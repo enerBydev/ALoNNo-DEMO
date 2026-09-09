@@ -39,6 +39,16 @@ responde igual con claves muertas: no prueba nada.
 Sin LLM no hay Capa 0 (parser + normalizacion al ingles) ni Capa 4 (explicaciones), y sin la
 normalizacion al ingles tampoco hay embeddings utiles. **Es el camino critico del dia 2.**
 
+**Se probaron DOS tokens distintos de NVIDIA y los dos dan 403 en chat y en embeddings.** El
+segundo se probo **desde el Worker desplegado**, o sea desde el edge de Cloudflare y no desde
+esta VM: eso descarta que sea la red o la IP. El problema es de la CUENTA de NVIDIA —creditos
+de API agotados, o claves sin permiso sobre la API de NIM—, no de la credencial concreta.
+Se comprueba en build.nvidia.com, mirando los creditos restantes.
+
+La sonda que lo mide vive en `/api/diagnostico-ia` y **hay que retirarla antes del 16**
+(tarea `86bbxv2wx`): devuelve solo codigos de estado, nunca el token, pero un cliente que la
+abra lee «Authorization failed» y eso no cuenta bien la historia.
+
 Candidatos que Rene ya tiene en GCP Secret Manager y que la SA aun no puede leer:
 `vercel-ai-gateway` y `zai`. Se desbloquean dando a
 `dev-vm-sa@enerby-workstation.iam.gserviceaccount.com` el rol *Secret Accessor* sobre uno.
