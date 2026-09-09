@@ -1,0 +1,21 @@
+{
+  "name": "alonno-demo",
+  "packageManager": "pnpm@11.20.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.0",
+    "wrangler": "catalog:"
+  },
+  "dependencies": {
+    "nuxt": "^4.5.2",
+    "vue": "^3.5.42",
+    "vue-router": "^5.3.1"
+  }
+}

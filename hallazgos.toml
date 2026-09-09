@@ -1,0 +1,28 @@
+# hallazgos.toml — el registro de hallazgos de este repositorio.
+#
+# Lo ESCRIBE la máquina (`just ci`): solo entradas nuevas y solo campos derivados.
+# Los ESTADOS los mueve una PERSONA, a mano, y se ven en el diff — que es donde se
+# mira una decisión. Lo VIGILA templates/bin/verificar-hallazgos.py, en el mismo gate.
+#
+# Un hallazgo nuevo NO tumba nada el día que aparece: lo causó el mundo (ADR-0009).
+# Uno VENCIDO sí: la aparición la causó el mundo, la permanencia la causas tú.
+
+[hallazgo."GHSA:GHSA-82fw-gwwq-j7x9"]
+paquete = "@vitest/mocker"
+gravedad = "media"
+titulo = "Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock"
+origen = "pnpm-audit o npm-audit"
+visto = "2026-09-09"
+vence = "2026-12-08"
+estado = "nuevo"
+id = "GHSA:GHSA-82fw-gwwq-j7x9"
+
+[hallazgo."GHSA:GHSA-rgj7-g3m4-5g8c"]
+paquete = "sharp"
+gravedad = "alta"
+titulo = "sharp: Vulnerabilities in libheif: GHSA-g89c-p67h-r497 and GHSA-2jg2-4ch7-h545"
+origen = "pnpm-audit o npm-audit"
+visto = "2026-09-09"
+vence = "2026-10-09"
+estado = "nuevo"
+id = "GHSA:GHSA-rgj7-g3m4-5g8c"

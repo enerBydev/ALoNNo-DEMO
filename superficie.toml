@@ -1,0 +1,25 @@
+# superficie.toml — las banderas que este repo USA, y la version que las declara.
+#
+# Lo ESCRIBE la maquina en cada `just ci`, preguntandole a las herramientas
+# INSTALADAS. No es documentacion: es el contrato entre lo que el repo invoca y lo
+# que existe. Si una bandera que aqui figura deja de existir, el gate falla con su
+# nombre — que es la unica forma de que «esa bandera no existe» se sepa ANTES de que
+# lo diga el CI de otro.
+#
+# Se lee, ademas, en el instante en que hace falta: antes de escribir un comando,
+# esto dice que banderas acepta de verdad la version que hay instalada aqui.
+
+[herramienta."gitleaks git"]
+version = "gitleaks version 8.30.1"
+usa = ["--config", "--no-banner", "--redact"]
+declara = 25
+
+[herramienta."just"]
+version = "just 1.58.0"
+usa = ["--list", "--unsorted"]
+declara = 68
+
+[herramienta."pnpm install"]
+version = "11.20.0"
+usa = ["--frozen-lockfile"]
+declara = 63
