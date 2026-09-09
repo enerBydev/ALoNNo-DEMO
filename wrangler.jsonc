@@ -1,0 +1,11 @@
+{
+  "name": "alonno-demo",
+  "main": "./.output/server/index.mjs",
+  // >= 2024-09-19 o el Worker no sirve los assets estaticos (trampa documentada).
+  "compatibility_date": "2026-09-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./.output/public"
+  }
+}
