@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(gcloud secrets *)",
-      "Bash(python3 -c ' *)",
-      "Bash(set -euo pipefail)"
-    ]
-  }
-}
