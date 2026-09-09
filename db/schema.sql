@@ -3,9 +3,18 @@
 -- DEMO: sin migraciones versionadas a proposito (regla 1). Este archivo se aplica entero,
 -- tantas veces como haga falta, y deja la base en el mismo sitio.
 --
--- DEPENDE DEL GATE DEL DIA 2 (brief §8): la dimension de `vector(1536)` es la de
--- text-embedding-3-small. Si el gate elige otro modelo —los de NVIDIA NIM son de 1024—,
--- hay que cambiar las tres columnas `embedding` AQUI y re-embeber el corpus entero.
+-- LA DIMENSION ES 384 PORQUE EL GENERADOR ES `gte-small`, el modelo que Supabase corre
+-- dentro de sus propias Edge Functions. Se eligio asi para no depender de ninguna API de
+-- embeddings externa: los vectores se producen donde se guardan.
+--
+-- `gte-small` es MONOLINGUE INGLES, y este producto tiene que casar aleman con ingles. La
+-- salida es la opcion C del §8 del brief, textual: el LLM de la Capa 0 devuelve, en la MISMA
+-- llamada, el JSON de intencion Y la frase normalizada al ingles; se embebe siempre ese texto
+-- en ingles, al sembrar y al consultar. Va declarado en el mensaje de entrega: el brief pide
+-- documentar este fallback, no esconderlo.
+--
+-- Si algun dia cambia el modelo, cambian las TRES columnas `embedding` y hay que re-embeber
+-- el corpus entero.
 
 create extension if not exists vector;
 create extension if not exists postgis;
@@ -31,7 +40,7 @@ create table if not exists profiles (
   verification      int default 0,              -- 0..3
   completed_plans   int default 0,
   reports           int default 0,
-  embedding         vector(1536),
+  embedding         vector(384),
   fts               tsvector
 );
 
@@ -58,7 +67,7 @@ create table if not exists plans (
   budget_band   text,
   pace          text,
   language_pref text[],
-  embedding     vector(1536),
+  embedding     vector(384),
   fts           tsvector
 );
 
@@ -78,7 +87,7 @@ create table if not exists intents (
   window_end    date,
   standing      boolean not null default false, -- true = sin fecha, interes continuo
   tags          text[] not null,
-  embedding     vector(1536),
+  embedding     vector(384),
   fts           tsvector
 );
 

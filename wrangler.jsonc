@@ -4,6 +4,11 @@
   // >= 2024-09-19 o el Worker no sirve los assets estaticos (trampa documentada).
   "compatibility_date": "2026-09-09",
   "compatibility_flags": ["nodejs_compat"],
+  // La URL del proyecto NO es una credencial (la credencial es la clave, que va como
+  // secret del Worker), asi que se versiona: asi el repo dice contra que base habla.
+  "vars": {
+    "SUPABASE_URL": "https://qbrgwphcpflbwhfqhffc.supabase.co"
+  },
   "assets": {
     "binding": "ASSETS",
     "directory": "./.output/public"
