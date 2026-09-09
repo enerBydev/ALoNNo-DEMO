@@ -28,43 +28,39 @@ Entrega: **miercoles 16 de septiembre**. Quedan 7 dias.
   esta VM no puede escribir secretos, y el repo es publico pero sus secretos de Actions no se
   exponen a forks.
 
-## Lo unico que bloquea
+## Proveedor de IA: RESUELTO, y el gate del §8 esta corrido
 
-**No hay credencial de LLM que funcione.** El token de NVIDIA NIM esta guardado
-(`NVIDIA_API_KEY`, en el Worker y en el repo) pero **rechaza toda inferencia**: HTTP 403
-`Authorization failed` en `/v1/embeddings` y en `/v1/chat/completions`, probado con 7 modelos
-de 4 familias (DeepSeek, Nemotron, Mistral, Phi). `/v1/models` devuelve 200, pero ese endpoint
-responde igual con claves muertas: no prueba nada.
+**Los tokens de NVIDIA que llegaron por chat no valian; el que estaba guardado en GCP
+(`nvidia-nim`) SI.** La API trataba a los dos primeros igual que a una clave inventada —403
+identico— mientras que sin cabecera devuelve 401. El endpoint y el modelo eran correctos
+desde el principio.
 
-Sin LLM no hay Capa 0 (parser + normalizacion al ingles) ni Capa 4 (explicaciones), y sin la
-normalizacion al ingles tampoco hay embeddings utiles. **Es el camino critico del dia 2.**
+**Gate del §8 corrido de verdad** (`scripts/gate-embeddings.py`), recall@1 cross-lingua sobre
+8 pares DE↔EN construidos con las frases reales de Helder:
 
-**Se probaron DOS tokens de NVIDIA y los dos dan 403 en chat y en embeddings.** El segundo se
-probo ademas **desde el Worker desplegado** —desde el edge de Cloudflare, no desde esta VM—,
-lo que descarta la red y la IP de origen.
+| modelo | dim | recall@1 | margen medio |
+|---|---|---|---|
+| **`nvidia/nemotron-3-embed-1b`** (NIM) | 2048 | 8/8 | **+0.340** ← elegido |
+| `openai/text-embedding-3-small` (Vercel) | 1536 | 8/8 | +0.319 |
+| `nemotron-3-embed-1b` **sin `input_type`** | 2048 | 7/8 | +0.091 |
 
-Lo que lo cierra es esta comparacion contra el mismo endpoint:
+Empatan en recall: **lo que decide es el cupo.** El AI Gateway de Vercel funciona pero su free
+tier corta con `429 rate-limited` a la segunda tanda, y sembrar son ~420 items; NIM hizo 60
+vectores en 4.8 s sin un fallo. Vercel queda como respaldo declarado.
 
-| Credencial | Respuesta |
-|---|---|
-| sin cabecera `Authorization` | **401** · `Header of type authorization was missing` |
-| una clave **inventada** (`nvapi-000...000`) | **403** · `Authorization failed` |
-| los dos tokens reales | **403** · `Authorization failed` |
+**Decisiones cerradas (§8 dice: decidir el dia 2 y no volver a tocarlo):**
 
-La API trata los tokens **igual que a una clave inventada**: no los reconoce. Descartado
-tambien que sea el endpoint (`ai.api.nvidia.com/v1` devuelve 404: no es ruta valida) y que
-sea el modelo (`nvidia/nemotron-3.5-lightning-30b-a3b` SI figura en el catalogo de
-`/v1/models`, que responde 200). Y no parece cupo agotado: eso daria 402 o 429.
-
-Hace falta una API key nueva emitida en build.nvidia.com.
-
-La sonda que lo mide vive en `/api/diagnostico-ia` y **hay que retirarla antes del 16**
-(tarea `86bbxv2wx`): devuelve solo codigos de estado, nunca el token, pero un cliente que la
-abra lee «Authorization failed» y eso no cuenta bien la historia.
-
-Candidatos que Rene ya tiene en GCP Secret Manager y que la SA aun no puede leer:
-`vercel-ai-gateway` y `zai`. Se desbloquean dando a
-`dev-vm-sa@enerby-workstation.iam.gserviceaccount.com` el rol *Secret Accessor* sobre uno.
+- **Embeddings**: `nvidia/nemotron-3-embed-1b` · 2048 dim · **es ASIMETRICO**: `input_type`
+  = `passage` al sembrar, `query` al consultar. Sin ese parametro el recall cae a 7/8 y el
+  margen se hunde a +0.091 — y no da ningun error: solo devuelve peores resultados.
+- **LLM (Capas 0 y 4)**: `nvidia/nemotron-3.5-lightning-30b-a3b`, probado y respondiendo.
+- **Multilingue nativo**: se cae la opcion C del §8 (traducir al ingles antes de embeber).
+  Menos codigo y una llamada menos por busqueda.
+- **El indice va sobre `halfvec(2048)`**, porque HNSW con el tipo `vector` topa en 2000. La
+  columna guarda precision completa. **Toda consulta tiene que llevar el mismo cast** o
+  Postgres ignora el indice sin avisar. Comprobado con EXPLAIN: `Index Scan using
+  profiles_embedding_hnsw`.
+- **Credenciales**: `NVIDIA_API_KEY` y `VERCEL_AI_GATEWAY_KEY`, en el Worker y en el repo.
 
 ## Huecos declarados (no bloquean)
 
