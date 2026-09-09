@@ -1,0 +1,59 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO just:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO pnpm lint:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO pnpm typecheck:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO pnpm test:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO pnpm build:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO vitest:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO just:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(cu:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr merge:*)"
+    ],
+    "deny": [
+      "Bash(cargo publish:*)",
+      "Bash(git push --force:*)",
+      "Bash(rm -rf:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | { read -r f; case \"$f\" in *.ts|*.vue|*.js) direnv exec \"$(dirname \"$f\")\" pnpm biome format --write \"$f\" 2>/dev/null;; esac; } || true"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"rama: $(git branch --show-current 2>/dev/null) | ultimo: $(git log --oneline -1 2>/dev/null)\"; command -v cu >/dev/null 2>&1 && cu current 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

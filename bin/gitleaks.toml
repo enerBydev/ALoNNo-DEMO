@@ -1,0 +1,98 @@
+# Configuración del escaneo de secretos del gate compartido de methodOS.
+#
+# POR QUÉ EXISTE ESTE FICHERO (2026-08-27). La acción invocaba a gitleaks sin `--config`, y
+# entonces gitleaks lee el `.gitleaks.toml` del repositorio que está escaneando. Es decir:
+# el repo auditado configuraba su propio auditor. Medido: un repo con una clave privada RSA
+# commiteada pasaba de `exit 1` (la caza) a `exit 0` (silencio) añadiendo cuatro líneas:
+#
+#     [extend]
+#     useDefault = false
+#
+# Y para rematarlo, `methodos-doctor` premiaba la simple EXISTENCIA de ese fichero con
+# CODE-5 ✅. El control lo controlaba el controlado.
+#
+# Ahora la acción pasa `--config` apuntando aquí, así que este archivo gana siempre y el del
+# repo escaneado se ignora. Una excepción legítima —un falso positivo real— se añade en ESTE
+# fichero: revisada, versionada y compartida por todos los repos, que es lo que LOOP-2 pide
+# de cualquier superficie que decide qué se puede integrar.
+
+title = "methodOS · escaneo de secretos del gate compartido"
+
+[extend]
+# El catálogo de reglas de gitleaks, íntegro. Es el suelo, y no se baja: quitar reglas aquí
+# afecta a TODOS los repos del namespace a la vez, y por eso debe verse en un diff.
+useDefault = true
+
+# ── Excepciones ──────────────────────────────────────────────────────────────────────────
+# Cada entrada lleva su motivo y su fecha. Una excepción sin explicación es una puerta que
+# nadie recuerda haber abierto.
+[allowlist]
+description = "Excepciones revisadas del namespace enerBydev"
+
+paths = [
+    # La configuración del propio escáner: contiene los patrones de ejemplo de arriba, no
+    # credenciales. Sin esto, el gate se denunciaría a sí mismo (2026-08-27).
+    '''\.github/actions/gate/gitleaks\.toml$''',
+]
+
+# Un COMMIT concreto del historial, no una ruta ni una regla: lo más quirúrgico que admite
+# gitleaks. Silenciar por `paths` dejaría ese fichero sin escanear PARA SIEMPRE y en TODOS
+# los repos; por commit, solo se calla este hecho ya cerrado.
+#
+# enerBydev/ClickUpCLI · 3df9b73a (2026-08-22) · tests/test_ui.py
+#   Un token REAL de ClickUp en la constante de un test. NO era un falso positivo: se
+#   comprobó (2026-09-06) contra el valor que servía GCP Secret Manager y era el que estaba
+#   en uso. Bloqueó el gate del PR #1 de ese repo desde el 2-sep, y el gate hizo BIEN su
+#   trabajo: no se integra un secreto.
+#   Se cierra en este orden, que es el único válido:
+#     1. Rene ROTÓ el token en ClickUp. Verificado: el viejo responde 401.
+#     2. El valor salió del árbol (ClickUpCLI, CU-86bbt77yk): el test usa uno inventado.
+#     3. Solo entonces, esta excepción — sobre una credencial MUERTA y un commit que ya no
+#        se puede cambiar sin reescribir la historia de un repo con PRs vivos.
+#   Si algún día se reescribe ese historial, esta entrada sobra y debe borrarse.
+commits = [
+    "3df9b73a71a5bcfce01905afa0c91a4cd2422117",
+]
+
+# ── SUPABASE: se cazan POR FORMA, no por la palabra que haya al lado ──────────────────
+#
+# LO QUE SE MIDIO (2026-09-04, OnlyHouseMX/site, gitleaks 8.30.1). De las 222 reglas
+# embebidas, NINGUNA menciona Supabase ni el prefijo `sbp_`. Tres commits sembrados y
+# deshechos con `reset --hard`:
+#
+#   1. SUPABASE_ACCESS_TOKEN=sbp_ + 40 letras «a»       ->  PASA  (no hay entropia)
+#   2. SUPABASE_ACCESS_TOKEN=sbp_ + 40 hex aleatorios   ->  falla, pero por la regla
+#                                                           GENERICA: la palabra «token»
+#                                                           al lado + entropia
+#   3. el MISMO PAT aleatorio en un JSON con clave neutra, sin token/key/secret cerca
+#                                                       ->  PASA
+#
+# O sea: el escaneo por defecto caza por PALABRA CLAVE + ENTROPIA, y las llaves de Supabase
+# tienen prefijo FIJO. Un PAT en un fichero de configuracion con una clave neutra —que es
+# como acaban de verdad— se cuela entero.
+#
+# `sb_secret_` merece subrayado: equivale al `service_role` y SALTA RLS. Con esa llave, la
+# base entera queda abierta con independencia de las politicas.
+#
+# Las tres reglas se escribieron y se verificaron EN CADENA en un consumidor
+# (OnlyHouseMX/site) antes de subir aqui. Suben al gate COMPARTIDO porque el hueco no es de
+# ese repo: es de todos los que usan Supabase, y el `.gitleaks.toml` de un repo NO lo lee
+# este escaneo — que es justamente el punto de ADR-0009.
+
+[[rules]]
+id = "supabase-pat"
+description = "Supabase personal access token (sbp_ + 40 hex) — acceso a la API de gestion"
+regex = '''\bsbp_(?:oauth_)?[a-f0-9]{40}\b'''
+keywords = ["sbp_"]
+
+[[rules]]
+id = "supabase-secret-key"
+description = "Supabase secret API key (sb_secret_…) — equivale a service_role: SALTA RLS"
+regex = '''\bsb_secret_[A-Za-z0-9_-]{20,}'''
+keywords = ["sb_secret_"]
+
+[[rules]]
+id = "supabase-publishable-key"
+description = "Supabase publishable API key (sb_publishable_…)"
+regex = '''\bsb_publishable_[A-Za-z0-9_-]{20,}'''
+keywords = ["sb_publishable_"]

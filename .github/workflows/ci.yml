@@ -1,0 +1,184 @@
+name: CI
+
+# LA COSTURA (methodOS, LOOP-4): este workflow NO repite la lista de comandos del justfile
+# y ya ni siquiera la invoca a mano: delega en la accion compuesta `gate` de methodOS, que
+# instala Nix, escanea secretos, corre `nix develop -c just ci` y mide el repo con
+# methodos-doctor. El toolchain lo da el flake de ESTE repo, no el workflow.
+#
+# POR QUE CAMBIO (Ola 1, 2026-08-26): antes esto era `run: just ci` inline. Funcionaba,
+# pero se saltaba la accion — y con ella el escaneo de secretos que ADR-0009 declara
+# BLOQUEANTE. Resultado medido por la auditoria: ningun proyecto nacido de methodOS
+# escaneaba secretos, y el doctor le daba CODE-5 en verde igualmente. La accion es el
+# unico sitio donde ese control vive una vez para todos.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  # LO PIDE EL MEDIDOR, Y SIN ESTO NO MIDE NADA. El token efímero del workflow trae por
+  # defecto `contents: read` y nada más, así que `gh pr list` daba 403 y `gh api …/protection`
+  # también: CODE-1 y CODE-2 salían ⊘ «sin gh autenticado» EN EL PROPIO CI que presumía de
+  # medirlas. Lo demostró una revisión adversarial leyendo el log del run verde (2026-08-27).
+  #
+  # Una acción compuesta NO PUEDE concederse permisos: tiene que declararlos el workflow que
+  # la usa. Por eso está aquí y en las tres plantillas, y por eso lo dice el `description:`
+  # de la acción — es parte del contrato con el consumidor, no un detalle interno.
+  contents: read
+  # `write` DESDE EL 2026-09-01 (ADR-0013): la accion `veredicto` emite la revision de
+  # CODE-2 con la identidad del App revisor, y para eso hace falta escribir en el PR.
+  pull-requests: write
+  # `administration: read` NO EXISTE como scope de `permissions` para el token de Actions:
+  # ponerlo hace que el workflow ni siquiera arranque (medido 2026-08-27 — la run falló sin
+  # jobs y sin log). La protección de rama solo se lee con un PAT que tenga ese scope, y aquí
+  # no lo hay a propósito. Consecuencia asumida y declarada: **CODE-1 sale ⊘ en CI**, que es
+  # la verdad —no se pudo preguntar— desde que el doctor dejó de afirmar ❌ por defecto.
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    # EL SECRETO SE MIRA POR `env`, NUNCA EN EL `if:`. El contexto `secrets` NO esta
+    # disponible en `jobs.<id>.steps[*].if` —lo dice la tabla de disponibilidad de contextos
+    # de GitHub—, asi que `if: secrets.X != ''` es SIEMPRE falso: el paso se saltaria
+    # siempre, sin error y sin aviso, y el CI seguiria en verde sin haber hecho nada.
+    env:
+      HAY_KIT: ${{ secrets.METHODOS_REVISOR_APP_ID }}
+    steps:
+      # fetch-depth 0 NO es opcional: la accion se niega a correr sobre un historial
+      # truncado, porque el escaneo de secretos solo veria el ultimo commit.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── EL KIT DE methodOS, TRAIDO A MANO ────────────────────────────────────────
+      #
+      # NO se usa `uses: enerBydev/methodOS/...@main`, y no es por gusto. Esa forma solo
+      # resuelve si el repo que la escribe es PRIVADO y del MISMO propietario que methodOS.
+      # Medido: un repo publico de la misma cuenta falla con «Unable to resolve action»
+      # (2026-09-07), y uno de otra organizacion tambien (2026-09-04). Las opciones de
+      # comparticion de GitHub no cruzan ninguna de esas dos lineas.
+      #
+      # Un estandar que solo alcanza a los repos privados de una cuenta no es un estandar:
+      # es una costumbre local. Asi que el kit se trae explicitamente, y estos tres pasos se
+      # comportan IGUAL sea el repo publico o privado, de la cuenta o de una organizacion.
+      # Ninguno queda fuera por lo que le toco ser.
+      #
+      # El token se acuna por ejecucion, es de SOLO LECTURA sobre UN repositorio, y GitHub lo
+      # revoca al terminar el job: no queda credencial guardada en ningun sitio.
+      - name: Token de lectura sobre methodOS
+        id: kit
+        if: env.HAY_KIT != ''
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.METHODOS_REVISOR_APP_ID }}
+          private-key: ${{ secrets.METHODOS_REVISOR_PRIVATE_KEY }}
+          owner: enerBydev
+          repositories: methodOS
+          permission-contents: read
+
+      - name: Traer el kit de methodOS
+        if: steps.kit.outputs.token != ''
+        uses: actions/checkout@v4
+        with:
+          repository: enerBydev/methodOS
+          token: ${{ steps.kit.outputs.token }}
+          path: .methodos
+          persist-credentials: false
+          # SOLO LO QUE LA ACCION NECESITA, no el repo entero. El kit aterriza DENTRO del
+          # arbol de trabajo —`uses: ./...` lo exige—, asi que todo lo que se traiga lo ven
+          # las herramientas del consumidor. Traido completo rompio un gate real dos veces
+          # el 2026-09-08: el verificador de catalogo juzgo un `package.json` de PLANTILLA
+          # de methodOS, y vitest ejecuto los tests de esa plantilla como si fueran del repo.
+          # No se persigue el sintoma configurando exclusiones en cada herramienta: no se
+          # trae lo que no hace falta.
+          sparse-checkout: |
+            .github
+            templates/bin
+
+      - name: El gate
+        if: steps.kit.outputs.token != ''
+        uses: ./.methodos/.github/actions/gate
+
+      - name: Sin kit, se informa el hueco
+        if: steps.kit.outputs.token == ''
+        run: |
+          echo "::notice::sin credencial del App (PR desde un fork, o secretos sin poner): el gate compartido no se ejecuta."
+
+  # ── EL VEREDICTO DE CODE-2, DESDE UNA IDENTIDAD QUE NO ES LA AUTORA ──────────────────
+  # Sin los secretos `METHODOS_REVISOR_*` este job NO rompe el CI: informa y se declara
+  # hueco, y el medidor dira CODE-2 en rojo. Un repo sin revisor sigue siendo valido; lo
+  # que no puede es CREER que lo tiene.
+  #
+  # `needs: gate` + `if: always()` no es adorno: hace que el insumo del veredicto sea el
+  # RESULTADO que calculo el runner, no una afirmacion de quien abre el PR. Esa es toda la
+  # diferencia entre una segunda identidad y un sello de goma.
+  veredicto:
+    runs-on: ubuntu-latest
+    needs: gate
+    if: always() && github.event_name == 'pull_request'
+    # EL SECRETO SE MIRA POR `env`, NUNCA EN EL `if:`. El contexto `secrets` NO esta
+    # disponible en `jobs.<id>.steps[*].if` —lo dice la tabla de disponibilidad de contextos
+    # de GitHub—, asi que `if: secrets.X != ''` es SIEMPRE falso: el paso se saltaria
+    # siempre, sin error y sin aviso, y el CI seguiria en verde sin haber hecho nada.
+    env:
+      HAY_KIT: ${{ secrets.METHODOS_REVISOR_APP_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── EL KIT DE methodOS, TRAIDO A MANO ────────────────────────────────────────
+      #
+      # NO se usa `uses: enerBydev/methodOS/...@main`, y no es por gusto. Esa forma solo
+      # resuelve si el repo que la escribe es PRIVADO y del MISMO propietario que methodOS.
+      # Medido: un repo publico de la misma cuenta falla con «Unable to resolve action»
+      # (2026-09-07), y uno de otra organizacion tambien (2026-09-04). Las opciones de
+      # comparticion de GitHub no cruzan ninguna de esas dos lineas.
+      #
+      # Un estandar que solo alcanza a los repos privados de una cuenta no es un estandar:
+      # es una costumbre local. Asi que el kit se trae explicitamente, y estos tres pasos se
+      # comportan IGUAL sea el repo publico o privado, de la cuenta o de una organizacion.
+      # Ninguno queda fuera por lo que le toco ser.
+      #
+      # El token se acuna por ejecucion, es de SOLO LECTURA sobre UN repositorio, y GitHub lo
+      # revoca al terminar el job: no queda credencial guardada en ningun sitio.
+      - name: Token de lectura sobre methodOS
+        id: kit
+        if: env.HAY_KIT != ''
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.METHODOS_REVISOR_APP_ID }}
+          private-key: ${{ secrets.METHODOS_REVISOR_PRIVATE_KEY }}
+          owner: enerBydev
+          repositories: methodOS
+          permission-contents: read
+
+      - name: Traer el kit de methodOS
+        if: steps.kit.outputs.token != ''
+        uses: actions/checkout@v4
+        with:
+          repository: enerBydev/methodOS
+          token: ${{ steps.kit.outputs.token }}
+          path: .methodos
+          persist-credentials: false
+          # SOLO LO QUE LA ACCION NECESITA, no el repo entero. El kit aterriza DENTRO del
+          # arbol de trabajo —`uses: ./...` lo exige—, asi que todo lo que se traiga lo ven
+          # las herramientas del consumidor. Traido completo rompio un gate real dos veces
+          # el 2026-09-08: el verificador de catalogo juzgo un `package.json` de PLANTILLA
+          # de methodOS, y vitest ejecuto los tests de esa plantilla como si fueran del repo.
+          # No se persigue el sintoma configurando exclusiones en cada herramienta: no se
+          # trae lo que no hace falta.
+          sparse-checkout: |
+            .github
+            templates/bin
+
+      - name: Veredicto de CODE-2
+        if: steps.kit.outputs.token != ''
+        uses: ./.methodos/.github/actions/veredicto
+        with:
+          app-id: ${{ secrets.METHODOS_REVISOR_APP_ID }}
+          private-key: ${{ secrets.METHODOS_REVISOR_PRIVATE_KEY }}
+          gate-verde: ${{ needs.gate.result == 'success' }}

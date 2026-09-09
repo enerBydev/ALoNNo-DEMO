@@ -1,0 +1,29 @@
+name: release a tareas
+
+# AL PUBLICAR, LAS TAREAS QUE ENTRARON NO SE ENTERABAN. La pregunta «¿en qué versión salió
+# esto?» solo se podía contestar leyendo el historial a mano, y el milestone quedaba abierto
+# para siempre.
+#
+# VA EN SU PROPIO FICHERO, como el del CI en rojo: `release` y `pull_request` en el mismo
+# workflow se disparan el uno con los eventos del otro y producen runs fantasma.
+#
+# `continue-on-error`, igual que el resto del puente: publicar una versión es lo último que
+# debe romperse por un problema de observabilidad.
+on:
+  release:
+    types: [published]
+
+jobs:
+  avisar:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      # Los milestones viven en Issues, aunque no se toque ningún issue. `contents: read` es
+      # para leer el rango de commits entre dos tags.
+      contents: read
+      issues: write
+    steps:
+      - uses: enerBydev/methodOS/.github/actions/sync-cu@main
+        with:
+          clickup-token: ${{ secrets.CLICKUP_TOKEN }}
+          accion: publicado
