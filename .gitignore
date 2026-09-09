@@ -21,3 +21,8 @@ dist/
 .dev.vars
 supabase/.temp/
 __pycache__/
+
+# Ficheros locales y temporales del harness de Claude Code: son de ESTA maquina,
+# no del proyecto. Uno se colo en un commit el 2026-09-09 via `git add -A`.
+.claude/settings.local.json
+.claude/settings.local.json.tmp.*
