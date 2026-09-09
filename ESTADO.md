@@ -11,6 +11,8 @@ Tarea de ClickUp: `86bbx99au` (Dia 1), en `in progress`.
 | **Nuxt 4.5.2 + Nitro** con preset `cloudflare_module` | `pnpm build` genera `.output/` |
 | **Desplegado y respondiendo** | <https://alonno-demo.enerby212.workers.dev> → HTTP 200 en ~0.16 s · `/api/salud` → `{"estado":"ok"}` · el HTML servido dice `backend: ok`, o sea que la ruta de servidor se ejecuta de verdad, no solo llegan bytes |
 | **`db/schema.sql`** escrito, idempotente | Aun **sin aplicar**: no hay base |
+| **El CI ejecuta el gate de verdad** | `instalar-revisor.sh` puso los dos secretos del App. Antes de eso el run salia **success sin ejecutar nada** (paso «sin kit, se informa el hueco»): el aviso estaba, pero un run verde que no mide es peor que uno rojo |
+| **Revision de CODE-2 por otra identidad** | el App `methodos-revisor` aprobo el PR #2, ya integrado en `main` |
 
 ## Decisiones cerradas hoy
 
@@ -33,6 +35,7 @@ Tarea de ClickUp: `86bbx99au` (Dia 1), en `in progress`.
    a proposito: crear el secreto es tarea de Rene desde su cuenta.
 3. Falta conectar Workers Builds al repo (git-connect). Hoy el deploy fue imperativo desde la
    maquina, que es un ❌ declarado del medidor (REL-5, no bloqueante).
+4. El bloqueo de la base tiene tarea propia: **`86bbx9y0j`**, en `blocked`.
 
 ## Siguiente paso concreto
 
