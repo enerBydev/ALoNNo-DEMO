@@ -39,11 +39,24 @@ responde igual con claves muertas: no prueba nada.
 Sin LLM no hay Capa 0 (parser + normalizacion al ingles) ni Capa 4 (explicaciones), y sin la
 normalizacion al ingles tampoco hay embeddings utiles. **Es el camino critico del dia 2.**
 
-**Se probaron DOS tokens distintos de NVIDIA y los dos dan 403 en chat y en embeddings.** El
-segundo se probo **desde el Worker desplegado**, o sea desde el edge de Cloudflare y no desde
-esta VM: eso descarta que sea la red o la IP. El problema es de la CUENTA de NVIDIA —creditos
-de API agotados, o claves sin permiso sobre la API de NIM—, no de la credencial concreta.
-Se comprueba en build.nvidia.com, mirando los creditos restantes.
+**Se probaron DOS tokens de NVIDIA y los dos dan 403 en chat y en embeddings.** El segundo se
+probo ademas **desde el Worker desplegado** —desde el edge de Cloudflare, no desde esta VM—,
+lo que descarta la red y la IP de origen.
+
+Lo que lo cierra es esta comparacion contra el mismo endpoint:
+
+| Credencial | Respuesta |
+|---|---|
+| sin cabecera `Authorization` | **401** · `Header of type authorization was missing` |
+| una clave **inventada** (`nvapi-000...000`) | **403** · `Authorization failed` |
+| los dos tokens reales | **403** · `Authorization failed` |
+
+La API trata los tokens **igual que a una clave inventada**: no los reconoce. Descartado
+tambien que sea el endpoint (`ai.api.nvidia.com/v1` devuelve 404: no es ruta valida) y que
+sea el modelo (`nvidia/nemotron-3.5-lightning-30b-a3b` SI figura en el catalogo de
+`/v1/models`, que responde 200). Y no parece cupo agotado: eso daria 402 o 429.
+
+Hace falta una API key nueva emitida en build.nvidia.com.
 
 La sonda que lo mide vive en `/api/diagnostico-ia` y **hay que retirarla antes del 16**
 (tarea `86bbxv2wx`): devuelve solo codigos de estado, nunca el token, pero un cliente que la
