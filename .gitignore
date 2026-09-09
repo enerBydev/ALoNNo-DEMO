@@ -1,0 +1,7 @@
+# Documentacion y material de negocio del proyecto: viven en un repo aparte y
+# PRIVADO, clonado aqui como docs/. Este repo es PUBLICO: nunca versionar docs/.
+docs/
+
+# Symlink a docs/CLAUDE.md, para que las reglas del proyecto se carguen solas
+# al abrir sesion. Apunta al repo privado, asi que no viaja con este repo.
+/CLAUDE.md
