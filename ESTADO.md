@@ -1,4 +1,4 @@
-# ESTADO — dias 2, 3 y 4 hechos (jueves 10 de septiembre de 2026)
+# ESTADO — dias 2, 3, 4 y 5 hechos (jueves 10 de septiembre de 2026)
 
 Entrega: **miercoles 16 de septiembre**. Ventana de feedback pedida: **3 dias habiles → hasta el
 lunes 21**. Quedan 6 dias de construccion.
@@ -38,7 +38,27 @@ comprobado por `just seed-determinista`.
 - **`thinking: false` NO es opcional**: medido, baja la Capa 0 de 6,9 s a 0,5 s en una llamada
   simple. Sin el, el modelo gasta los 300 tokens de salida enteros razonando.
 
-**Falta el motor de scoring (Capa 3) y las explicaciones (Capa 4), que son el dia 5.** Y la UI.
+### Dia 5 · Capas 3 y 4 (hecho)
+
+- **Capa 3 · scoring determinista.** Los siete pesos del §7 intactos; lo que se a~nade es la
+  normalizacion del ADR-0002 (piso y techo declarados por componente). **19 pruebas**, entre
+  ellas que un match impecable entra en la banda **88-95%** que exige el §9.
+- **Capa 4 · explicaciones.** El modelo recibe los tres componentes que mas aportan, **con sus
+  puntos ya calculados**, y escribe una frase. Si se cuela un numero en la prosa, se borra: el
+  modelo escribe la oracion, nunca el numero (regla 6).
+- **La regla de mezcla por arquetipo.** El §9-A pide cosas distintas segun la frase: la 1 quiere
+  personas (quien pregunta ya tiene la entrada), la 7 quiere planes, la 6 mezcla. Es un
+  multiplicador por tipo, no un filtro: los dos siguen apareciendo y etiquetados (§10.4).
+- **Cache sobre KV**: la misma frase pasa de **15,9 s a 0,33 s**. Las 10 frases son clicables y
+  se van a repetir el dia de la revision.
+- **Resistencia**: reintento con espera en las llamadas al proveedor —dos de diez frases dieron
+  502 en una tanda y funcionaron al reintentar— y un **parser de reserva por reglas** si la Capa
+  0 no responde. Se pierde precision, no la demo, y la respuesta lo declara con `degradado: true`.
+
+**Las 10 frases de Helder devuelven resultado**, todas con un resultado del top 3 en el idioma
+contrario al de la consulta. `just frases` lo comprueba y de paso calienta la cache.
+
+**Falta la UI (dia 6) y la calibracion (dia 7).**
 
 ## Decisiones cerradas (§8 dice: decidir el dia 2 y no volver a tocarlo)
 
@@ -114,8 +134,17 @@ La respuesta esta en el plan y hay que construirla el dia 5: **cache por frase n
 **pre-calentado de las 10 frases de Helder** antes de mandar el link. Las diez frases clicables
 no deben tocar el LLM en vivo.
 
+## Lo que el dia 7 tiene que calibrar (medido hoy, no adivinado)
+
+| | |
+|---|---|
+| **La escala real** | El match de la frase 6 da **89%** (banda correcta), pero las frases de tipo persona se quedan en **55-74%**. La similitud consulta↔bio vive en una banda mas baja que texto↔texto: los pisos y techos del ADR-0002 necesitan valores propios para cada tipo de comparacion |
+| **La frase 8** | Sale `standing_interest` y deberia ser `intent_seeks_any`: «this weekend» es una ventana temporal y el parser no la esta viendo |
+| **La frase 2** | Es hibrida (persona **y** plan) y hoy devuelve solo personas |
+| **El idioma de dos explicaciones** | Las frases 5 y 7 tienen explicaciones en espanol **cacheadas** de antes del arreglo. La cache hay que **purgarla** antes de pre-calentar el dia 16 |
+
 ## Siguiente paso concreto
 
-Dia 5: **Capa 3 (scoring determinista)** con la normalizacion del ADR-0002 —los componentes en
-[0,1] con piso y techo declarados, para que un match impecable llegue a la banda 88–95% que
-exige el §9— y **Capa 4 (explicaciones)**, cacheadas por par. Mas la cache de la Capa 0.
+Dia 6: la UI del §10 — el textarea, las 10 frases clicables, el panel «asi lo entendi» editable,
+los resultados etiquetados PERSONA/PLAN con su porcentaje y su desglose de componentes, el enlace
+«ver descartados» y el pie con el desglose de tiempos por capa.

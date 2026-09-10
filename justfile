@@ -127,3 +127,12 @@ seed-determinista:
     b=$(sha256sum db/seed.json | cut -d" " -f1)
     if [ "$a" != "$b" ]; then echo "el seed NO es determinista: $a != $b" >&2; exit 1; fi
     echo "seed determinista: $a"
+
+# Las 10 frases de Helder contra la demo desplegada: criterio de aceptacion (regla 4), smoke test
+# del §11 y pre-calentado de la cache, todo en el mismo comando.
+#
+# FUERA de `just ci` a proposito: necesita red y la URL desplegada, y un gate que depende de un
+# tercero no es un gate. Se corre a mano, y OBLIGATORIAMENTE el dia 16 despues de re-sembrar y
+# ANTES de mandar el link.
+frases:
+    python3 scripts/frases.py

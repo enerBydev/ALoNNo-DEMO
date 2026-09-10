@@ -9,6 +9,12 @@
   "vars": {
     "SUPABASE_URL": "https://qbrgwphcpflbwhfqhffc.supabase.co"
   },
+  // El almacen de la cache. Sin el, `defineCachedEventHandler` cae a memoria del proceso — y en
+  // Workers cada peticion puede tocar una instancia distinta, asi que la cache no acierta nunca.
+  "kv_namespaces": [
+    { "binding": "CACHE", "id": "bbb24212ab7644a289a9a3383021ee26" }
+  ],
+
   "assets": {
     "binding": "ASSETS",
     "directory": "./.output/public"
