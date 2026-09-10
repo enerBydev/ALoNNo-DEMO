@@ -56,14 +56,28 @@ export const PESOS_INTENCION_PLAN = {
 /** LA CALIBRACION. Estos numeros son el objeto del dia 7, y por eso viven juntos y con su
  *  razon al lado. Cambiar uno cambia la ESCALA; cambiar un peso cambia las PRIORIDADES. */
 export const CALIBRACION = {
-  // Medido sobre el corpus real el 10-sep-2026: dos textos sin relacion rondan 0,28 de coseno
-  // y un match tematico fuerte llega a ~0,68. Sin normalizar, el mejor resultado posible
-  // aportaria 0,68 × 30 = 20,4 puntos de los 30 que el peso promete.
-  taste_piso: 0.24,
-  taste_techo: 0.68,
-  // El Jaccard de dos personas con cinco intereses cada una y tres compartidos es 0,43. Exigir
-  // 1,0 seria exigir que dos personas sean identicas, que no es lo que mide «comparten gusto».
-  overlap_techo: 0.45,
+  // ── CALIBRADO EL DIA 7 CONTRA LAS 10 FRASES, no estimado ────────────────────────────────
+  //
+  // HAY DOS BANDAS, Y ESA ES LA LECCION DEL DIA 7. La similitud coseno no vive en el mismo
+  // sitio segun que se compare:
+  //
+  //   consulta ↔ BIO DE UNA PERSONA   el mejor del corpus da 0,424   (una frase sobre un plan
+  //                                    contra un texto sobre una vida: se parecen poco aunque
+  //                                    la persona sea perfecta para ese plan)
+  //   consulta ↔ TEXTO DE UN PLAN     el mejor del corpus da 0,724   (dos textos sobre lo mismo)
+  //
+  // Con una sola banda, el match impecable de la frase 1 daba 68% —12,5 puntos de los 30 que el
+  // peso del gusto promete— cuando el §9 exige 88-95% y el PDF del cliente ense~na un 92%.
+  // Medido: con estas bandas ese mismo perfil sube a la banda correcta y el near-miss por gusto
+  // se queda cerca de 50, asi que la discriminacion no se pierde: se recupera la ESCALA.
+  taste_persona_piso: 0.22,
+  taste_persona_techo: 0.44,
+  taste_plan_piso: 0.30,
+  taste_plan_techo: 0.70,
+  // El Jaccard entre los pocos tags que sobreviven a una frase y los muchos gustos de una
+  // persona es bajo por construccion: el mejor del corpus da 0,222. Exigir mas seria exigir que
+  // la frase enumere la vida entera de alguien.
+  overlap_techo: 0.25,
   // La proximidad se mide contra el radio que el PROPIO plan declara (§7), no contra un numero
   // fijo: un concierto tiene radio 40 km y un viaje, otro.
   proximidad_suelo_km: 0.3,
@@ -194,7 +208,7 @@ export function puntuarPersona(
   const componentes = [
     comp('taste_affinity', 'Gusto parecido', 'Shared taste',
       persona.similitud,
-      normalizarBanda(persona.similitud, CALIBRACION.taste_piso, CALIBRACION.taste_techo),
+      normalizarBanda(persona.similitud, CALIBRACION.taste_persona_piso, CALIBRACION.taste_persona_techo),
       P.taste_affinity),
     comp('explicit_overlap', 'Intereses en comun', 'Interests in common',
       solape.valor, clamp01(solape.valor / CALIBRACION.overlap_techo), P.explicit_overlap,
@@ -264,7 +278,7 @@ export function puntuarPlan(
   const componentes = [
     comp('intent_similarity', 'Encaja con lo que pides', 'Matches what you asked',
       plan.similitud,
-      normalizarBanda(plan.similitud, CALIBRACION.taste_piso, CALIBRACION.taste_techo),
+      normalizarBanda(plan.similitud, CALIBRACION.taste_plan_piso, CALIBRACION.taste_plan_techo),
       P.intent_similarity),
     comp('subject_match', 'Es justo eso', 'Exactly that', sujeto, sujeto, P.subject_match,
       plan.subject ?? undefined),

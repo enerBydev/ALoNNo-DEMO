@@ -1,4 +1,4 @@
-# ESTADO — dias 2 a 6 hechos (jueves 10 de septiembre de 2026)
+# ESTADO — las 5 capas funcionando, dias 2 a 7 hechos (10 de septiembre de 2026)
 
 Entrega: **miercoles 16 de septiembre**. Ventana de feedback pedida: **3 dias habiles → hasta el
 lunes 21**. Quedan 6 dias de construccion.
@@ -76,7 +76,21 @@ es la respuesta de producto a «no quiero que los usuarios llenen 20 filtros».
 10 frases son clicables, una busqueda devuelve 12 resultados, el desglose tiene 7 filas y **suma
 exactamente el porcentaje que ense~na**, y no hay ni un error de consola.
 
-**Falta la calibracion (dia 7).**
+### Dia 7 · calibracion (hecho)
+
+**El match impecable de la frase 1 pasa de 68% a 91%**, dentro de la banda 88-95% que exige el
+§9 y coherente con el 92% que el cliente tiene en su PDF.
+
+La leccion del dia 7, medida: **la similitud coseno no vive en el mismo sitio segun que se
+compare.** Consulta contra la bio de una persona da como maximo **0,424** en este corpus;
+consulta contra el texto de un plan llega a **0,724**. Con una sola banda de normalizacion, un
+perfil perfecto se quedaba en 12,5 de los 30 puntos que el peso del gusto promete. Ahora hay dos
+bandas declaradas, y **los pesos del §7 siguen intactos** — que es lo que la regla 7 protege.
+
+Y un fallo que las pruebas no cazaban: `reforzarFecha` corregia la fecha **despues** de que
+`normalizar` hubiera decidido el arquetipo, asi que la correccion no llegaba a ninguna parte. La
+prueba unitaria llamaba a las dos funciones por separado — que es justo lo que el codigo real no
+hace. Corregido, y la prueba ahora comprueba el objeto que devuelve la funcion.
 
 ## Decisiones cerradas (§8 dice: decidir el dia 2 y no volver a tocarlo)
 
@@ -152,17 +166,39 @@ La respuesta esta en el plan y hay que construirla el dia 5: **cache por frase n
 **pre-calentado de las 10 frases de Helder** antes de mandar el link. Las diez frases clicables
 no deben tocar el LLM en vivo.
 
-## Lo que el dia 7 tiene que calibrar (medido hoy, no adivinado)
+## Las 10 frases de Helder, ahora mismo
 
-| | |
-|---|---|
-| **La escala real** | El match de la frase 6 da **89%** (banda correcta), pero las frases de tipo persona se quedan en **55-74%**. La similitud consulta↔bio vive en una banda mas baja que texto↔texto: los pisos y techos del ADR-0002 necesitan valores propios para cada tipo de comparacion |
-| **La frase 8** | Sale `standing_interest` y deberia ser `intent_seeks_any`: «this weekend» es una ventana temporal y el parser no la esta viendo |
-| **La frase 2** | Es hibrida (persona **y** plan) y hoy devuelve solo personas |
-| **El idioma de dos explicaciones** | Las frases 5 y 7 tienen explicaciones en espanol **cacheadas** de antes del arreglo. La cache hay que **purgarla** antes de pre-calentar el dia 16 |
+| # | Arquetipo | Top 1 | |
+|---|---|---|---|
+| 1 · DE Burna Boy | `plan_seeks_person` | **91%** PERSONA [en] Amara | ✓ |
+| 2 · EN Colonia | `plan_seeks_plan` | 61% PLAN | ~ hibrida: deberia mezclar persona y plan |
+| 3 · DE techno | `intent_seeks_any` | 72% PERSONA [en] | ✓ |
+| 4 · EN Bayern | `plan_seeks_person` | 79% PERSONA [en] | ✓ |
+| 5 · DE Frankfurt | `plan_seeks_person` | 72% PERSONA [en] | ✓ |
+| **6 · EN Coldplay** | `intent_seeks_any` | **89% PLAN [de] «ein Ticket übrig»** | ✓ **el momento estrella** |
+| 7 · DE Barcelona | `plan_seeks_plan` | 74% PLAN | ✓ |
+| 8 · EN Berlin abierto | `intent_seeks_any` | 70% PLAN [de] Livemusik | ✓ |
+| 9 · DE afrobeats | `standing_interest` | 66-81% PERSONA | ✓ sin fecha, como pide |
+| 10 · EN senderismo | `plan_seeks_person` | 80% PERSONA [en] | ✓ |
 
-## Siguiente paso concreto
+**Las 10 devuelven resultado**, y en 9 de 10 hay un resultado del top 3 escrito en el idioma
+contrario al de la consulta — el criterio del §3.
 
-Dia 6: la UI del §10 — el textarea, las 10 frases clicables, el panel «asi lo entendi» editable,
-los resultados etiquetados PERSONA/PLAN con su porcentaje y su desglose de componentes, el enlace
-«ver descartados» y el pie con el desglose de tiempos por capa.
+## Lo que queda flojo, y se dice (regla 8)
+
+- **La frase 2 es hibrida** y hoy resuelve como `plan_seeks_plan`: deberia devolver personas
+  **y** planes mezclados. El brief lo marca como caso limite y la auditoria tambien.
+- **La latencia en frio va de 13 s a 46 s** por variabilidad del proveedor. Con la cache
+  caliente son **0,2-0,4 s**, y por eso `just frases` se corre **siempre antes de ense~nar la
+  demo**. Si el limite de 12 s salta, la respuesta usa el parser de reglas y **lo declara**.
+- **La cache se invalida subiendo la version de la clave** (`v5:` hoy). Hay que subirla al tocar
+  CUALQUIER capa, no solo el scoring: paso hoy y las frases seguian dando el resultado viejo.
+
+## La lista de comprobacion del dia 16, antes de mandar el link
+
+1. `just seed` y `just sembrar` — **re-sembrar**, para que las fechas vuelvan a ser relativas a
+   ese dia. Es el riesgo numero 1 del §12.
+2. Subir la version de la clave de cache en `server/api/buscar.get.ts` y desplegar.
+3. `just frases` — comprueba las 10 y **deja la cache caliente**: el cliente no espera nunca.
+4. Comprobar que no hay rutas de diagnostico publicadas.
+5. Escribir el mensaje del §13 en ingles, con los 11 puntos, **incluido lo que no quedo**.

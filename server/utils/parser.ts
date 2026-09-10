@@ -176,6 +176,43 @@ export function decidirArquetipo(i: Intencion): Arquetipo {
   return i.fecha.expresion === 'sin_fecha' ? 'standing_interest' : 'intent_seeks_any'
 }
 
+/** EL CODIGO CORRIGE AL MODELO TAMBIEN EN LAS FECHAS.
+ *
+ * Medido el 10-sep-2026 con la frase 8 de Helder —«I am in Berlin this weekend and would like to
+ * do something spontaneous»—: el modelo devolvia `sin_fecha`, y con eso la frase se clasificaba
+ * como `standing_interest` (un interes permanente) cuando es una intencion CON ventana. Se
+ * perdia el filtro del fin de semana entero.
+ *
+ * Una expresion temporal explicita en la frase gana sobre el silencio del modelo. Al reves no:
+ * si el modelo SI vio una fecha, se respeta — el sabe leer «am zweiten Oktoberwochenende» y
+ * estas reglas no. */
+export function reforzarFecha(i: Intencion, q: string): Intencion {
+  if (i.fecha.expresion !== 'sin_fecha') return i
+  const t = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  const reglas: Array<[RegExp, Expresion]> = [
+    [/\b(morgen|tomorrow)\b/, 'manana'],
+    [/\b(heute|today|tonight|heute abend)\b/, 'hoy'],
+    [/\b(samstag|saturday)\b/, 'este_sabado'],
+    [/\b(sonntag|sunday)\b/, 'este_domingo'],
+    [/\b(freitag|friday)\b/, 'viernes_noche'],
+    [/\b(wochenende|weekend)\b/, 'este_finde'],
+    [/\b(diese woche|this week)\b/, 'esta_semana'],
+    [/\b(nachsten monat|next month|im monat)\b/, 'proximo_mes'],
+  ]
+  for (const [re, exp] of reglas) {
+    if (re.test(t)) {
+      // EL ARQUETIPO SE RECALCULA. `normalizar()` ya lo habia decidido con la fecha que dijo el
+      // modelo; si aqui se cambia la fecha y no se vuelve a decidir, la correccion no llega a
+      // ninguna parte. Paso el 10-sep-2026 con la frase 8: la fecha quedaba bien y el arquetipo
+      // seguia siendo `standing_interest`. La prueba unitaria no lo cazo porque llamaba a las
+      // dos funciones por separado, que es justo lo que el codigo real NO hace.
+      const corregida = { ...i, fecha: { ...i.fecha, expresion: exp } }
+      return { ...corregida, archetype: decidirArquetipo(corregida) }
+    }
+  }
+  return i
+}
+
 const DIA = 86_400_000
 const iso = (d: Date) => d.toISOString().slice(0, 10)
 

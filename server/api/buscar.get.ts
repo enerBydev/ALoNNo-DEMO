@@ -5,7 +5,7 @@
 // frases distintas comparten entrada de cache y la segunda recibe la respuesta de la primera.
 // Medido el 10-sep-2026. Ademas, asi una busqueda es enlazable.
 import { embeberConsulta, chatJson, type Uso } from '../utils/ia'
-import { SISTEMA_PARSER, normalizar, parsearSinModelo, resolverVentana, type Intencion } from '../utils/parser'
+import { SISTEMA_PARSER, normalizar, parsearSinModelo, reforzarFecha, resolverVentana, type Intencion } from '../utils/parser'
 import { rpc, centroDe, type Persona, type Plan } from '../utils/bd'
 import { puntuarPersona, puntuarPlan, type Puntuacion } from '../utils/scoring'
 import { explicar, type ParaExplicar } from '../utils/explicar'
@@ -32,13 +32,24 @@ export default defineCachedEventHandler(async (event) => {
   let usoParser: Uso = { tokens_entrada: 0, tokens_salida: 0, ms: 0 }
   let degradado = false
   try {
-    const r = await chatJson(env, SISTEMA_PARSER, q)
+    // TIEMPO MAXIMO PARA LA CAPA 0. Medido: el mismo modelo y la misma frase tardan entre 3,9 s
+    // y 91 s segun la cola del proveedor. Una demo que se mira en vivo no puede quedarse noventa
+    // segundos en blanco: pasado el limite se usa el parser de reglas, que da un resultado peor
+    // pero inmediato. Y se declara.
+    const LIMITE_MS = 12_000
+    const r = await Promise.race([
+      chatJson(env, SISTEMA_PARSER, q),
+      new Promise<never>((_, rechaza) =>
+        setTimeout(() => rechaza(new Error('capa 0: se agoto el tiempo')), LIMITE_MS)),
+    ])
     intencion = normalizar(r.json)
     usoParser = r.uso
   } catch {
     intencion = parsearSinModelo(q)
     degradado = true
   }
+  // Una expresion temporal explicita en la frase gana sobre el silencio del modelo.
+  intencion = reforzarFecha(intencion, q)
   const ventana = resolverVentana(intencion)
 
   // ── CAPA 1 + 2 · filtros duros y recuperacion, las dos dentro de Postgres.
@@ -196,5 +207,9 @@ export default defineCachedEventHandler(async (event) => {
   maxAge: 60 * 60 * 6,
   swr: true,
   name: 'buscar',
-  getKey: (event) => `q:${String(getQuery(event).q ?? '').trim().toLowerCase()}`,
+  // LA VERSION VA EN LA CLAVE, Y HAY QUE SUBIRLA AL TOCAR CUALQUIER CAPA — no solo el scoring.
+  // Paso el 10-sep-2026: se corrigio el parser para que la frase 8 detectara «this weekend», se
+  // desplego, y las 10 frases seguian dando el resultado viejo porque salian de KV. Una cache
+  // que no se invalida ense~na el trabajo de ayer y parece que el arreglo no funciono.
+  getKey: (event) => `v5:${String(getQuery(event).q ?? '').trim().toLowerCase()}`,
 })

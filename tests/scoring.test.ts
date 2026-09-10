@@ -24,8 +24,15 @@ describe('los pesos son los del §7 y no se tocan antes del dia 7', () => {
 
 describe('la normalizacion del ADR-0002', () => {
   it('lleva el techo medido a 1.0 y el piso a 0', () => {
-    expect(normalizarBanda(CALIBRACION.taste_techo, CALIBRACION.taste_piso, CALIBRACION.taste_techo)).toBe(1)
-    expect(normalizarBanda(CALIBRACION.taste_piso, CALIBRACION.taste_piso, CALIBRACION.taste_techo)).toBe(0)
+    const { taste_persona_piso: p, taste_persona_techo: t } = CALIBRACION
+    expect(normalizarBanda(t, p, t)).toBe(1)
+    expect(normalizarBanda(p, p, t)).toBe(0)
+  })
+
+  it('personas y planes tienen bandas DISTINTAS, y esa es la leccion del dia 7', () => {
+    // consulta↔bio y consulta↔plan no viven en el mismo sitio: 0,424 contra 0,724 en el corpus
+    // real. Con una sola banda, el match impecable de la frase 1 se quedaba en 68%.
+    expect(CALIBRACION.taste_persona_techo).toBeLessThan(CALIBRACION.taste_plan_techo)
   })
   it('nunca se sale de [0,1], por raro que venga el crudo', () => {
     expect(normalizarBanda(5, 0.2, 0.7)).toBe(1)
@@ -65,7 +72,7 @@ describe('los componentes, uno a uno', () => {
 })
 
 const perfecta = {
-  similitud: CALIBRACION.taste_techo, km: 0.2, disponible_exacto: true, disponible_finde: true,
+  similitud: CALIBRACION.taste_persona_techo, km: 0.2, disponible_exacto: true, disponible_finde: true,
   interests: ['afrobeats', 'live_music', 'dancing'], top_artists: ['Burna Boy'],
   top_teams: [], cuisines: [], pace: 'moderate', budget_band: 'mid', group_pref: 'one_to_one',
   languages: ['de', 'en'], verification: 3, completed_plans: 20, reports: 0,
