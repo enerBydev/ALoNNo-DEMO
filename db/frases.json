@@ -1,0 +1,52 @@
+[
+ {
+  "escenario": "01-burna-boy-dusseldorf",
+  "frase_de_helder": "Ich habe noch ein Ticket für Burna Boy in Düsseldorf am Samstag. Mein Freund kann nicht mehr und ich möchte nicht alleine gehen.",
+  "que_debe_devolver": "Personas en Dusseldorf con gusto afrobeats y libres ese sabado: el top 1 entre 88 y 95 % y escrito en ingles, con los cuatro near-miss visibles abajo y su motivo."
+ },
+ {
+  "escenario": "02-colonia-octubre",
+  "frase_de_helder": "I already booked a weekend in Cologne in October, but the person who was coming with me cancelled. I am looking for someone who would enjoy the trip too.",
+  "que_debe_devolver": "Mezcla etiquetada: personas que disfrutarian ese viaje y planes compatibles en Colonia dentro de la misma ventana de octubre, con el solape de fechas visible y el match fuerte escrito en aleman."
+ },
+ {
+  "escenario": "03-techno-berlin",
+  "frase_de_helder": "Ich möchte am Wochenende auf ein Techno-Festival in Berlin, aber keiner von meinen Freunden hat Lust.",
+  "que_debe_devolver": "Planes de techno en Berlin este fin de semana con plaza libre, dominando el top, mas gente con la misma intencion y sin con quien ir."
+ },
+ {
+  "escenario": "04-bayern-dortmund-munich",
+  "frase_de_helder": "I have an extra ticket for Bayern against Dortmund in Munich tomorrow and would rather go with someone who actually likes football.",
+  "que_debe_devolver": "Personas en Munchen a las que les gusta el futbol de verdad y estan libres MANANA, con el hincha del Bayern del mismo barrio arriba y los cuatro near-miss por debajo."
+ },
+ {
+  "escenario": "05-frankfurt-viernes",
+  "frase_de_helder": "„Ich habe für Freitagabend einen Tisch in Frankfurt reserviert, aber meine Begleitung ist ausgefallen. Vielleicht hat jemand spontan Lust auf gutes Essen.\"",
+  "que_debe_devolver": "Personas de Frankfurt con gusto por la cocina levantina, libres el viernes por la noche y a pocos km del restaurante; el near-miss por presupuesto baja unos puntos pero no se descarta."
+ },
+ {
+  "escenario": "06-coldplay-reciproco",
+  "frase_de_helder": "\"I want to go to a Coldplay concert in Düsseldorf next month. I do not have a ticket yet, but I am looking for someone who is planning to go too.\"",
+  "que_debe_devolver": "Top 1: el plan de Coldplay en Dusseldorf con seats_open=1 — quien TIENE la entrada de sobra —; detras, la gente que quiere ir sin entrada."
+ },
+ {
+  "escenario": "07-barcelona",
+  "frase_de_helder": "Ich habe eine Reise nach Barcelona gebucht und möchte ungern alleine fahren. Ich suche jemanden, der ungefähr im gleichen Zeitraum dort sein möchte.",
+  "que_debe_devolver": "Planes de viaje con dest_city Barcelona y origin_city aleman cuyas ventanas solapen con la del usuario: arriba el de solape total, detras el parcial, y abajo o fuera el que no solapa."
+ },
+ {
+  "escenario": "08-berlin-abierto",
+  "frase_de_helder": "I am in Berlin this weekend and would like to do something spontaneous — live music, a bar, an event or just explore the city with someone.",
+  "que_debe_devolver": "Planes de VARIAS categorias distintas en Berlin este fin de semana (musica en vivo, un bar, un evento, un paseo por la ciudad) mezclados con personas que declaran la misma intencion abierta: el top 5 tiene que traer al menos tres categorias."
+ },
+ {
+  "escenario": "09-afrobeats-colonia",
+  "frase_de_helder": "Meine Freunde interessieren sich nicht für Afrobeats. Ich suche jemanden in Köln oder Umgebung, der gerne auf solche Konzerte und Partys geht.",
+  "que_debe_devolver": "Personas (no planes) con gusto afrobeats en Colonia y en el area de 40 km, sin ningun filtro de fecha porque el interes es permanente, y con al menos una viviendo fuera de Colonia para que «oder Umgebung» signifique algo."
+ },
+ {
+  "escenario": "10-senderismo-munich",
+  "frase_de_helder": "I planned a hiking weekend near Munich, but my friend cancelled. I am looking for someone active who enjoys nature and is free that weekend.",
+  "que_debe_devolver": "Personas de Munich activas y de naturaleza, libres ese fin de semana, ordenadas por ritmo: el que camina al mismo `pace` que el plan arriba y el que quiere pasear tranquilo abajo, con la explicacion diciendo que lo que falla es el ritmo, no el gusto."
+ }
+]

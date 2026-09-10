@@ -1,4 +1,4 @@
-# ESTADO — dias 2, 3, 4 y 5 hechos (jueves 10 de septiembre de 2026)
+# ESTADO — dias 2 a 6 hechos (jueves 10 de septiembre de 2026)
 
 Entrega: **miercoles 16 de septiembre**. Ventana de feedback pedida: **3 dias habiles → hasta el
 lunes 21**. Quedan 6 dias de construccion.
@@ -58,7 +58,25 @@ comprobado por `just seed-determinista`.
 **Las 10 frases de Helder devuelven resultado**, todas con un resultado del top 3 en el idioma
 contrario al de la consulta. `just frases` lo comprueba y de paso calienta la cache.
 
-**Falta la UI (dia 6) y la calibracion (dia 7).**
+### Dia 6 · la UI (hecho)
+
+Una sola pagina, como pide el §10. **Sin selector de modo**: el sistema deduce el arquetipo, que
+es la respuesta de producto a «no quiero que los usuarios llenen 20 filtros».
+
+- Un textarea, y debajo **las 10 frases de Helder, verbatim y clicables** (regla 4).
+- **Panel «asi lo entendi»**: el arquetipo en lenguaje humano —«You have a plan and you are
+  looking for a person»—, mas ciudad, categoria, tema y fecha.
+- Resultados **etiquetados PERSONA / PLAN**, con el porcentaje grande, la explicacion en el
+  idioma de la consulta, y un desplegable con **los 7 componentes y sus puntos**.
+- Enlace **«ver descartados»** con el motivo de cada uno.
+- Pie con el **desglose de tiempos por capa** y el aviso de datos sinteticos.
+- Selector DE/EN de la interfaz.
+
+**Verificado en un navegador real** (Chromium + Playwright, no un `curl`): la pagina monta, las
+10 frases son clicables, una busqueda devuelve 12 resultados, el desglose tiene 7 filas y **suma
+exactamente el porcentaje que ense~na**, y no hay ni un error de consola.
+
+**Falta la calibracion (dia 7).**
 
 ## Decisiones cerradas (§8 dice: decidir el dia 2 y no volver a tocarlo)
 
