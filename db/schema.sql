@@ -120,3 +120,21 @@ create index if not exists intents_geo_gist   on intents  using gist (geo);
 create index if not exists profiles_fts_gin on profiles using gin (fts);
 create index if not exists plans_fts_gin    on plans    using gin (fts);
 create index if not exists intents_fts_gin  on intents  using gin (fts);
+
+
+-- ── RLS: cerrado por defecto ────────────────────────────────────────────────────────────
+--
+-- EL FALLO (10-sep-2026, incidente): las tres tablas nacieron con RLS APAGADO. PostgREST esta
+-- expuesto en `https://<ref>.supabase.co/rest/v1/`, la clave publishable es publica por dise~no y
+-- la URL del proyecto esta versionada en `wrangler.jsonc` — o sea que **cualquiera podia escribir
+-- en la base de la demo**. Comprobado insertando una fila real con la clave publica: HTTP 201.
+--
+-- Se activa SIN NINGUNA POLICY, y eso es lo correcto aqui: RLS sin policies deniega todo al rol
+-- anonimo, y `service_role` —que es con lo que habla el servidor de la demo— la salta por
+-- dise~no. La demo no tiene usuarios ni auth: nadie mas necesita tocar estas tablas.
+--
+-- Verificado tras aplicarlo: INSERT anonimo → 401 `new row violates row-level security policy`,
+-- SELECT anonimo → `[]`, y `/api/salud` sigue leyendo con la clave de servidor.
+alter table profiles enable row level security;
+alter table plans    enable row level security;
+alter table intents  enable row level security;
