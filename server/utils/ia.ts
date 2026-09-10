@@ -21,6 +21,26 @@ export interface Uso {
   ms: number
 }
 
+/** Un fallo puntual del proveedor no puede tumbar una busqueda delante del cliente.
+ *  Medido el 10-sep-2026: dos de diez frases devolvieron 502 en una tanda, y la misma frase
+ *  funciono al reintentarla. Dos intentos con espera corta cubren eso sin alargar la demo. */
+async function conReintento(f: () => Promise<Response>, intentos = 3): Promise<Response> {
+  let ultima: Response | null = null
+  for (let i = 0; i < intentos; i++) {
+    try {
+      const r = await f()
+      if (r.ok) return r
+      ultima = r
+      // 4xx que no sea 429 es culpa nuestra: reintentar no lo arregla.
+      if (r.status < 500 && r.status !== 429) return r
+    } catch (e) {
+      if (i === intentos - 1) throw e
+    }
+    await new Promise((res) => setTimeout(res, 400 * (i + 1)))
+  }
+  return ultima as Response
+}
+
 function claveDe(env: Record<string, string | undefined>): string {
   const clave = env.NVIDIA_API_KEY
   if (!clave) throw createError({ statusCode: 503, statusMessage: 'sin credencial de IA' })
@@ -33,7 +53,7 @@ export async function embeberConsulta(
   texto: string,
 ): Promise<{ vector: number[]; uso: Uso }> {
   const t0 = Date.now()
-  const r = await fetch(`${BASE}/embeddings`, {
+  const r = await conReintento(() => fetch(`${BASE}/embeddings`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${claveDe(env)}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -43,7 +63,7 @@ export async function embeberConsulta(
       truncate: 'END',
       encoding_format: 'float',
     }),
-  })
+  }))
   if (!r.ok) {
     throw createError({ statusCode: 502, statusMessage: `embeddings: ${r.status} ${(await r.text()).slice(0, 120)}` })
   }
@@ -64,7 +84,7 @@ export async function chatJson(
   maxTokens = 500,
 ): Promise<{ json: any; uso: Uso }> {
   const t0 = Date.now()
-  const r = await fetch(`${BASE}/chat/completions`, {
+  const r = await conReintento(() => fetch(`${BASE}/chat/completions`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${claveDe(env)}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -79,7 +99,7 @@ export async function chatJson(
       // El razonamiento se factura y aqui no aporta: la tarea es rellenar un formulario.
       chat_template_kwargs: { thinking: false },
     }),
-  })
+  }))
   if (!r.ok) {
     throw createError({ statusCode: 502, statusMessage: `chat: ${r.status} ${(await r.text()).slice(0, 120)}` })
   }

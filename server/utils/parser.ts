@@ -226,3 +226,55 @@ export function resolverVentana(i: Intencion, ahora = new Date()): Ventana {
       return { desde: null, hasta: null, etiqueta: 'sin fecha concreta', exacta: false }
   }
 }
+
+
+/** PARSER DE RESERVA: reglas, sin LLM.
+ *
+ * Si la Capa 0 falla —el proveedor esta caido, agoto el cupo, devuelve basura—, la demo NO puede
+ * quedarse en blanco delante del cliente. Esto extrae lo minimo con expresiones regulares para
+ * que las capas 1 y 2 sigan funcionando: la busqueda semantica no necesita el parser, solo la
+ * frase. Se pierde el panel «asi lo entendi» afinado, no la busqueda.
+ *
+ * Se marca con `confidence: 0` para que la UI lo diga: es un modo degradado, no un resultado
+ * normal, y la regla 8 prohibe disimularlo. */
+export function parsearSinModelo(q: string): Intencion {
+  const t = q.toLowerCase()
+  const sinTildes = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  const aleman = /\b(ich|nicht|und|habe|suche|jemanden|moechte|mochte|wochenende|freund)\b/.test(sinTildes)
+
+  const CIUDADES = ['berlin', 'dusseldorf', 'koln', 'frankfurt', 'munchen', 'munich', 'cologne', 'barcelona']
+  const encontrada = CIUDADES.find((c) => sinTildes.includes(c)) ?? null
+  const ciudad = encontrada
+    ? { munich: 'Munchen', cologne: 'Koln' }[encontrada] ?? encontrada[0].toUpperCase() + encontrada.slice(1)
+    : null
+
+  let expresion: Expresion = 'sin_fecha'
+  if (/\b(morgen|tomorrow)\b/.test(sinTildes)) expresion = 'manana'
+  else if (/\b(samstag|saturday)\b/.test(sinTildes)) expresion = 'este_sabado'
+  else if (/\b(freitag|friday)\b/.test(sinTildes)) expresion = 'viernes_noche'
+  else if (/\b(wochenende|weekend)\b/.test(sinTildes)) expresion = 'este_finde'
+  else if (/\b(monat|month)\b/.test(sinTildes)) expresion = 'proximo_mes'
+
+  // «No tengo entrada todavia» / «me gustaria ir» = no hay reserva propia.
+  const sinReserva = /\b(no ticket|not have a ticket|kein ticket|keine karte|mochte|moechte|would like|want to)\b/
+    .test(sinTildes)
+  const conReserva = /\b(habe noch ein ticket|extra ticket|spare ticket|reserviert|booked|gebucht|have an extra)\b/
+    .test(sinTildes)
+
+  return normalizar({
+    archetype: 'intent_seeks_any',
+    has_concrete_event: conReserva,
+    user_has_booking: conReserva && !sinReserva,
+    subject_specificity: 'open',
+    language: aleman ? 'de' : 'en',
+    category: null,
+    subject: null,
+    city: ciudad,
+    dest_city: null,
+    fecha: { expresion, mes: null },
+    must_match: [],
+    nice_to_have: [],
+    confidence: 0,
+    unparsed: ['la Capa 0 no respondio: esto es un analisis de reserva por reglas'],
+  })
+}
