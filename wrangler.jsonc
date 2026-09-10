@@ -9,6 +9,17 @@
   "vars": {
     "SUPABASE_URL": "https://qbrgwphcpflbwhfqhffc.supabase.co"
   },
+  // EL BINDING NATIVO `ratelimits` NO SE USA, y conviene que conste por que. Se declaro, el
+  // Worker lo recibio (`ratelimit · FRENO` aparece en sus bindings) y el codigo lo veia, pero
+  // `limit()` devolvia `{success: true}` SIEMPRE — probado hasta con 3 peticiones por 10
+  // segundos y diez seguidas. En vez de seguir peleando con una caja negra, el freno cuenta en
+  // KV: mas codigo, pero se puede ver, probar y explicar. Medido el 10-sep-2026.
+
+  // Logs y trazas del Worker, que en el plan gratuito vienen incluidos. Sin esto, cuando algo
+  // falle el dia 16 no hay nada que mirar — y la propuesta promete «the incident and its root
+  // cause, not a smoothed-over sentence».
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+
   // El almacen de la cache. Sin el, `defineCachedEventHandler` cae a memoria del proceso — y en
   // Workers cada peticion puede tocar una instancia distinta, asi que la cache no acierta nunca.
   "kv_namespaces": [
