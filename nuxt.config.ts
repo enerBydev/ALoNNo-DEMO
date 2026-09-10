@@ -2,6 +2,12 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-09-09',
   devtools: { enabled: false },
+  css: ['~/assets/css/base.css'],
+  // Transicion entre paginas: es lo que hace que se sienta una aplicacion y no una web de 2004.
+  app: {
+    pageTransition: { name: 'pagina', mode: 'out-in' },
+    head: { htmlAttrs: { lang: 'en' } },
+  },
   nitro: {
     // `cloudflare_module`, NO `cloudflare`: con el segundo el Worker se comporta como
     // service-worker y los assets no se sirven (trampa documentada en el CLAUDE.md global).

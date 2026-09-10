@@ -42,6 +42,8 @@ export interface Intencion {
 }
 
 export interface Ventana {
+  // La etiqueta la LEE EL USUARIO: va en su idioma, no en el del codigo. Se escapo un «el mes
+  // que viene» en espanol dentro de una interfaz en ingles, y se veia en la primera pantalla.
   desde: string | null   // ISO date
   hasta: string | null
   etiqueta: string       // lo que se le ense~na al usuario en el panel «asi lo entendi»
@@ -226,41 +228,41 @@ export function resolverVentana(i: Intencion, ahora = new Date()): Ventana {
 
   switch (i.fecha.expresion) {
     case 'hoy':
-      return { desde: iso(hoy), hasta: iso(hoy), etiqueta: 'hoy', exacta: true }
+      return { desde: iso(hoy), hasta: iso(hoy), etiqueta: 'today', exacta: true }
     case 'manana':
-      return { desde: iso(mas(1)), hasta: iso(mas(1)), etiqueta: 'manana', exacta: true }
+      return { desde: iso(mas(1)), hasta: iso(mas(1)), etiqueta: 'tomorrow', exacta: true }
     case 'este_sabado': {
       const s = mas(hasta(6))
-      return { desde: iso(s), hasta: iso(s), etiqueta: 'este sabado', exacta: true }
+      return { desde: iso(s), hasta: iso(s), etiqueta: 'this Saturday', exacta: true }
     }
     case 'este_domingo': {
       const s = mas(hasta(0) === 0 ? 7 : hasta(0))
-      return { desde: iso(s), hasta: iso(s), etiqueta: 'este domingo', exacta: true }
+      return { desde: iso(s), hasta: iso(s), etiqueta: 'this Sunday', exacta: true }
     }
     case 'viernes_noche': {
       const v = mas(hasta(5))
-      return { desde: iso(v), hasta: iso(v), etiqueta: 'el viernes por la noche', exacta: true }
+      return { desde: iso(v), hasta: iso(v), etiqueta: 'Friday evening', exacta: true }
     }
     case 'este_finde': {
       const sab = mas(hasta(6))
-      return { desde: iso(sab), hasta: iso(new Date(sab.getTime() + DIA)), etiqueta: 'este fin de semana', exacta: false }
+      return { desde: iso(sab), hasta: iso(new Date(sab.getTime() + DIA)), etiqueta: 'this weekend', exacta: false }
     }
     case 'esta_semana':
-      return { desde: iso(hoy), hasta: iso(mas(7)), etiqueta: 'esta semana', exacta: false }
+      return { desde: iso(hoy), hasta: iso(mas(7)), etiqueta: 'this week', exacta: false }
     case 'proximo_mes':
-      return { desde: iso(mas(21)), hasta: iso(mas(51)), etiqueta: 'el mes que viene', exacta: false }
+      return { desde: iso(mas(21)), hasta: iso(mas(51)), etiqueta: 'next month', exacta: false }
     case 'mes_nombrado': {
-      if (!i.fecha.mes) return { desde: iso(mas(21)), hasta: iso(mas(51)), etiqueta: 'el mes que viene', exacta: false }
+      if (!i.fecha.mes) return { desde: iso(mas(21)), hasta: iso(mas(51)), etiqueta: 'next month', exacta: false }
       const idx = MESES.indexOf(i.fecha.mes)
       // El mes nombrado que viene: si ya paso este ano, el del ano que viene.
       let ano = hoy.getUTCFullYear()
       if (idx < hoy.getUTCMonth()) ano += 1
       const ini = new Date(Date.UTC(ano, idx, 1))
       const fin = new Date(Date.UTC(ano, idx + 1, 0))
-      return { desde: iso(ini), hasta: iso(fin), etiqueta: `en ${i.fecha.mes}`, exacta: false }
+      return { desde: iso(ini), hasta: iso(fin), etiqueta: `in ${i.fecha.mes}`, exacta: false }
     }
     default:
-      return { desde: null, hasta: null, etiqueta: 'sin fecha concreta', exacta: false }
+      return { desde: null, hasta: null, etiqueta: 'no fixed date', exacta: false }
   }
 }
 

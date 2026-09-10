@@ -211,5 +211,5 @@ export default defineCachedEventHandler(async (event) => {
   // Paso el 10-sep-2026: se corrigio el parser para que la frase 8 detectara «this weekend», se
   // desplego, y las 10 frases seguian dando el resultado viejo porque salian de KV. Una cache
   // que no se invalida ense~na el trabajo de ayer y parece que el arreglo no funciono.
-  getKey: (event) => `v5:${String(getQuery(event).q ?? '').trim().toLowerCase()}`,
+  getKey: (event) => `v6:${String(getQuery(event).q ?? '').trim().toLowerCase()}`,
 })

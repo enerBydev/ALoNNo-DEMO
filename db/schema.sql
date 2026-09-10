@@ -157,3 +157,23 @@ create table if not exists seed_meta (
   constraint seed_meta_una_fila check (id = 1)
 );
 alter table seed_meta enable row level security;
+
+-- ── El tercer flujo: «agree to meet» ────────────────────────────────────────────────────
+--
+-- La propuesta vende TRES flujos en el M1 (seccion F): *"create a plan, find a person, agree to
+-- meet"*. Los dos primeros son buscar y publicar; este es el que los cierra.
+--
+-- Un interes es unidireccional. Cuando el dueno de un plan muestra interes de vuelta en quien
+-- se apunto, hay **match mutuo** — y es entonces cuando dos personas se pueden hablar. Es el
+-- «interest & mutual match» que la propuesta pone en el M3, reducido a lo que una demo necesita
+-- para contar la historia.
+create table if not exists intereses (
+  id         uuid primary key default gen_random_uuid(),
+  persona_id uuid not null references profiles(id) on delete cascade,
+  plan_id    uuid not null references plans(id) on delete cascade,
+  creado     timestamptz not null default now(),
+  unique (persona_id, plan_id)
+);
+create index if not exists intereses_plan on intereses (plan_id);
+create index if not exists intereses_persona on intereses (persona_id);
+alter table intereses enable row level security;

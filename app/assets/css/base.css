@@ -1,0 +1,93 @@
+/* El sistema visual de la demo. Un fichero, sin framework: el §10 pide que se vea limpia, y
+   una demo que arrastra un framework de UI entero para seis pantallas cuenta la historia
+   equivocada sobre como se construye. */
+:root {
+  --tinta: #16130f;
+  --papel: #fbf9f6;
+  --papel-2: #ffffff;
+  --linea: #e6e0d8;
+  --tenue: #7d7469;
+  --acento: #c2410c;        /* el naranja de una entrada de concierto */
+  --acento-suave: #fff1e9;
+  --verde: #15803d;
+  --verde-suave: #eafaf0;
+  --radio: 12px;
+  --sombra: 0 1px 2px #16130f0a, 0 8px 24px #16130f0a;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tinta: #f4f1ec; --papel: #14120f; --papel-2: #1c1917; --linea: #302b26;
+    --tenue: #a29a8f; --acento: #fb923c; --acento-suave: #2a1a10;
+    --verde: #4ade80; --verde-suave: #10251a;
+    --sombra: 0 1px 2px #0006, 0 8px 24px #0004;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--papel); color: var(--tinta);
+  font: 15.5px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { line-height: 1.22; margin: 0; letter-spacing: -0.018em; }
+h1 { font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 700; }
+h2 { font-size: 1.22rem; font-weight: 650; }
+h3 { font-size: 1rem; font-weight: 620; }
+p { margin: 0; }
+a { color: inherit; }
+.contenedor { max-width: 60rem; margin: 0 auto; padding: 0 1.25rem; }
+.estrecho { max-width: 44rem; }
+
+/* ── piezas ─────────────────────────────────────────────────────────── */
+.tarjeta {
+  background: var(--papel-2); border: 1px solid var(--linea);
+  border-radius: var(--radio); padding: 1.1rem 1.2rem; box-shadow: var(--sombra);
+}
+.boton {
+  display: inline-flex; align-items: center; gap: .45rem; justify-content: center;
+  font: inherit; font-weight: 560; cursor: pointer; text-decoration: none;
+  padding: .62rem 1.05rem; border-radius: 9px; border: 1px solid transparent;
+  background: var(--acento); color: #fff; transition: filter .15s, transform .06s;
+}
+.boton:hover { filter: brightness(1.07); }
+.boton:active { transform: translateY(1px); }
+.boton:disabled { opacity: .5; cursor: default; }
+.boton.fantasma { background: transparent; color: inherit; border-color: var(--linea); }
+.boton.fantasma:hover { border-color: var(--tenue); filter: none; }
+.boton.hecho { background: var(--verde-suave); color: var(--verde); border-color: transparent; }
+.etiqueta {
+  display: inline-flex; align-items: center; gap: .3rem; font-size: .7rem; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase; padding: .16rem .45rem; border-radius: 5px;
+  background: var(--acento-suave); color: var(--acento);
+}
+.etiqueta.gris { background: var(--linea); color: var(--tenue); }
+.etiqueta.verde { background: var(--verde-suave); color: var(--verde); }
+.tenue { color: var(--tenue); }
+.pequeno { font-size: .84rem; }
+.minusculo { font-size: .74rem; }
+input, textarea, select {
+  font: inherit; color: inherit; background: var(--papel-2); width: 100%;
+  border: 1px solid var(--linea); border-radius: 9px; padding: .62rem .75rem;
+}
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
+label { display: block; font-size: .82rem; font-weight: 580; margin-bottom: .28rem; }
+
+/* ── el numero, que es el protagonista ──────────────────────────────── */
+.puntuacion {
+  font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: -0.03em;
+  font-size: 1.75rem; line-height: 1;
+}
+.barra { height: 5px; border-radius: 3px; background: var(--linea); overflow: hidden; }
+.barra > i { display: block; height: 100%; background: var(--acento); }
+
+/* ── transicion entre paginas ───────────────────────────────────────── */
+.pagina-enter-active, .pagina-leave-active { transition: opacity .18s, transform .18s; }
+.pagina-enter-from { opacity: 0; transform: translateY(6px); }
+.pagina-leave-to { opacity: 0; }
+
+.rejilla { display: grid; gap: .8rem; }
+@media (min-width: 40rem) { .dos { grid-template-columns: 1fr 1fr; } }
+.cargando { display: inline-block; width: .8em; height: .8em; border: 2px solid currentColor;
+  border-right-color: transparent; border-radius: 50%; animation: giro .7s linear infinite; }
+@keyframes giro { to { transform: rotate(360deg); } }
