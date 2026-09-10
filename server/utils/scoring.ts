@@ -201,8 +201,8 @@ export function puntuarPersona(
       solape.comunes.slice(0, 4).join(', ')),
     comp('availability', 'Disponibilidad', 'Availability', disp, disp, P.availability,
       persona.disponible_exacto
-        ? `libre el ${contexto.fechaTexto ?? 'dia pedido'}`
-        : persona.disponible_finde ? 'libre ese fin de semana' : 'no coincide'),
+        ? (contexto.fechaTexto ?? '')
+        : persona.disponible_finde ? 'weekend' : '—'),
     comp('proximity', 'Cercania', 'Distance', persona.km ?? -1, prox, P.proximity,
       persona.km === null ? undefined : `${persona.km.toFixed(1)} km`),
     comp('style_fit', 'Estilo compatible', 'Style fit', est.valor, est.valor, P.style_fit, est.detalle),
@@ -277,7 +277,7 @@ export function puntuarPlan(
     // porque su texto se parece igual. Un plan sin plazas no sirve para lo que pediste.
     comp('seats_available', 'Queda plaza', 'Seat available',
       plan.seats_open, plan.seats_open > 0 ? 1 : 0.2, P.seats_available,
-      plan.seats_open > 0 ? `${plan.seats_open} libre(s)` : 'completo'),
+      plan.seats_open > 0 ? `${plan.seats_open}` : '0'),
     comp('owner_affinity', 'Afinidad con quien lo organiza', 'Affinity with the organiser',
       0.5, 0.5, P.owner_affinity),
     comp('trust', 'Confianza', 'Trust', 0.6, 0.6, P.trust),

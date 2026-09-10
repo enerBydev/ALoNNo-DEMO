@@ -304,6 +304,15 @@ def main():
     print(f"  intents  {len(intents):>4}")
     print(f"  escenarios plantados: {len(escenarios)}")
 
+    # Las 10 frases, aparte y en pequeno: la UI las ense~na CLICABLES (regla 4) y no puede
+    # cargar un seed de 450 KB para leer diez lineas. Salen de los mismos ficheros plantados,
+    # asi que no pueden divergir de lo que se sembro.
+    ruta_frases = os.path.join(RAIZ, "db", "frases.json")
+    with open(ruta_frases, "w", encoding="utf-8") as f:
+        json.dump(escenarios, f, ensure_ascii=False, indent=1)
+        f.write("\n")
+    print(f"  frases de Helder: {os.path.relpath(ruta_frases, RAIZ)}")
+
 
 if __name__ == "__main__":
     main()
