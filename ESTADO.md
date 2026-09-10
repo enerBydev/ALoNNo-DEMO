@@ -1,4 +1,4 @@
-# ESTADO — dia 2 de 7 (jueves 10 de septiembre de 2026)
+# ESTADO — dias 2, 3 y 4 hechos (jueves 10 de septiembre de 2026)
 
 Entrega: **miercoles 16 de septiembre**. Ventana de feedback pedida: **3 dias habiles → hasta el
 lunes 21**. Quedan 6 dias de construccion.
@@ -16,8 +16,29 @@ lunes 21**. Quedan 6 dias de construccion.
 | RLS activo en las tres tablas | INSERT anonimo → `401 violates row-level security`; probado como codigo en `tests/rls.test.ts` |
 | Gate de documentacion | `just hechos` dentro de `just ci`: al instalarlo cazo 8 afirmaciones falsas |
 
-**Las tres tablas tienen 0 filas.** No existe `seed.json`. No existe ninguna de las 5 capas del
-motor. El dia 2 del §11 **no ha empezado**.
+### Dia 3 · el seed (hecho)
+
+240 perfiles · 180 planes · 42 intents sembrados en Frankfurt con sus embeddings. De ellos,
+**100 perfiles y 40 planes plantados a mano**, uno por cada frase de Helder, con su match
+perfecto y sus cuatro near-miss. `db/seed.json` **no contiene ni una fecha**: el tiempo son
+desplazamientos que `just sembrar` materializa y `just reanclar` desplaza. Determinismo
+comprobado por `just seed-determinista`.
+
+### Dia 4 · Capas 0, 1 y 2 (hecho)
+
+`GET /api/buscar?q=<frase>` responde con la intencion interpretada y los candidatos.
+
+- **Capa 0** — el modelo extrae los HECHOS; **el codigo aplica el arbol del §9-A**. Medido: el
+  modelo acertaba `user_has_booking` y fallaba la taxonomia, clasificando la frase 6 como
+  `plan_seeks_person`. Ahora el arquetipo lo decide `decidirArquetipo()`, que esta probado.
+  Tambien **el modelo no escribe fechas**: devuelve una expresion de un conjunto cerrado y
+  `resolverVentana()` la resuelve contra el reloj.
+- **Capa 1 y 2** — en Postgres (`db/funciones.sql`): filtros duros con PostGIS y fusion RRF de
+  HNSW + `tsvector`.
+- **`thinking: false` NO es opcional**: medido, baja la Capa 0 de 6,9 s a 0,5 s en una llamada
+  simple. Sin el, el modelo gasta los 300 tokens de salida enteros razonando.
+
+**Falta el motor de scoring (Capa 3) y las explicaciones (Capa 4), que son el dia 5.** Y la UI.
 
 ## Decisiones cerradas (§8 dice: decidir el dia 2 y no volver a tocarlo)
 
@@ -75,12 +96,26 @@ motor. El dia 2 del §11 **no ha empezado**.
 **`docs/conocimiento/PLAN.md`**: el recorte de las 69,3 h que propusieron los auditores a las
 ~10 h de aparato que caben sin robarle tiempo al motor, con el reparto dia a dia del 11 al 16.
 
+## Lo verificado contra el despliegue
+
+| Frase | Resultado |
+|---|---|
+| **1** (DE, Burna Boy) | `plan_seeks_person` · Dusseldorf · «am Samstag» → 2026-09-12 exacta. Top 1: **Amara, bio en INGLES**, a 0,5 km, con Burna Boy en sus artistas — el cross-lingua del §3, demostrado |
+| **6** (EN, Coldplay) | `intent_seeks_any` ✓ (el modelo decia `plan_seeks_person`; lo corrige el arbol). `has_concrete_event: true` + `user_has_booking: false`, que es justo la distincion del ADR-0003 |
+| **9** (DE, afrobeats) | `standing_interest` ✓ · Koln · **sin ventana temporal**, que es lo que la frase pide |
+
+## El problema abierto, y es de latencia
+
+La Capa 0 tarda entre **3,9 s y 15 s** contra el mismo modelo y la misma frase: la variabilidad
+es del proveedor, no del codigo (con `thinking:false` y el prompt real, tres frases seguidas dan
+3,8 · 3,8 · 3,9 s). **La demo no puede depender de eso en vivo.**
+
+La respuesta esta en el plan y hay que construirla el dia 5: **cache por frase normalizada** y
+**pre-calentado de las 10 frases de Helder** antes de mandar el link. Las diez frases clicables
+no deben tocar el LLM en vivo.
+
 ## Siguiente paso concreto
 
-Dia 3 (viernes 11): el seed. ~240 perfiles, ~180 planes, los 8 escenarios plantados —**el par
-reciproco 6↔1 primero**— y `seed.json` versionado, **con fechas relativas a `now()` desde la
-primera linea**.
-
-Antes de escribir una linea del generador hay que cerrar las **tres decisiones** del plan: como
-ruedan las fechas, la normalizacion del score, y separar `has_concrete_event` de
-`user_has_booking`.
+Dia 5: **Capa 3 (scoring determinista)** con la normalizacion del ADR-0002 —los componentes en
+[0,1] con piso y techo declarados, para que un match impecable llegue a la banda 88–95% que
+exige el §9— y **Capa 4 (explicaciones)**, cacheadas por par. Mas la cache de la Capa 0.
