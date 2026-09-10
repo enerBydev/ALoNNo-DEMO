@@ -96,3 +96,34 @@ superficie:
 # cabecera con `<!-- hechos: congelado AAAA-MM-DD -->` y deja de auditarse.
 hechos:
     python3 bin/verificar-hechos.py .
+
+# ── El seed ──────────────────────────────────────────────────────────────────────────────
+
+# Genera db/seed.json: los escenarios plantados + el relleno. Determinista, sin red.
+seed:
+    python3 scripts/generar-seed.py
+
+# Lleva el seed a Postgres CON sus embeddings (regla 5: se embebe al escribir, nunca al leer).
+# Vacia las tres tablas antes. Cachea los embeddings en disco: un fallo a mitad no vuelve a
+# pagarlos.
+sembrar:
+    python3 scripts/sembrar.py
+
+# Desplaza TODAS las fechas conservando sus distancias relativas, sin re-embeber nada.
+# Es lo que hace que «Bayern gegen Dortmund morgen» siga siendo manana el dia 21, dentro de la
+# ventana de feedback del cliente. Ver docs/adr/0001-como-ruedan-las-fechas.md.
+reanclar:
+    python3 scripts/sembrar.py --reanclar
+
+# Que el mundo sea REPRODUCIBLE: dos generaciones seguidas tienen que dar el mismo fichero.
+# El §9 del brief prohibe la aleatoriedad en tiempo de ejecucion — «la demo tiene que dar los
+# mismos resultados el dia de la revision».
+seed-determinista:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/generar-seed.py > /dev/null
+    a=$(sha256sum db/seed.json | cut -d" " -f1)
+    python3 scripts/generar-seed.py > /dev/null
+    b=$(sha256sum db/seed.json | cut -d" " -f1)
+    if [ "$a" != "$b" ]; then echo "el seed NO es determinista: $a != $b" >&2; exit 1; fi
+    echo "seed determinista: $a"
