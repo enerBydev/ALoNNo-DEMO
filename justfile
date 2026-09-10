@@ -11,7 +11,7 @@ default:
 # ── El gate ──────────────────────────────────────────────────────────────────────
 # Sin `lint`: la plantilla no impone configuración de biome/eslint que nadie decidió
 # (regla 1). Cuando el repo la tenga, el verbo entra aquí y en `ci`.
-ci: install catalogo cambios test audit secretos superficie
+ci: install catalogo cambios test audit secretos superficie hechos
 
 # ── Los verbos ───────────────────────────────────────────────────────────────────
 
@@ -82,3 +82,17 @@ clean:
 # escribir una bandera que no existe. Este verbo le pregunta a la herramienta.
 superficie:
     python3 bin/verificar-superficie.py
+
+# Que lo escrito SIGA SIENDO CIERTO: rutas citadas que ya no existen, comandos `just` que nadie
+# declara, entidades retiradas citadas en presente.
+#
+# EL FALLO QUE LO TRAE (2026-09-10, este repo): `ESTADO.md` afirmaba `vector(384)` y `gte-small`
+# cuando el esquema aplicado era `vector(2048)` y el modelo nemotron — y `just ci` paso en VERDE
+# con esa contradiccion dentro, porque el gate de este repo no miraba la documentacion. La
+# propuesta le promete al cliente exactamente este control: *"a documentation gate breaks the
+# build when the repository describes something that no longer exists"*.
+#
+# Un documento que narra un momento concreto (un informe fechado, un incidente) se sella en su
+# cabecera con `<!-- hechos: congelado AAAA-MM-DD -->` y deja de auditarse.
+hechos:
+    python3 bin/verificar-hechos.py .
