@@ -3,7 +3,7 @@
 // No llama al modelo: prueba la parte DETERMINISTA — que es justo la que se le quito al modelo
 // porque la fallaba. Corre sin red, dentro de `just ci`.
 import { describe, it, expect } from 'vitest'
-import { decidirArquetipo, resolverVentana, normalizar, type Intencion } from '../server/utils/parser'
+import { decidirArquetipo, resolverVentana, normalizar, reforzarFecha, type Intencion } from '../server/utils/parser'
 
 const base = (extra: Partial<Intencion>): Intencion => normalizar({
   archetype: 'intent_seeks_any', has_concrete_event: false, user_has_booking: false,
@@ -72,5 +72,38 @@ describe('las fechas se resuelven en codigo, nunca las escribe el modelo', () =>
   it('sin fecha no hay ventana: un interes permanente no se filtra por tiempo', () => {
     const v = resolverVentana(base({}), jueves)
     expect(v.desde).toBeNull()
+  })
+})
+
+
+describe('el codigo corrige al modelo cuando la frase dice una fecha y el no la ve', () => {
+  it('frase 8: «this weekend» convierte un interes permanente en una intencion con ventana', () => {
+    // Medido con la frase 8 de Helder: el modelo devolvia `sin_fecha` y la frase acababa como
+    // `standing_interest`, perdiendo el filtro del fin de semana entero.
+    const mudo = base({ user_has_booking: false, city: 'Berlin' })
+    expect(decidirArquetipo(mudo)).toBe('standing_interest')
+    const corregida = reforzarFecha(mudo, 'I am in Berlin this weekend and would like to do something')
+    expect(corregida.fecha.expresion).toBe('este_finde')
+    // El arquetipo tiene que venir YA corregido en el objeto, sin que nadie lo recalcule fuera:
+    // asi es como lo usa el endpoint, y llamar a las dos funciones por separado en la prueba
+    // escondia el fallo.
+    expect(corregida.archetype).toBe('intent_seeks_any')
+  })
+
+  it('«morgen» tambien, en aleman', () => {
+    const r = reforzarFecha(base({}), 'Ich habe ein Extra-Ticket fuer morgen in Muenchen')
+    expect(r.fecha.expresion).toBe('manana')
+  })
+
+  it('NO pisa al modelo cuando el si vio una fecha', () => {
+    // El modelo sabe leer expresiones que estas reglas no; si dijo algo, se respeta.
+    const conFecha = base({ fecha: { expresion: 'proximo_mes', mes: null } })
+    expect(reforzarFecha(conFecha, 'this weekend').fecha.expresion).toBe('proximo_mes')
+  })
+
+  it('frase 9 sigue sin fecha: no hay ninguna expresion temporal que agarrar', () => {
+    const r = reforzarFecha(base({}), 'Meine Freunde interessieren sich nicht fuer Afrobeats. Ich suche jemanden in Koeln')
+    expect(r.fecha.expresion).toBe('sin_fecha')
+    expect(decidirArquetipo(r)).toBe('standing_interest')
   })
 })
