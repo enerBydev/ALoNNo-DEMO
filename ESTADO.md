@@ -12,7 +12,9 @@ lunes 21**. Quedan 6 dias de construccion.
 | `db/schema.sql` aplicado | `profiles`/`plans`/`intents` · **`vector(2048)`** · 12 indices · HNSW sobre **`halfvec(2048)`** · idempotencia probada |
 | La app alcanza la base | `/api/salud` → `{"estado":"ok","bd":"ok","region_bd":"eu-central-1 (Frankfurt)"}` — hace una lectura real de `profiles` |
 | methodOS | `just ci` exit 0 · `methodos-doctor.py .` GATE VERDE · revisor maquina aprobando los PR |
-| Base de conocimiento | 7 informes de auditoria en `docs/conocimiento/`, **4.413 lineas** (repo privado) |
+| Base de conocimiento | **13 informes** de auditoria en `docs/conocimiento/`, **9.114 lineas** (repo privado) |
+| RLS activo en las tres tablas | INSERT anonimo → `401 violates row-level security`; probado como codigo en `tests/rls.test.ts` |
+| Gate de documentacion | `just hechos` dentro de `just ci`: al instalarlo cazo 8 afirmaciones falsas |
 
 **Las tres tablas tienen 0 filas.** No existe `seed.json`. No existe ninguna de las 5 capas del
 motor. El dia 2 del §11 **no ha empezado**.
@@ -34,11 +36,15 @@ motor. El dia 2 del §11 **no ha empezado**.
   guarda precision completa. **Toda consulta tiene que llevar el mismo cast** o el planner ignora
   el indice sin avisar. Comprobado con EXPLAIN: `Index Scan using profiles_embedding_hnsw`.
 
-## Incidente cerrado hoy
+## Dos incidentes cerrados hoy
 
-**`/api/diagnostico-ia` reenviaba `Authorization: Bearer NVIDIA_API_KEY` al host que le pasaran
-por `?base=`.** Publico, sin auth, ~19 h expuesto. Retirado y desplegado; registro completo con
-causa raiz en `incidentes/2026-09-10-proxy-abierto.md`.
+1. **`/api/diagnostico-ia` reenviaba `Authorization: Bearer NVIDIA_API_KEY`** al host que le
+   pasaran por `?base=`. Publico, sin auth, ~19 h expuesto. Retirado y desplegado.
+   → `incidentes/2026-09-10-proxy-abierto.md`
+2. **La base aceptaba escritura anonima**: RLS apagado en las tres tablas. Comprobado insertando
+   una fila real con la clave publishable (**HTTP 201**) y borrandola. Cerrado, llevado al
+   esquema y probado como codigo. → `incidentes/2026-09-10-rls-apagado.md`
+
 **Pendiente de Rene: rotar la clave `nvidia-nim`.**
 
 ## Lo que la auditoria cambio del plan (y hay que decidir HOY)
@@ -64,9 +70,17 @@ causa raiz en `incidentes/2026-09-10-proxy-abierto.md`.
 5. **El medidor da dos verdes falsos**: REL-5 y OPS-5 dicen git-connect, pero los 9 despliegues
    son `source: wrangler` y Workers Builds responde `12000 Not found`.
 
+## El plan revisado
+
+**`docs/conocimiento/PLAN.md`**: el recorte de las 69,3 h que propusieron los auditores a las
+~10 h de aparato que caben sin robarle tiempo al motor, con el reparto dia a dia del 11 al 16.
+
 ## Siguiente paso concreto
 
-El dia 2 entero, sin recortes: generador de datos sinteticos **con fechas relativas a `now()`
-desde la primera linea**, los 8 escenarios plantados —**el par reciproco 6↔1 primero**— y
-`seed.json` versionado. Antes de escribir el generador, cerrar la decision 1 (como ruedan las
-fechas) porque condiciona el formato del seed.
+Dia 3 (viernes 11): el seed. ~240 perfiles, ~180 planes, los 8 escenarios plantados —**el par
+reciproco 6↔1 primero**— y `seed.json` versionado, **con fechas relativas a `now()` desde la
+primera linea**.
+
+Antes de escribir una linea del generador hay que cerrar las **tres decisiones** del plan: como
+ruedan las fechas, la normalizacion del score, y separar `has_concrete_event` de
+`user_has_booking`.
