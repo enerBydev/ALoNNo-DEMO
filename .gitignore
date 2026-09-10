@@ -26,3 +26,7 @@ __pycache__/
 # no del proyecto. Uno se colo en un commit el 2026-09-09 via `git add -A`.
 .claude/settings.local.json
 .claude/settings.local.json.tmp.*
+
+# El CI clona el kit de methodOS DENTRO del arbol (`path: .methodos`) porque `uses: ./...`
+# lo exige. No es codigo de este repo y no se versiona.
+.methodos/

@@ -42,7 +42,14 @@ import re
 import shutil
 import sys
 
-EXCLUIDOS = {".git", "node_modules", ".direnv", "target", "archivo-v1"}
+# `.methodos` NO estaba en esta lista y rompio el CI de este repo el 2026-09-10, la primera vez
+# que se adopto el verbo `hechos`. El `ci.yml` del estandar clona el kit de methodOS DENTRO del
+# arbol de trabajo (`path: .methodos`) porque `uses: ./...` lo exige, asi que este verificador
+# auditaba los ficheros de PLANTILLA y fallaba por un `just panel` que existe en methodOS y no en
+# el consumidor. Es el mismo patron que ya rompio dos gates el 2026-09-08 con el verificador de
+# catalogo y con vitest: lo que el CI deja caer en el arbol no es del repo que se audita.
+# Corregido aqui y reportado a la fuente: tarea 86bbyfjf1.
+EXCLUIDOS = {".git", "node_modules", ".direnv", "target", "archivo-v1", ".methodos"}
 REGISTRO = os.path.join("docs", "hechos.md")
 
 SELLO = re.compile(r"<!--\s*hechos:\s*(congelado|sujeto ajeno)", re.I)
