@@ -1,79 +1,72 @@
-# ESTADO — dia 1 de 7 CERRADO (miercoles 9 de septiembre de 2026)
+# ESTADO — dia 2 de 7 (jueves 10 de septiembre de 2026)
 
-Entrega: **miercoles 16 de septiembre**. Quedan 7 dias.
+Entrega: **miercoles 16 de septiembre**. Ventana de feedback pedida: **3 dias habiles → hasta el
+lunes 21**. Quedan 6 dias de construccion.
 
-## Que quedo funcionando (todo comprobado, no declarado)
+## Lo que hay construido, verificado hoy
 
 | | Comprobacion |
 |---|---|
-| **methodOS instalado** (plantilla `node`) | `nix develop . -c just ci` verde · `methodos-doctor.py .` → GATE VERDE, 40/40 capacidades evaluadas |
-| **El CI ejecuta el gate de verdad** | antes salia `success` **sin ejecutar nada** (paso «sin kit, se informa el hueco»). `instalar-revisor.sh` puso los secretos del App; ahora corre `nix develop -c just ci` + gitleaks + medidor |
-| **Revision por otra identidad (CODE-2)** | el App `methodos-revisor` aprueba los PR |
-| **Nuxt 4.5.2 + Nitro**, preset `cloudflare_module` | `pnpm build` genera `.output/` |
-| **Desplegado** | <https://alonno-demo.enerby212.workers.dev> |
-| **Base de datos en Frankfurt** | proyecto Supabase `qbrgwphcpflbwhfqhffc`, org `enerbydev`, region **eu-central-1** |
-| **`db/schema.sql` APLICADO** | pgvector 0.8.2 · PostGIS 3.3.7 · pg_trgm 1.6 · `profiles`/`plans`/`intents` · `vector(384)` · indices HNSW + GIN + GiST. **Idempotencia probada**: segunda aplicacion sin error |
-| **La app ALCANZA la base** | `/api/salud` → `{"estado":"ok","bd":"ok","region_bd":"eu-central-1 (Frankfurt)"}`. No mide el proceso: hace una lectura real de `profiles` |
+| Nuxt 4.5.2 + Nitro, preset `cloudflare_module` | desplegado: <https://alonno-demo.enerby212.workers.dev> |
+| Base en **Frankfurt** (`qbrgwphcpflbwhfqhffc`) | pgvector 0.8.2 · PostGIS 3.3.7 · pg_trgm 1.6 |
+| `db/schema.sql` aplicado | `profiles`/`plans`/`intents` · **`vector(2048)`** · 12 indices · HNSW sobre **`halfvec(2048)`** · idempotencia probada |
+| La app alcanza la base | `/api/salud` → `{"estado":"ok","bd":"ok","region_bd":"eu-central-1 (Frankfurt)"}` — hace una lectura real de `profiles` |
+| methodOS | `just ci` exit 0 · `methodos-doctor.py .` GATE VERDE · revisor maquina aprobando los PR |
+| Base de conocimiento | 7 informes de auditoria en `docs/conocimiento/`, **4.413 lineas** (repo privado) |
 
-## Decisiones cerradas
+**Las tres tablas tienen 0 filas.** No existe `seed.json`. No existe ninguna de las 5 capas del
+motor. El dia 2 del §11 **no ha empezado**.
 
-- **Hosting**: Cloudflare Workers.
-- **Base**: Supabase Frankfurt, en la org `enerbydev` (la otra org tenia el cupo lleno).
-- **Embeddings: `gte-small` de Supabase, 384 dimensiones**, ejecutado dentro de Supabase — sin
-  API de embeddings externa. Es monolingue ingles, asi que el cruce DE↔EN se resuelve con la
-  **opcion C del §8 del brief**: el LLM de la Capa 0 devuelve, en la misma llamada, el JSON de
-  intencion **y** la frase normalizada al ingles; se embebe siempre el texto en ingles, al
-  sembrar y al consultar. Va declarado en el mensaje de entrega, no escondido.
-- **Secretos**: en el Worker (`wrangler secret`) y en el repo de GitHub. No en GCP: la SA de
-  esta VM no puede escribir secretos, y el repo es publico pero sus secretos de Actions no se
-  exponen a forks.
+## Decisiones cerradas (§8 dice: decidir el dia 2 y no volver a tocarlo)
 
-## Proveedor de IA: RESUELTO, y el gate del §8 esta corrido
+- **Hosting**: Cloudflare Workers. **Base**: Supabase Frankfurt, org `enerbydev`.
+- **Embeddings**: **`nvidia/nemotron-3-embed-1b`** · **2048 dim** · via NVIDIA NIM. Elegido
+  midiendo (`scripts/gate-embeddings.py`): recall@1 8/8 y margen +0.340 sobre 8 pares DE↔EN de
+  las frases reales de Helder, frente a 8/8 y +0.319 de `text-embedding-3-small`. **Decidio el
+  cupo, no la calidad**: el AI Gateway de Vercel corta con `429` a la segunda tanda y sembrar son
+  ~420 items.
+  **Es ASIMETRICO**: `input_type` = `passage` al sembrar, `query` al consultar. Sin ese parametro
+  el recall cae a 7/8 y el margen se hunde a +0.091 — **sin dar ningun error**.
+- **LLM (Capas 0 y 4)**: `nvidia/nemotron-3.5-lightning-30b-a3b`.
+- **Multilingue nativo**: NO hay que traducir al ingles antes de embeber. Se cae la opcion C del
+  §8 que se planeo cuando el candidato era `gte-small`.
+- **Indice sobre `halfvec(2048)`**: HNSW con el tipo `vector` topa en 2000 dimensiones. La columna
+  guarda precision completa. **Toda consulta tiene que llevar el mismo cast** o el planner ignora
+  el indice sin avisar. Comprobado con EXPLAIN: `Index Scan using profiles_embedding_hnsw`.
 
-**Los tokens de NVIDIA que llegaron por chat no valian; el que estaba guardado en GCP
-(`nvidia-nim`) SI.** La API trataba a los dos primeros igual que a una clave inventada —403
-identico— mientras que sin cabecera devuelve 401. El endpoint y el modelo eran correctos
-desde el principio.
+## Incidente cerrado hoy
 
-**Gate del §8 corrido de verdad** (`scripts/gate-embeddings.py`), recall@1 cross-lingua sobre
-8 pares DE↔EN construidos con las frases reales de Helder:
+**`/api/diagnostico-ia` reenviaba `Authorization: Bearer NVIDIA_API_KEY` al host que le pasaran
+por `?base=`.** Publico, sin auth, ~19 h expuesto. Retirado y desplegado; registro completo con
+causa raiz en `incidentes/2026-09-10-proxy-abierto.md`.
+**Pendiente de Rene: rotar la clave `nvidia-nim`.**
 
-| modelo | dim | recall@1 | margen medio |
-|---|---|---|---|
-| **`nvidia/nemotron-3-embed-1b`** (NIM) | 2048 | 8/8 | **+0.340** ← elegido |
-| `openai/text-embedding-3-small` (Vercel) | 1536 | 8/8 | +0.319 |
-| `nemotron-3-embed-1b` **sin `input_type`** | 2048 | 7/8 | +0.091 |
+## Lo que la auditoria cambio del plan (y hay que decidir HOY)
 
-Empatan en recall: **lo que decide es el cupo.** El AI Gateway de Vercel funciona pero su free
-tier corta con `429 rate-limited` a la segunda tanda, y sembrar son ~420 items; NIM hizo 60
-vectores en 4.8 s sin un fallo. Vercel queda como respaldo declarado.
+1. **El §12 dimensiona mal el riesgo nº1.** Manda re-sembrar el 16 antes de enviar el link, pero
+   la ventana de feedback llega al **lunes 21**: si Helder abre la demo el 18, «Bayern gegen
+   Dortmund morgen» ya caduco y **5 de las 10 frases devuelven vacio**. Re-sembrar una vez no
+   basta: **las fechas tienen que rodar solas** (Cron Trigger diario que re-ancle, o fechas
+   calculadas como offset desde `now()`).
+2. **La escala del scoring no llega a lo prometido.** Con las formulas del §7 tal cual, un match
+   impecable da **~72%** y como maximo 79%. El brief §9 exige la banda **88–95%** y el PDF que el
+   cliente tiene en la mano ense~na un **92%**. La discriminacion relativa si funciona (~72%
+   frente a ~42% del near-miss). Falta decidir **la normalizacion de cada componente**.
+3. **La frase 6 falla por dise~no del propio brief.** El §6 deja `has_concrete_event=true` para
+   ella, pero la regla de mezcla del §7 solo sube los planes cuando es `false` — justo la unica
+   frase donde el brief exige un plan en el top-1. Arreglo propuesto: separar
+   `has_concrete_event` (¿existe el evento?) de `user_has_booking` (¿lo tiene el usuario?) y atar
+   la regla de mezcla a la segunda.
+4. **El gate de este repo no mide documentacion.** `ESTADO.md` afirmaba `vector(384)` y
+   `gte-small` mientras el esquema era `vector(2048)` y el modelo nemotron — y **`just ci` paso en
+   verde con esa contradiccion dentro**. Este repo corre 7 verbos de los 12 del kernel: le faltan
+   `docs` y `hechos`, que son los que cazan exactamente esto.
+5. **El medidor da dos verdes falsos**: REL-5 y OPS-5 dicen git-connect, pero los 9 despliegues
+   son `source: wrangler` y Workers Builds responde `12000 Not found`.
 
-**Decisiones cerradas (§8 dice: decidir el dia 2 y no volver a tocarlo):**
+## Siguiente paso concreto
 
-- **Embeddings**: `nvidia/nemotron-3-embed-1b` · 2048 dim · **es ASIMETRICO**: `input_type`
-  = `passage` al sembrar, `query` al consultar. Sin ese parametro el recall cae a 7/8 y el
-  margen se hunde a +0.091 — y no da ningun error: solo devuelve peores resultados.
-- **LLM (Capas 0 y 4)**: `nvidia/nemotron-3.5-lightning-30b-a3b`, probado y respondiendo.
-- **Multilingue nativo**: se cae la opcion C del §8 (traducir al ingles antes de embeber).
-  Menos codigo y una llamada menos por busqueda.
-- **El indice va sobre `halfvec(2048)`**, porque HNSW con el tipo `vector` topa en 2000. La
-  columna guarda precision completa. **Toda consulta tiene que llevar el mismo cast** o
-  Postgres ignora el indice sin avisar. Comprobado con EXPLAIN: `Index Scan using
-  profiles_embedding_hnsw`.
-- **Credenciales**: `NVIDIA_API_KEY` y `VERCEL_AI_GATEWAY_KEY`, en el Worker y en el repo.
-
-## Huecos declarados (no bloquean)
-
-- El deploy es imperativo desde la maquina (REL-5 en rojo). Falta conectar Workers Builds.
-- La contrasena de Postgres la genero Supabase y no la conocemos: `SUPABASE_DB_PASSWORD` estaba
-  vacia al crear el proyecto. **No estorba**: el SQL se aplica por la Management API con el PAT
-  y la app habla por PostgREST con la clave `secret`. Si algun dia hace falta `psql`, hay que
-  resetearla en el dashboard.
-- El puente `sync-cu` sigue inerte (repo publico → sin `CLICKUP_TOKEN`): los estados de las
-  tareas se mueven a mano con `cu`.
-
-## Siguiente paso concreto (dia 2)
-
-En cuanto haya LLM: generador de datos sinteticos con **fechas relativas a `now()`** (brief §9:
-es el bug numero 1 del proyecto), los 8 escenarios plantados —incluido el par reciproco 6↔1—,
-y el gate de recall@5 cross-lingua medido de verdad sobre 20 pares DE↔EN.
+El dia 2 entero, sin recortes: generador de datos sinteticos **con fechas relativas a `now()`
+desde la primera linea**, los 8 escenarios plantados —**el par reciproco 6↔1 primero**— y
+`seed.json` versionado. Antes de escribir el generador, cerrar la decision 1 (como ruedan las
+fechas) porque condiciona el formato del seed.
