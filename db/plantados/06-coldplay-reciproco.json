@@ -1,0 +1,630 @@
+{
+  "escenario": "06-coldplay-reciproco",
+  "frase_de_helder": "\"I want to go to a Coldplay concert in Düsseldorf next month. I do not have a ticket yet, but I am looking for someone who is planning to go too.\"",
+  "que_debe_devolver": "Top 1: el plan de Coldplay en Dusseldorf con seats_open=1 — quien TIENE la entrada de sobra —; detras, la gente que quiere ir sin entrada.",
+  "perfiles": [
+    {
+      "clave": "coldplay-duenno",
+      "rol": "duenno-del-plan",
+      "display_name": "Malte",
+      "age": 33,
+      "city": "Dusseldorf",
+      "barrio": "Derendorf",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Ich gehe seit der Schulzeit auf Konzerte und habe die halbe Wohnung voller Platten. Coldplay habe ich viermal gesehen und würde jedes Mal wieder hingehen. Lieber zu zweit als in einer großen Gruppe, dann redet man auch danach noch.",
+      "interests": [
+        "live_music",
+        "festivals",
+        "vinyl"
+      ],
+      "top_artists": [
+        "Coldplay"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "italian"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 25,
+          "hasta_offset": 40
+        }
+      ],
+      "verification": 3,
+      "completed_plans": 12,
+      "reports": 0
+    },
+    {
+      "clave": "coldplay-buscador",
+      "rol": "el-espejo",
+      "display_name": "Nele",
+      "age": 28,
+      "city": "Dusseldorf",
+      "barrio": "Pempelfort",
+      "languages": [
+        "en",
+        "de"
+      ],
+      "bio_lang": "en",
+      "bio": "I have wanted to see Coldplay live since I was fifteen and I still have not managed it. The tour comes to Düsseldorf next month and every ticket sold out in an hour. I would happily go with a stranger.",
+      "interests": [
+        "live_music",
+        "festivals",
+        "photography"
+      ],
+      "top_artists": [
+        "Coldplay",
+        "Adele"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "vietnamese"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 24,
+          "hasta_offset": 41
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 6,
+      "reports": 0
+    },
+    {
+      "clave": "coldplay-fan-fuerte",
+      "rol": "bueno",
+      "display_name": "Paulina",
+      "age": 30,
+      "city": "Dusseldorf",
+      "barrio": "Flingern",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Konzerte sind bei mir Pflichtprogramm, mindestens eins im Monat. Pop, Indie, alles, wo man mitsingen kann. Ich stehe lieber vorne als hinten an der Bar und bleibe bis zur letzten Zugabe, auch wenn es unter der Woche ist.",
+      "interests": [
+        "live_music",
+        "dancing",
+        "vinyl"
+      ],
+      "top_artists": [
+        "Coldplay",
+        "Nina Chuba"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "italian"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 26,
+          "hasta_offset": 38
+        }
+      ],
+      "verification": 3,
+      "completed_plans": 8,
+      "reports": 0
+    },
+    {
+      "clave": "coldplay-fan-pop",
+      "rol": "bueno",
+      "display_name": "Carla",
+      "age": 26,
+      "city": "Dusseldorf",
+      "barrio": "Altstadt",
+      "languages": [
+        "en",
+        "de"
+      ],
+      "bio_lang": "en",
+      "bio": "I know every Coldplay record by heart, which my flatmates find embarrassing and I find useful. I go to concerts alone when I have to, but it is a better evening with someone who sings along too.",
+      "interests": [
+        "live_music",
+        "dancing",
+        "cinema"
+      ],
+      "top_artists": [
+        "Coldplay",
+        "Adele"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "spanish"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 27,
+          "hasta_offset": 39
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 5,
+      "reports": 0
+    },
+    {
+      "clave": "coldplay-fan-koln",
+      "rol": "bueno",
+      "display_name": "Yusuf",
+      "age": 35,
+      "city": "Koln",
+      "barrio": "Ehrenfeld",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Ich wohne in Ehrenfeld und fahre für Konzerte auch mal nach Düsseldorf oder Dortmund. Große Stadionabende mag ich mehr, als ich zugeben sollte. Wenn eine Karte übrig ist, gebe ich sie weiter, statt sie verfallen zu lassen.",
+      "interests": [
+        "live_music",
+        "festivals",
+        "cycling"
+      ],
+      "top_artists": [
+        "Coldplay"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "turkish"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "any",
+      "disponible": [
+        {
+          "desde_offset": 28,
+          "hasta_offset": 36
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 7,
+      "reports": 0
+    },
+    {
+      "clave": "coldplay-duenno-lleno",
+      "rol": "near-miss-asiento",
+      "display_name": "Sven",
+      "age": 29,
+      "city": "Dusseldorf",
+      "barrio": "Bilk",
+      "languages": [
+        "en",
+        "de"
+      ],
+      "bio_lang": "en",
+      "bio": "Concerts are a group thing for me: same four friends, same meeting point, same bar afterwards. We book early and we book together. New people are welcome around it, just not usually inside the ticket order.",
+      "interests": [
+        "live_music",
+        "craft_beer",
+        "football"
+      ],
+      "top_artists": [
+        "Coldplay",
+        "Arctic Monkeys"
+      ],
+      "top_teams": [
+        "Fortuna Dusseldorf"
+      ],
+      "cuisines": [
+        "german"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "small_group",
+      "disponible": [
+        {
+          "desde_offset": 29,
+          "hasta_offset": 33
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 5,
+      "reports": 0
+    },
+    {
+      "clave": "coldplay-duenno-tardio",
+      "rol": "near-miss-fecha",
+      "display_name": "Mareike",
+      "age": 32,
+      "city": "Dusseldorf",
+      "barrio": "Oberbilk",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Ich plane gern lange im Voraus und kaufe Karten, sobald der Vorverkauf startet. In den nächsten Wochen bin ich beruflich unterwegs, danach habe ich wieder Zeit für Konzerte. Coldplay steht ganz oben auf meiner Liste.",
+      "interests": [
+        "live_music",
+        "theatre",
+        "vinyl"
+      ],
+      "top_artists": [
+        "Coldplay"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "japanese"
+      ],
+      "pace": "relaxed",
+      "budget_band": "mid",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 62,
+          "hasta_offset": 74
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 4,
+      "reports": 0
+    },
+    {
+      "clave": "coldplay-duenno-berlin",
+      "rol": "near-miss-ciudad",
+      "display_name": "Ousmane",
+      "age": 31,
+      "city": "Berlin",
+      "barrio": "Charlottenburg",
+      "languages": [
+        "en",
+        "de"
+      ],
+      "bio_lang": "en",
+      "bio": "Berlin gives me a concert every week and I still travel for the big ones. Stadium shows, singalongs, forty thousand phone lights — I know it is not cool and I do not care. Company welcome, ticket included.",
+      "interests": [
+        "live_music",
+        "festivals",
+        "running"
+      ],
+      "top_artists": [
+        "Coldplay",
+        "Tems"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "ethiopian"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "any",
+      "disponible": [
+        {
+          "desde_offset": 25,
+          "hasta_offset": 33
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 6,
+      "reports": 0
+    },
+    {
+      "clave": "coldplay-duenno-techno",
+      "rol": "near-miss-gusto",
+      "display_name": "Timo",
+      "age": 27,
+      "city": "Dusseldorf",
+      "barrio": "Unterbilk",
+      "languages": [
+        "de"
+      ],
+      "bio_lang": "de",
+      "bio": "Ich bin im Hafen fast jedes Wochenende unterwegs, meistens bis es hell wird. Techno, laut, ohne Programm. Mit Popkonzerten kann ich wenig anfangen, da stehen mir zu viele Leute und um elf ist alles vorbei.",
+      "interests": [
+        "dancing",
+        "festivals",
+        "photography"
+      ],
+      "top_artists": [
+        "Amelie Lens",
+        "Charlotte de Witte"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "vietnamese"
+      ],
+      "pace": "intense",
+      "budget_band": "low",
+      "group_pref": "small_group",
+      "disponible": [
+        {
+          "desde_offset": 29,
+          "hasta_offset": 34
+        }
+      ],
+      "verification": 1,
+      "completed_plans": 3,
+      "reports": 0
+    }
+  ],
+  "planes": [
+    {
+      "clave": "coldplay-plan-entrada",
+      "rol": "match-perfecto",
+      "owner": "coldplay-duenno",
+      "title": "Coldplay in Düsseldorf — ein Ticket übrig",
+      "description": "Ich habe zwei Karten für Coldplay in der Arena und gehe allein hin, wenn sich niemand meldet. Eine Karte ist übrig, zum Selbstkostenpreis. Wer die Band wirklich mag, ist mir lieber als jemand, der nur mitkommt.",
+      "desc_lang": "de",
+      "category": "concert",
+      "origin_city": "Dusseldorf",
+      "dest_city": "Dusseldorf",
+      "barrio": "Derendorf",
+      "venue": "Merkur Spiel-Arena",
+      "date_precision": "exact",
+      "dia_offset": 31,
+      "hora": "20:00",
+      "duracion_h": 4,
+      "radius_km": 40,
+      "seats_open": 1,
+      "subject": "Coldplay",
+      "tags": [
+        "concert",
+        "coldplay",
+        "pop",
+        "live_music"
+      ],
+      "budget_band": "mid",
+      "pace": "moderate",
+      "language_pref": [
+        "de",
+        "en"
+      ]
+    },
+    {
+      "clave": "coldplay-plan-lleno",
+      "rol": "near-miss-asiento",
+      "owner": "coldplay-duenno-lleno",
+      "title": "Coldplay night — group already complete",
+      "description": "Four of us are going to Coldplay in Düsseldorf next month and the tickets are already bought and paid. Nothing left to hand over, but happy to meet before the show for a drink.",
+      "desc_lang": "en",
+      "category": "concert",
+      "origin_city": "Dusseldorf",
+      "dest_city": "Dusseldorf",
+      "barrio": "Derendorf",
+      "venue": "Merkur Spiel-Arena",
+      "date_precision": "exact",
+      "dia_offset": 31,
+      "hora": "20:00",
+      "duracion_h": 4,
+      "radius_km": 40,
+      "seats_open": 0,
+      "subject": "Coldplay",
+      "tags": [
+        "concert",
+        "coldplay",
+        "pop",
+        "live_music"
+      ],
+      "budget_band": "mid",
+      "pace": "moderate",
+      "language_pref": [
+        "en"
+      ]
+    },
+    {
+      "clave": "coldplay-plan-koln",
+      "rol": "bueno",
+      "owner": "coldplay-fan-koln",
+      "title": "Coldplay in Köln — one spare ticket",
+      "description": "Same tour, different city: Coldplay play Cologne a couple of days later and I have one ticket spare. Thirty-five kilometres from Düsseldorf, and the train back runs late enough to make it work. Same price I paid.",
+      "desc_lang": "en",
+      "category": "concert",
+      "origin_city": "Koln",
+      "dest_city": "Koln",
+      "barrio": "Ehrenfeld",
+      "venue": "RheinEnergieStadion",
+      "date_precision": "exact",
+      "dia_offset": 33,
+      "hora": "20:00",
+      "duracion_h": 4,
+      "radius_km": 40,
+      "seats_open": 1,
+      "subject": "Coldplay",
+      "tags": [
+        "concert",
+        "coldplay",
+        "pop",
+        "live_music"
+      ],
+      "budget_band": "mid",
+      "pace": "moderate",
+      "language_pref": [
+        "de",
+        "en"
+      ]
+    },
+    {
+      "clave": "coldplay-plan-berlin",
+      "rol": "near-miss-ciudad",
+      "owner": "coldplay-duenno-berlin",
+      "title": "Coldplay at the Olympiastadion, Berlin",
+      "description": "Coldplay at the Olympiastadion in Berlin, and I have one ticket too many. It is a long way from the Rhineland, I know — the last train back leaves before the encore. Meet me at the stadium gate.",
+      "desc_lang": "en",
+      "category": "concert",
+      "origin_city": "Berlin",
+      "dest_city": "Berlin",
+      "barrio": "Charlottenburg",
+      "venue": "Olympiastadion",
+      "date_precision": "exact",
+      "dia_offset": 28,
+      "hora": "20:00",
+      "duracion_h": 4,
+      "radius_km": 40,
+      "seats_open": 1,
+      "subject": "Coldplay",
+      "tags": [
+        "concert",
+        "coldplay",
+        "pop",
+        "live_music"
+      ],
+      "budget_band": "mid",
+      "pace": "moderate",
+      "language_pref": [
+        "de",
+        "en"
+      ]
+    },
+    {
+      "clave": "coldplay-plan-tarde",
+      "rol": "near-miss-fecha",
+      "owner": "coldplay-duenno-tardio",
+      "title": "Coldplay — der zweite Termin der Tour",
+      "description": "Für den ersten Abend habe ich keine Karten mehr bekommen, für den Zusatztermin zwei Monate später schon. Eine Karte ist frei. Wer bis dahin warten kann, bekommt denselben Platzbereich zum gleichen Preis.",
+      "desc_lang": "de",
+      "category": "concert",
+      "origin_city": "Dusseldorf",
+      "dest_city": "Dusseldorf",
+      "barrio": "Derendorf",
+      "venue": "Merkur Spiel-Arena",
+      "date_precision": "exact",
+      "dia_offset": 68,
+      "hora": "20:00",
+      "duracion_h": 4,
+      "radius_km": 40,
+      "seats_open": 1,
+      "subject": "Coldplay",
+      "tags": [
+        "concert",
+        "coldplay",
+        "pop",
+        "live_music"
+      ],
+      "budget_band": "mid",
+      "pace": "moderate",
+      "language_pref": [
+        "de",
+        "en"
+      ]
+    },
+    {
+      "clave": "coldplay-plan-techno",
+      "rol": "near-miss-gusto",
+      "owner": "coldplay-duenno-techno",
+      "title": "Technoabend im Hafen, Düsseldorf",
+      "description": "Lange Nacht im Hafen, drei DJs, Türen um elf. Ich gehe fast jeden Monat hin und nehme gern jemanden mit, der bis morgens bleibt und nicht nach zwei Stunden nach Hause will. Karten an der Abendkasse.",
+      "desc_lang": "de",
+      "category": "concert",
+      "origin_city": "Dusseldorf",
+      "dest_city": "Dusseldorf",
+      "barrio": "Unterbilk",
+      "venue": "Salzmagazin",
+      "date_precision": "exact",
+      "dia_offset": 31,
+      "hora": "23:00",
+      "duracion_h": 6,
+      "radius_km": 40,
+      "seats_open": 1,
+      "subject": "Amelie Lens",
+      "tags": [
+        "concert",
+        "techno",
+        "dancing",
+        "electronic"
+      ],
+      "budget_band": "low",
+      "pace": "intense",
+      "language_pref": [
+        "de"
+      ]
+    }
+  ],
+  "intents": [
+    {
+      "clave": "coldplay-quiere",
+      "rol": "el-espejo",
+      "owner": "coldplay-buscador",
+      "text": "I want to see Coldplay in Düsseldorf next month but I have no ticket. If someone has a spare one, I will take it.",
+      "text_lang": "en",
+      "category": "concert",
+      "subject": "Coldplay",
+      "city": "Dusseldorf",
+      "barrio": "Pempelfort",
+      "radius_km": 40,
+      "ventana_desde_offset": 25,
+      "ventana_hasta_offset": 40,
+      "standing": false,
+      "tags": [
+        "coldplay",
+        "concert",
+        "pop"
+      ]
+    },
+    {
+      "clave": "coldplay-fuerte-quiere",
+      "rol": "reciprocidad",
+      "owner": "coldplay-fan-fuerte",
+      "text": "Ich gehe eigentlich immer auf Popkonzerte in Düsseldorf, egal welche Band. Wenn jemand eine Karte übrig hat oder Gesellschaft sucht, bin ich dabei.",
+      "text_lang": "de",
+      "category": "concert",
+      "subject": null,
+      "city": "Dusseldorf",
+      "barrio": "Flingern",
+      "radius_km": 40,
+      "ventana_desde_offset": null,
+      "ventana_hasta_offset": null,
+      "standing": true,
+      "tags": [
+        "concert",
+        "pop",
+        "live_music"
+      ]
+    },
+    {
+      "clave": "coldplay-koln-quiere",
+      "rol": "reciprocidad",
+      "owner": "coldplay-fan-koln",
+      "text": "Nächsten Monat sind Coldplay im Rheinland. Ich habe eine Karte übrig und suche jemanden, der mitfährt — Köln oder Düsseldorf, beides geht. Zug und Rückfahrt organisiere ich.",
+      "text_lang": "de",
+      "category": "concert",
+      "subject": "Coldplay",
+      "city": "Koln",
+      "barrio": "Ehrenfeld",
+      "radius_km": 40,
+      "ventana_desde_offset": 25,
+      "ventana_hasta_offset": 40,
+      "standing": false,
+      "tags": [
+        "coldplay",
+        "concert",
+        "pop"
+      ]
+    },
+    {
+      "clave": "coldplay-pop-quiere",
+      "rol": "reciprocidad",
+      "owner": "coldplay-fan-pop",
+      "text": "Coldplay are playing here next month and I still have no ticket. Anyone with a spare seat, or anyone else looking for company, just write me.",
+      "text_lang": "en",
+      "category": "concert",
+      "subject": "Coldplay",
+      "city": "Dusseldorf",
+      "barrio": "Altstadt",
+      "radius_km": 40,
+      "ventana_desde_offset": 25,
+      "ventana_hasta_offset": 40,
+      "standing": false,
+      "tags": [
+        "coldplay",
+        "concert",
+        "pop"
+      ]
+    }
+  ]
+}

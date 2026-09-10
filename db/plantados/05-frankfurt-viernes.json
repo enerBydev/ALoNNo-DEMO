@@ -1,0 +1,461 @@
+{
+  "escenario": "05-frankfurt-viernes",
+  "frase_de_helder": "„Ich habe für Freitagabend einen Tisch in Frankfurt reserviert, aber meine Begleitung ist ausgefallen. Vielleicht hat jemand spontan Lust auf gutes Essen.\"",
+  "que_debe_devolver": "Personas de Frankfurt con gusto por la cocina levantina, libres el viernes por la noche y a pocos km del restaurante; el near-miss por presupuesto baja unos puntos pero no se descarta.",
+  "perfiles": [
+    {
+      "clave": "frankfurt-duenno",
+      "rol": "duenno-del-plan",
+      "display_name": "Tarek",
+      "age": 34,
+      "city": "Frankfurt",
+      "barrio": "Sachsenhausen",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Ich koche selbst viel und probiere trotzdem jede Woche etwas Neues in Frankfurt aus. Am liebsten libanesisch, mit Mezze in der Mitte und genug Zeit zum Reden. Große Runden mag ich nicht, zu zweit schmeckt es besser.",
+      "interests": [
+        "cooking",
+        "wine",
+        "markets"
+      ],
+      "top_artists": [],
+      "top_teams": [],
+      "cuisines": [
+        "levantine",
+        "turkish"
+      ],
+      "pace": "relaxed",
+      "budget_band": "high",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 2
+        }
+      ],
+      "verification": 3,
+      "completed_plans": 11,
+      "reports": 0
+    },
+    {
+      "clave": "frankfurt-perfecto",
+      "rol": "match-perfecto",
+      "display_name": "Mirjam",
+      "age": 31,
+      "city": "Frankfurt",
+      "barrio": "Nordend",
+      "languages": [
+        "en",
+        "de"
+      ],
+      "bio_lang": "en",
+      "bio": "I cook on Sundays and eat out on Fridays, mostly Levantine — mezze, too much bread, long conversations. I moved to Frankfurt for work and found the city through its markets. I would rather share one table than join a big group.",
+      "interests": [
+        "wine",
+        "cooking",
+        "markets"
+      ],
+      "top_artists": [],
+      "top_teams": [],
+      "cuisines": [
+        "levantine"
+      ],
+      "pace": "relaxed",
+      "budget_band": "high",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 3
+        },
+        {
+          "desde_offset": 7,
+          "hasta_offset": 10
+        }
+      ],
+      "verification": 3,
+      "completed_plans": 9,
+      "reports": 0
+    },
+    {
+      "clave": "frankfurt-bueno-bornheim",
+      "rol": "bueno",
+      "display_name": "Kasia",
+      "age": 29,
+      "city": "Frankfurt",
+      "barrio": "Bornheim",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Ich bin in Frankfurt aufgewachsen und esse mich seit Jahren durch Bornheim. Türkisch, griechisch, alles mit Vorspeisen zum Teilen. Ich trinke gern einen guten Wein dazu und rede dabei zu viel. Kochen kann ich auch, aber selten.",
+      "interests": [
+        "cooking",
+        "wine",
+        "photography"
+      ],
+      "top_artists": [],
+      "top_teams": [],
+      "cuisines": [
+        "turkish",
+        "greek"
+      ],
+      "pace": "relaxed",
+      "budget_band": "high",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 1,
+          "hasta_offset": 4
+        }
+      ],
+      "verification": 3,
+      "completed_plans": 7,
+      "reports": 0
+    },
+    {
+      "clave": "frankfurt-bueno-vino",
+      "rol": "bueno",
+      "display_name": "Ines",
+      "age": 36,
+      "city": "Frankfurt",
+      "barrio": "Westend",
+      "languages": [
+        "en",
+        "de"
+      ],
+      "bio_lang": "en",
+      "bio": "Wine first, food right after. I run tastings twice a month and I still get nervous about it. Levantine and Italian are my comfort zone, and Frankfurt hides better small kitchens than people admit. Weeknights work better for me than crowds.",
+      "interests": [
+        "wine",
+        "markets",
+        "art_galleries"
+      ],
+      "top_artists": [],
+      "top_teams": [],
+      "cuisines": [
+        "levantine",
+        "italian"
+      ],
+      "pace": "relaxed",
+      "budget_band": "mid",
+      "group_pref": "any",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 5
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 6,
+      "reports": 0
+    },
+    {
+      "clave": "frankfurt-bueno-mezze",
+      "rol": "bueno",
+      "display_name": "Emre",
+      "age": 27,
+      "city": "Frankfurt",
+      "barrio": "Ostend",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Meine Familie kommt aus Gaziantep, also bin ich mit zu viel Essen aufgewachsen und finde das bis heute richtig. In Frankfurt suche ich Leute, die einen ganzen Abend am Tisch sitzen bleiben, statt nach einer Stunde weiterzuziehen.",
+      "interests": [
+        "cooking",
+        "markets",
+        "cinema"
+      ],
+      "top_artists": [],
+      "top_teams": [],
+      "cuisines": [
+        "levantine",
+        "turkish"
+      ],
+      "pace": "moderate",
+      "budget_band": "high",
+      "group_pref": "small_group",
+      "disponible": [
+        {
+          "desde_offset": 1,
+          "hasta_offset": 3
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 5,
+      "reports": 0
+    },
+    {
+      "clave": "frankfurt-nm-fecha",
+      "rol": "near-miss-fecha",
+      "display_name": "Hendrik",
+      "age": 33,
+      "city": "Frankfurt",
+      "barrio": "Nordend",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Ich esse am liebsten libanesisch, am besten mit Mezze und viel Zeit. Diese Woche bin ich abends komplett verplant, das ärgert mich selbst. In ein paar Tagen sieht es besser aus, dann auch gern spontan. Kochen ist mein Feierabend.",
+      "interests": [
+        "wine",
+        "cooking",
+        "markets"
+      ],
+      "top_artists": [],
+      "top_teams": [],
+      "cuisines": [
+        "levantine"
+      ],
+      "pace": "relaxed",
+      "budget_band": "high",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 3,
+          "hasta_offset": 9
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 6,
+      "reports": 0
+    },
+    {
+      "clave": "frankfurt-nm-ciudad",
+      "rol": "near-miss-ciudad",
+      "display_name": "Bahar",
+      "age": 30,
+      "city": "Koln",
+      "barrio": "Ehrenfeld",
+      "languages": [
+        "en",
+        "de"
+      ],
+      "bio_lang": "en",
+      "bio": "Cologne is home, but I travel for a good table without thinking twice. Levantine food is what I order first, wine second. I cook badly and eat well. Friday evenings are usually free and usually spent somewhere with mezze.",
+      "interests": [
+        "wine",
+        "cooking",
+        "markets"
+      ],
+      "top_artists": [],
+      "top_teams": [],
+      "cuisines": [
+        "levantine"
+      ],
+      "pace": "relaxed",
+      "budget_band": "high",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 6
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 8,
+      "reports": 0
+    },
+    {
+      "clave": "frankfurt-nm-gusto",
+      "rol": "near-miss-gusto",
+      "display_name": "Fabian",
+      "age": 26,
+      "city": "Frankfurt",
+      "barrio": "Gallus",
+      "languages": [
+        "de"
+      ],
+      "bio_lang": "de",
+      "bio": "Eintracht am Samstag, Laufgruppe am Dienstag, und dazwischen möglichst wenig Termine. Essen ist für mich Tanken, kein Programm. Wenn ich ausgehe, dann in eine Kneipe mit Fernseher, nicht in ein Restaurant mit Weinkarte. Freitag habe ich trotzdem frei.",
+      "interests": [
+        "football",
+        "running",
+        "board_games"
+      ],
+      "top_artists": [],
+      "top_teams": [
+        "Eintracht Frankfurt"
+      ],
+      "cuisines": [
+        "german"
+      ],
+      "pace": "intense",
+      "budget_band": "low",
+      "group_pref": "small_group",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 4
+        }
+      ],
+      "verification": 1,
+      "completed_plans": 3,
+      "reports": 0
+    },
+    {
+      "clave": "frankfurt-nm-estilo",
+      "rol": "near-miss-estilo",
+      "display_name": "Aylin",
+      "age": 25,
+      "city": "Frankfurt",
+      "barrio": "Bockenheim",
+      "languages": [
+        "en",
+        "de"
+      ],
+      "bio_lang": "en",
+      "bio": "I eat Levantine at least twice a week, usually standing up at a counter and usually cheap. Student budget, big appetite. I like markets, cheap wine and a table with four or five people talking over each other.",
+      "interests": [
+        "wine",
+        "cooking",
+        "markets"
+      ],
+      "top_artists": [],
+      "top_teams": [],
+      "cuisines": [
+        "levantine"
+      ],
+      "pace": "intense",
+      "budget_band": "low",
+      "group_pref": "small_group",
+      "disponible": [
+        {
+          "desde_offset": 1,
+          "hasta_offset": 6
+        }
+      ],
+      "verification": 1,
+      "completed_plans": 4,
+      "reports": 0
+    }
+  ],
+  "planes": [
+    {
+      "clave": "frankfurt-plan",
+      "rol": "el-plan-de-la-frase",
+      "owner": "frankfurt-duenno",
+      "title": "Tisch für zwei — libanesisch in Sachsenhausen",
+      "description": "Der Tisch steht seit zwei Wochen: halb acht abends, kleine libanesische Küche in Sachsenhausen. Meine Begleitung ist abgesprungen. Ich hätte gern jemanden dabei, der Mezze teilt und sich Zeit zum Essen nimmt. Bezahlt wird getrennt.",
+      "desc_lang": "de",
+      "category": "restaurant",
+      "origin_city": "Frankfurt",
+      "dest_city": "Frankfurt",
+      "barrio": "Sachsenhausen",
+      "venue": "Restaurant Zedernhof",
+      "date_precision": "exact",
+      "dia_offset": 1,
+      "hora": "19:30",
+      "duracion_h": 3,
+      "radius_km": 18,
+      "seats_open": 1,
+      "subject": "levantine",
+      "tags": [
+        "restaurant",
+        "levantine",
+        "wine",
+        "cooking",
+        "markets"
+      ],
+      "budget_band": "high",
+      "pace": "relaxed",
+      "language_pref": [
+        "de",
+        "en"
+      ]
+    }
+  ],
+  "intents": [
+    {
+      "clave": "frankfurt-perfecto-quiere",
+      "rol": "reciprocidad",
+      "owner": "frankfurt-perfecto",
+      "text": "I am always up for a proper dinner in Frankfurt — Levantine, Turkish, anything with mezze. One table, two people, no rush, any evening that comes up.",
+      "text_lang": "en",
+      "category": "restaurant",
+      "subject": "levantine",
+      "city": "Frankfurt",
+      "barrio": "Nordend",
+      "radius_km": 20,
+      "ventana_desde_offset": null,
+      "ventana_hasta_offset": null,
+      "standing": true,
+      "tags": [
+        "restaurant",
+        "levantine",
+        "wine",
+        "cooking"
+      ]
+    },
+    {
+      "clave": "frankfurt-mezze-quiere",
+      "rol": "reciprocidad",
+      "owner": "frankfurt-bueno-mezze",
+      "text": "Ich suche jemanden zum Essengehen in Frankfurt, gern libanesisch oder türkisch, am besten abends unter der Woche. Große Gruppen brauche ich nicht, zwei oder drei reichen.",
+      "text_lang": "de",
+      "category": "restaurant",
+      "subject": "turkish",
+      "city": "Frankfurt",
+      "barrio": "Ostend",
+      "radius_km": 20,
+      "ventana_desde_offset": null,
+      "ventana_hasta_offset": null,
+      "standing": true,
+      "tags": [
+        "restaurant",
+        "turkish",
+        "levantine",
+        "cooking"
+      ]
+    },
+    {
+      "clave": "frankfurt-bornheim-quiere",
+      "rol": "reciprocidad",
+      "owner": "frankfurt-bueno-bornheim",
+      "text": "Ich gehe unter der Woche gern essen, am liebsten irgendwo mit Vorspeisen zum Teilen und einer ordentlichen Weinkarte. Frankfurt und Umgebung, ohne festen Termin.",
+      "text_lang": "de",
+      "category": "restaurant",
+      "subject": "turkish",
+      "city": "Frankfurt",
+      "barrio": "Bornheim",
+      "radius_km": 20,
+      "ventana_desde_offset": null,
+      "ventana_hasta_offset": null,
+      "standing": true,
+      "tags": [
+        "restaurant",
+        "turkish",
+        "greek",
+        "wine"
+      ]
+    },
+    {
+      "clave": "frankfurt-vino-quiere",
+      "rol": "reciprocidad",
+      "owner": "frankfurt-bueno-vino",
+      "text": "Looking for people who take dinner seriously in Frankfurt. Small kitchens, a bottle worth talking about, no fixed date — I will make the evening work.",
+      "text_lang": "en",
+      "category": "restaurant",
+      "subject": "levantine",
+      "city": "Frankfurt",
+      "barrio": "Westend",
+      "radius_km": 20,
+      "ventana_desde_offset": null,
+      "ventana_hasta_offset": null,
+      "standing": true,
+      "tags": [
+        "restaurant",
+        "levantine",
+        "italian",
+        "wine"
+      ]
+    }
+  ]
+}

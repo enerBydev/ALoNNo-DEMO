@@ -138,3 +138,22 @@ create index if not exists intents_fts_gin  on intents  using gin (fts);
 alter table profiles enable row level security;
 alter table plans    enable row level security;
 alter table intents  enable row level security;
+
+
+-- ── El ancla del seed ───────────────────────────────────────────────────────────────────
+--
+-- Guarda el instante contra el que se materializaron las fechas del seed. Con eso, re-anclar
+-- es un `update` que suma la diferencia a todas las fechas y **conserva las distancias
+-- relativas**: el partido sigue siendo «manana» y el concierto «el mes que viene», pase el
+-- tiempo que pase. Ver docs/adr/0001-como-ruedan-las-fechas.md.
+--
+-- Sin esto habria que re-sembrar entero cada dia —460 embeddings, ~40 s y dinero— para mover
+-- unas fechas que no cambian de sitio unas respecto a otras.
+create table if not exists seed_meta (
+  id        int primary key default 1,
+  anclado   timestamptz not null,
+  semilla   bigint,
+  filas     jsonb,
+  constraint seed_meta_una_fila check (id = 1)
+);
+alter table seed_meta enable row level security;

@@ -1,0 +1,484 @@
+{
+  "escenario": "09-afrobeats-colonia",
+  "frase_de_helder": "Meine Freunde interessieren sich nicht für Afrobeats. Ich suche jemanden in Köln oder Umgebung, der gerne auf solche Konzerte und Partys geht.",
+  "que_debe_devolver": "Personas (no planes) con gusto afrobeats en Colonia y en el area de 40 km, sin ningun filtro de fecha porque el interes es permanente, y con al menos una viviendo fuera de Colonia para que «oder Umgebung» signifique algo.",
+  "perfiles": [
+    {
+      "clave": "afrokoln-perfecto",
+      "rol": "match-perfecto",
+      "display_name": "Chidera",
+      "age": 28,
+      "city": "Koln",
+      "barrio": "Ehrenfeld",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "en",
+      "bio": "Afrobeats is basically my whole social life. I know every night in Cologne where they play Burna Boy and Wizkid properly, and I would rather go with one person who really dances than with a group that stands around filming.",
+      "interests": [
+        "afrobeats",
+        "live_music",
+        "dancing",
+        "nightlife",
+        "amapiano"
+      ],
+      "top_artists": [
+        "Burna Boy",
+        "Wizkid",
+        "Tems"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "nigerian"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 45
+        }
+      ],
+      "verification": 3,
+      "completed_plans": 9,
+      "reports": 0
+    },
+    {
+      "clave": "afrokoln-bueno-leverkusen",
+      "rol": "bueno",
+      "display_name": "Yasemin",
+      "age": 31,
+      "city": "Leverkusen",
+      "barrio": "Wiesdorf",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Ich fahre fast jedes Wochenende nach Köln, weil hier in Leverkusen niemand Afrobeats auflegt. Dancehall mag ich genauso gern. Zehn Minuten mit der Bahn, und ich bin da. Ich suche jemanden, der bis zum Schluss tanzt und nicht nur am Tresen steht.",
+      "interests": [
+        "afrobeats",
+        "dancehall",
+        "dancing",
+        "nightlife"
+      ],
+      "top_artists": [
+        "Burna Boy",
+        "Rema"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "turkish"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 45
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 6,
+      "reports": 0
+    },
+    {
+      "clave": "afrokoln-bueno-bonn",
+      "rol": "bueno",
+      "display_name": "Tomasz",
+      "age": 34,
+      "city": "Bonn",
+      "barrio": "Südstadt",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Ich bin für die Arbeit von Warschau nach Bonn gezogen und vermisse nichts so sehr wie die Partys von früher. Für Afrobeats- und Amapiano-Nächte fahre ich mit dem Zug nach Köln. Ich halte das Budget klein: billiges Ticket und danach zu Fuß nach Hause.",
+      "interests": [
+        "afrobeats",
+        "amapiano",
+        "dancing",
+        "live_music"
+      ],
+      "top_artists": [
+        "Wizkid",
+        "Asake"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "vietnamese"
+      ],
+      "pace": "moderate",
+      "budget_band": "low",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 45
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 3,
+      "reports": 0
+    },
+    {
+      "clave": "afrokoln-bueno-dusseldorf",
+      "rol": "bueno",
+      "display_name": "Marlene",
+      "age": 26,
+      "city": "Dusseldorf",
+      "barrio": "Flingern",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Konzerte sind mein einziges echtes Hobby. Afrobeats, ein bisschen Afro-House, alles was live gespielt wird. Von Düsseldorf nach Köln ist es keine Stunde, das mache ich auch unter der Woche. Alleine hingehen finde ich trotzdem jedes Mal komisch.",
+      "interests": [
+        "afrobeats",
+        "afro_house",
+        "live_music",
+        "dancing"
+      ],
+      "top_artists": [
+        "Burna Boy",
+        "Ayra Starr"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "italian"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 45
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 5,
+      "reports": 0
+    },
+    {
+      "clave": "afrokoln-solo-semantico",
+      "rol": "solo-semantico",
+      "display_name": "Emeka",
+      "age": 33,
+      "city": "Koln",
+      "barrio": "Nippes",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "en",
+      "bio": "I grew up between Lagos and the Rhine, so anything with that West African bounce gets me on the floor before I even hear the chorus. Friends drag me home at four in the morning. I do not care about genres, I care about the room moving.",
+      "interests": [
+        "dancing",
+        "nightlife",
+        "live_music"
+      ],
+      "top_artists": [],
+      "top_teams": [],
+      "cuisines": [
+        "nigerian"
+      ],
+      "pace": "intense",
+      "budget_band": "mid",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 45
+        }
+      ],
+      "verification": 3,
+      "completed_plans": 11,
+      "reports": 0
+    },
+    {
+      "clave": "afrokoln-trampa-fecha",
+      "rol": "trampa-fecha-no-aplica",
+      "display_name": "Svenja",
+      "age": 29,
+      "city": "Koln",
+      "barrio": "Lindenthal",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "en",
+      "bio": "Cologne is home and the afrobeats nights are half the reason I stayed. I am away on a long work placement for the next few weeks, but I am not looking for one single evening, I want somebody to go with all year round.",
+      "interests": [
+        "afrobeats",
+        "live_music",
+        "dancing",
+        "nightlife"
+      ],
+      "top_artists": [
+        "Wizkid",
+        "Tems"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "ghanaian"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 30,
+          "hasta_offset": 75
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 4,
+      "reports": 0
+    },
+    {
+      "clave": "afrokoln-nearmiss-ciudad",
+      "rol": "near-miss-ciudad",
+      "display_name": "Chinedu",
+      "age": 32,
+      "city": "Munchen",
+      "barrio": "Schwabing",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "In München gibt es genau zwei gute Afrobeats-Abende im Monat, und ich verpasse keinen davon. Burna Boy, Wizkid und Rema laufen bei mir den ganzen Tag. Ich gehe immer hin, egal wie voll es ist, und tanze bis das Licht angeht.",
+      "interests": [
+        "afrobeats",
+        "live_music",
+        "dancing",
+        "nightlife",
+        "amapiano"
+      ],
+      "top_artists": [
+        "Burna Boy",
+        "Wizkid",
+        "Rema"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "nigerian"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 45
+        }
+      ],
+      "verification": 3,
+      "completed_plans": 8,
+      "reports": 0
+    },
+    {
+      "clave": "afrokoln-nearmiss-gusto",
+      "rol": "near-miss-gusto",
+      "display_name": "Konstantin",
+      "age": 35,
+      "city": "Koln",
+      "barrio": "Sülz",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Ich habe ein Abo in der Philharmonie und gehe mindestens zweimal im Monat hin. Kammermusik, Oper, gelegentlich ein Klavierabend. Clubs sind nichts für mich; nach halb elf bin ich lieber zu Hause mit einem Buch und einem Glas Wein.",
+      "interests": [
+        "classical_music",
+        "opera",
+        "reading",
+        "wine_bars"
+      ],
+      "top_artists": [],
+      "top_teams": [],
+      "cuisines": [
+        "german"
+      ],
+      "pace": "moderate",
+      "budget_band": "mid",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 45
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 5,
+      "reports": 0
+    },
+    {
+      "clave": "afrokoln-nearmiss-estilo",
+      "rol": "near-miss-estilo",
+      "display_name": "Ricardo",
+      "age": 30,
+      "city": "Koln",
+      "barrio": "Deutz",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "bio_lang": "de",
+      "bio": "Afrobeats höre ich nur noch live. Aber ich gehe ausschließlich in den Table-Service-Bereich: reservierter Tisch, Flasche auf dem Eis, kein Gedränge. Unter zweihundert Euro fange ich einen Abend gar nicht erst an. Dafür ist es dann auch wirklich ein Abend.",
+      "interests": [
+        "afrobeats",
+        "live_music",
+        "nightlife",
+        "dancing"
+      ],
+      "top_artists": [
+        "Burna Boy",
+        "Davido"
+      ],
+      "top_teams": [],
+      "cuisines": [
+        "italian"
+      ],
+      "pace": "moderate",
+      "budget_band": "high",
+      "group_pref": "one_to_one",
+      "disponible": [
+        {
+          "desde_offset": 0,
+          "hasta_offset": 45
+        }
+      ],
+      "verification": 2,
+      "completed_plans": 7,
+      "reports": 0
+    }
+  ],
+  "planes": [
+    {
+      "clave": "afrokoln-plan-fiesta",
+      "rol": "plan-de-fondo",
+      "owner": "afrokoln-solo-semantico",
+      "title": "Afro Nation Night im Bootshaus",
+      "description": "A proper afrobeats and amapiano night with two DJs flown in from Lagos. We start with food at my place around eight and walk over together. I have two spare spots on the guest list.",
+      "desc_lang": "en",
+      "category": "concert",
+      "origin_city": "Koln",
+      "dest_city": "Koln",
+      "barrio": "Deutz",
+      "venue": "Bootshaus",
+      "date_precision": "exact",
+      "dia_offset": 9,
+      "hora": "23:00",
+      "duracion_h": 6,
+      "radius_km": 40,
+      "seats_open": 2,
+      "subject": "Afro Nation Night",
+      "tags": [
+        "afrobeats",
+        "amapiano",
+        "dancing",
+        "nightlife",
+        "live_music"
+      ],
+      "budget_band": "mid",
+      "pace": "intense",
+      "language_pref": [
+        "de",
+        "en"
+      ]
+    }
+  ],
+  "intents": [
+    {
+      "clave": "afrokoln-intent-perfecto",
+      "rol": "el-interes-permanente",
+      "owner": "afrokoln-perfecto",
+      "text": "I am looking for one reliable person to go to afrobeats nights and concerts with here in Cologne. No fixed date, just whenever something good lands in town.",
+      "text_lang": "en",
+      "category": "concert",
+      "subject": "afrobeats",
+      "city": "Koln",
+      "barrio": "Ehrenfeld",
+      "radius_km": 40,
+      "ventana_desde_offset": null,
+      "ventana_hasta_offset": null,
+      "standing": true,
+      "tags": [
+        "afrobeats",
+        "live_music",
+        "dancing",
+        "nightlife"
+      ]
+    },
+    {
+      "clave": "afrokoln-intent-leverkusen",
+      "rol": "el-interes-permanente-en-umgebung",
+      "owner": "afrokoln-bueno-leverkusen",
+      "text": "Suche dauerhaft jemanden für Afrobeats- und Dancehall-Partys in Köln. Kein bestimmtes Datum, ich gehe einfach mit, wenn etwas Gutes läuft. Die Bahn ab Leverkusen geht immer.",
+      "text_lang": "de",
+      "category": "concert",
+      "subject": "afrobeats",
+      "city": "Leverkusen",
+      "barrio": "Wiesdorf",
+      "radius_km": 40,
+      "ventana_desde_offset": null,
+      "ventana_hasta_offset": null,
+      "standing": true,
+      "tags": [
+        "afrobeats",
+        "dancehall",
+        "dancing",
+        "nightlife"
+      ]
+    },
+    {
+      "clave": "afrokoln-intent-dusseldorf",
+      "rol": "el-interes-permanente-en-umgebung",
+      "owner": "afrokoln-bueno-dusseldorf",
+      "text": "Ich suche jemanden für Afrobeats-Konzerte in Köln oder Düsseldorf. Ohne festen Termin, ich fahre hin, sobald etwas Gutes angekündigt wird, auch unter der Woche.",
+      "text_lang": "de",
+      "category": "concert",
+      "subject": "afrobeats",
+      "city": "Dusseldorf",
+      "barrio": "Flingern",
+      "radius_km": 40,
+      "ventana_desde_offset": null,
+      "ventana_hasta_offset": null,
+      "standing": true,
+      "tags": [
+        "afrobeats",
+        "afro_house",
+        "live_music",
+        "dancing"
+      ]
+    },
+    {
+      "clave": "afrokoln-intent-solo-semantico",
+      "rol": "el-interes-permanente-sin-tags",
+      "owner": "afrokoln-solo-semantico",
+      "text": "No plan and no date. I just want somebody who will go dancing with me whenever a proper West African night shows up in town.",
+      "text_lang": "en",
+      "category": null,
+      "subject": null,
+      "city": "Koln",
+      "barrio": "Nippes",
+      "radius_km": 40,
+      "ventana_desde_offset": null,
+      "ventana_hasta_offset": null,
+      "standing": true,
+      "tags": [
+        "dancing",
+        "nightlife",
+        "live_music"
+      ]
+    }
+  ]
+}
