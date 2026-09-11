@@ -12,6 +12,8 @@ export interface Persona {
   interests: string[]; top_artists: string[] | null; top_teams: string[] | null; cuisines: string[] | null
   pace: string | null; budget_band: string | null; group_pref: string | null; languages: string[]
   verification: number; completed_plans: number; reports: number
+  conduce: boolean; coche: string | null; plazas_coche: number | null
+  nota: number | null; notas_conteo: number | null; desde_offset: number | null
   km: number | null; disponible_exacto: boolean; disponible_finde: boolean
   similitud: number; rrf: number
 }
@@ -29,6 +31,7 @@ export interface Plan {
   // El conductor viaja con el viaje: sin esto, pintar una estrella costaria una consulta por fila.
   conductor: string | null; conductor_coche: string | null; conductor_nota: number | null
   conductor_notas: number | null; conductor_verificado: number | null; conductor_viajes: number | null
+  ruta_geojson: string | null; origen_geojson: string | null; destino_geojson: string | null
   km: number | null; km_ruta: number | null; similitud: number; rrf: number
 }
 

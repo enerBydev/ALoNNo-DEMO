@@ -1,0 +1,32 @@
+/* La entrada de Nuxt UI 4 + Tailwind 4. Convive con `base.css`, que sigue mandando en lo que ya
+   mandaba: los componentes nuevos usan este tema y las pantallas viejas su CSS. Migrar las ocho
+   paginas enteras no compensa (~5 h) y no hace falta. */
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* ── El color de marca ──────────────────────────────────────────────────────────────────────
+   Nuxt UI viene en VERDE ESMERALDA de fabrica. Si no se cambia en el mismo commit que la
+   instalacion, la primera captura que vea alguien tiene botones de otro producto.
+
+   La rampa esta anclada en `#0B5F5A` (el `--accion` de `base.css`, 7,5:1 sobre blanco), que es
+   el verde petroleo que eligio la critica de UI/UX: ni el negro de Uber, ni el naranja de Didi,
+   ni el azul de BlaBlaCar. Los pasos de arriba y abajo se derivan del mismo tono. */
+@theme static {
+  --color-marca-50:  #F0FAF9;
+  --color-marca-100: #DCEEEB;
+  --color-marca-200: #B6DDD8;
+  --color-marca-300: #82C4BD;
+  --color-marca-400: #4CA49B;
+  --color-marca-500: #2A837B;
+  --color-marca-600: #146E68;
+  --color-marca-700: #0B5F5A;
+  --color-marca-800: #084744;
+  --color-marca-900: #06332F;
+  --color-marca-950: #032220;
+
+  /* La familia tipografica la auto-aloja `@nuxt/fonts`, que entra dentro de Nuxt UI: la descarga
+     en construccion y escribe los `@font-face` contra `public/_fonts`. Se hace asi y NO con un
+     `<link>` a `fonts.googleapis.com` porque el cliente es aleman y una peticion a Google en
+     cada carga es una transferencia de datos a EE. UU. que habria que justificar. */
+  --font-sans: Inter, ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+}

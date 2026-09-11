@@ -18,7 +18,7 @@
 -- `42P13 cannot change return type of existing function`. Y aqui cambia cada vez que el motor
 -- aprende a devolver un dato nuevo —paso el 11-sep-2026 al a~nadir la ruta del viaje—, asi que
 -- el fichero empieza tirandolas. Sigue siendo idempotente: `if exists` no falla si no estan.
-drop function if exists buscar_personas(halfvec, text, text, double precision, double precision, int, date, date, uuid, int);
+drop function if exists buscar_personas(halfvec, text, text, double precision, double precision, int, date, date, boolean, uuid, int);
 drop function if exists buscar_planes(halfvec, text, text, double precision, double precision, int, date, date, text, text, uuid, int);
 
 -- ── Personas ────────────────────────────────────────────────────────────────────────────
@@ -39,6 +39,9 @@ create or replace function buscar_personas(
   interests text[], top_artists text[], top_teams text[], cuisines text[],
   pace text, budget_band text, group_pref text, languages text[],
   verification int, completed_plans int, reports int,
+  -- La reputacion viaja con la persona. La lista «conductores que encajan contigo» sin nota ni
+  -- coche es una lista de nombres, y nadie se sube al coche de un nombre.
+  conduce boolean, coche text, plazas_coche int, nota numeric, notas_conteo int, desde_offset int,
   km double precision, disponible_exacto boolean, disponible_finde boolean,
   similitud double precision, rrf double precision
 )
@@ -83,6 +86,7 @@ language sql stable as $$
          f.interests, f.top_artists, f.top_teams, f.cuisines,
          f.pace, f.budget_band, f.group_pref, f.languages,
          f.verification, f.completed_plans, f.reports,
+         f.conduce, f.coche, f.plazas_coche, f.nota, f.notas_conteo, f.desde_offset,
          f.km_calc,
          -- Se devuelven las dos, porque el scoring de la Capa 3 las pondera distinto:
          -- estar libre EL DIA vale 1.0; estar libre ese fin de semana, 0.7.
@@ -122,6 +126,10 @@ create or replace function buscar_planes(
   -- fila —el N+1 clasico— para pintar una estrella.
   conductor text, conductor_coche text, conductor_nota numeric, conductor_notas int,
   conductor_verificado int, conductor_viajes int,
+  -- La geometria sale como GeoJSON para que el mapa la pinte sin una segunda consulta. Son tres
+  -- o cuatro puntos por viaje: no justifica un endpoint aparte, y un mapa que pide los datos por
+  -- su cuenta es un mapa que puede quedarse en blanco mientras la lista ya esta puesta.
+  ruta_geojson text, origen_geojson text, destino_geojson text,
   km double precision, km_ruta double precision, similitud double precision, rrf double precision
 )
 language sql stable as $$
@@ -187,6 +195,7 @@ language sql stable as $$
          f.budget_band, f.pace, f.language_pref,
          f.via, f.distancia_km, f.precio_por_km, f.recurrente,
          d.display_name, d.coche, d.nota, d.notas_conteo, d.verification, d.completed_plans,
+         st_asgeojson(f.ruta), st_asgeojson(f.origin_geo), st_asgeojson(f.geo),
          f.km_calc, f.km_ruta_calc, fu.sim, fu.rrf
   from fusion fu
   join filtrados f on f.id = fu.id

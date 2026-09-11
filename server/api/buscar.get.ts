@@ -12,6 +12,24 @@ import { explicar, type ParaExplicar } from '../utils/explicar'
 
 const TOP_EXPLICADO = 5
 
+/** PostGIS devuelve GeoJSON como texto. Se lee aqui, una vez, y con guardia: una geometria rota
+ *  no puede tumbar una busqueda entera por un mapa que es accesorio. */
+function leerLinea(t: string | null): [number, number][] | null {
+  if (!t) return null
+  try {
+    const g = JSON.parse(t)
+    return Array.isArray(g?.coordinates) ? (g.coordinates as [number, number][]) : null
+  } catch { return null }
+}
+function leerPunto(t: string | null): [number, number] | null {
+  if (!t) return null
+  try {
+    const g = JSON.parse(t)
+    return Array.isArray(g?.coordinates) && g.coordinates.length === 2
+      ? (g.coordinates as [number, number]) : null
+  } catch { return null }
+}
+
 export default defineCachedEventHandler(async (event) => {
   const t0 = Date.now()
   // EL PRESUPUESTO DE LA PETICION ENTERA. Sin esto, cada capa tenia su techo y nadie miraba la
@@ -29,6 +47,19 @@ export default defineCachedEventHandler(async (event) => {
   // Va por la URL y no por la cookie a proposito: la clave de cache se construye con la URL, y
   // dos ciudades distintas tienen que ser dos entradas distintas.
   const ciudadDeQuienPregunta = String(getQuery(event).ciudad ?? '').trim() || null
+
+  // ── EL CAMINO INSTANTANEO ───────────────────────────────────────────────────────────────
+  //
+  // Cuando el usuario CORRIGE un campo (desde / hacia / cuando), ya no hay nada que
+  // interpretar: la frase la escribio el formulario. Volver a pagar 7-9 s de modelo para releer
+  // una frase que acabamos de construir nosotros seria cobrarle al usuario su propia correccion.
+  //
+  // Es ademas lo que hace que la demo NO dependa del proveedor: con los campos, la busqueda
+  // tarda 0,9 s y no puede degradarse.
+  const q_desde = String(getQuery(event).desde ?? '').trim() || null
+  const q_hacia = String(getQuery(event).hacia ?? '').trim() || null
+  const q_cuando = String(getQuery(event).cuando ?? '').trim() || null
+  const directo = Boolean(q_desde || q_hacia || q_cuando)
 
   const env = {
     ...process.env,
@@ -70,8 +101,9 @@ export default defineCachedEventHandler(async (event) => {
     motivoDegradado = String(e?.statusMessage ?? e?.message ?? e).slice(0, 200)
     console.warn(`[capa-0] degradada: ${motivoDegradado} · frase=${JSON.stringify(q.slice(0, 80))}`)
   }
-  // Una expresion temporal explicita en la frase gana sobre el silencio del modelo.
-  intencion = reforzarFecha(intencion, q)
+  // Una expresion temporal explicita en la frase gana sobre el silencio del modelo — salvo en el
+  // camino directo, donde el desplegable ES la verdad y no hay frase que reforzar.
+  if (!directo) intencion = reforzarFecha(intencion, q)
   const ventana = resolverVentana(intencion)
 
   // ── CAPA 1 + 2 · filtros duros y recuperacion, las dos dentro de Postgres.
@@ -260,18 +292,39 @@ export default defineCachedEventHandler(async (event) => {
           // Redondeado aqui y no en la plantilla: «pasa a 0,76445526829 km de ti» llego a salir
           // en una respuesta real, y un numero con once decimales delata que nadie lo miro.
           km_de_tu_ruta: (f as any).km_ruta != null ? Math.round(Number((f as any).km_ruta) * 10) / 10 : null,
+          // [lon, lat] en el orden de GeoJSON. La plantilla del mapa los invierte, que es como
+          // los quiere Leaflet; hacerlo aqui obligaria a recordarlo en cada sitio que los lea.
+          puntos: leerLinea((f as any).ruta_geojson),
+          origen: leerPunto((f as any).origen_geojson),
+          destino: leerPunto((f as any).destino_geojson),
         }
       : null,
-    conductor: f.tipo === 'PLAN' && (f as any).conductor
-      ? {
-          nombre: (f as any).conductor,
-          coche: (f as any).conductor_coche ?? null,
-          nota: (f as any).conductor_nota != null ? Number((f as any).conductor_nota) : null,
-          notas: Number((f as any).conductor_notas ?? 0),
-          verificado: Number((f as any).conductor_verificado ?? 0),
-          viajes: Number((f as any).conductor_viajes ?? 0),
-        }
-      : null,
+    // La reputacion sale igual para un viaje (la de quien conduce) y para una persona (la
+    // suya), porque la tarjeta es la misma pieza y lo que el pasajero mira antes de subirse no
+    // cambia segun de que lista venga.
+    conductor: f.tipo === 'PLAN'
+      ? ((f as any).conductor
+          ? {
+              nombre: (f as any).conductor,
+              coche: (f as any).conductor_coche ?? null,
+              nota: (f as any).conductor_nota != null ? Number((f as any).conductor_nota) : null,
+              notas: Number((f as any).conductor_notas ?? 0),
+              verificado: Number((f as any).conductor_verificado ?? 0),
+              viajes: Number((f as any).conductor_viajes ?? 0),
+              conduce: true,
+            }
+          : null)
+      : {
+          nombre: (f as any).display_name,
+          coche: (f as any).coche ?? null,
+          nota: (f as any).nota != null ? Number((f as any).nota) : null,
+          notas: Number((f as any).notas_conteo ?? 0),
+          verificado: Number((f as any).verification ?? 0),
+          viajes: Number((f as any).completed_plans ?? 0),
+          conduce: Boolean((f as any).conduce),
+        },
+    edad: f.tipo === 'PERSONA' ? (f as any).age ?? null : null,
+    plazas_coche: f.tipo === 'PERSONA' ? (f as any).plazas_coche ?? null : null,
   })
 
   const suma = (...us: Uso[]): Uso => ({
@@ -284,6 +337,7 @@ export default defineCachedEventHandler(async (event) => {
     consulta: q,
     degradado,      // true = la Capa 0 no respondio y esto salio de reglas, no del modelo
     motivo_degradado: motivoDegradado,
+    directo,        // true = se corrigio un campo, asi que no habia nada que interpretar
     intencion,      // el panel «asi lo entendi» del §10: el usuario no configura, corrige
     ventana,
     // `listas` es lo que pinta la pantalla; `resultados` se conserva plano para las pruebas y
@@ -340,10 +394,14 @@ export default defineCachedEventHandler(async (event) => {
   // desplego, y las 10 frases seguian dando el resultado viejo porque salian de KV. Una cache
   // que no se invalida ense~na el trabajo de ayer y parece que el arreglo no funciono.
   getKey: (event) => {
-    const q = String(getQuery(event).q ?? '').trim().toLowerCase()
-    const ciudad = String(getQuery(event).ciudad ?? '').trim().toLowerCase()
+    const g = getQuery(event)
+    const q = String(g.q ?? '').trim().toLowerCase()
+    const ciudad = String(g.ciudad ?? '').trim().toLowerCase()
+    // Los campos corregidos cambian el resultado, asi que cambian la clave. Sin esto, corregir
+    // «hacia Mitte» por «hacia Westend» devolveria la respuesta de Mitte.
+    const campos = [g.desde, g.hacia, g.cuando].map((x) => String(x ?? '').trim().toLowerCase()).join('|')
     // La ciudad entra en la clave porque cambia el resultado: la misma frase desde Berlin y
     // desde Koln devuelve coches distintos. Olvidarla serviria el resultado del otro.
-    return `v8:${ciudad}:${q}`
+    return `v9:${ciudad}:${campos}:${q}`
   },
 })
