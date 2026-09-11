@@ -21,6 +21,27 @@ export interface Uso {
   ms: number
 }
 
+/** Techo por INTENTO, no por busqueda.
+ *
+ *  Ningun `fetch` de este fichero tenia limite, y eso no es lo mismo que ser lento: un proveedor
+ *  que acepta la conexion y luego calla deja la peticion viva hasta que alguien la mate. Medido
+ *  el 11-sep-2026: una busqueda tardo 82 s con las capas 0-3 sumando 10. Con tres intentos sin
+ *  techo, el peor caso no tiene numero.
+ *
+ *  Va aqui y no en quien llama porque el reintento multiplica: el techo de arriba corta la
+ *  busqueda, este corta cada intento y deja sitio para el siguiente. */
+//  Y el techo NO es el mismo para las dos llamadas, porque no tardan lo mismo ni valen lo mismo.
+//  Un techo unico de 8 s degradaba la Capa 0 —el parser— justo cuando el proveedor estaba frio:
+//  medido el mismo dia, la Capa 0 tarda entre 3,9 s y 15 s y el embedding 0,44 s. Poner el techo
+//  del lento al rapido tira la comprension de la frase; poner el del rapido al lento deja la
+//  puerta abierta que se queria cerrar.
+const TECHO_EMBEDDING_MS = 6_000
+// MEDIDO el 11-sep-2026, dos llamadas seguidas: 9.226 ms y 6.843 ms con 1.108 tokens de entrada
+// y 190 de salida. El coste esta en la SALIDA, no en el prompt. Por eso el techo son 14 s y no
+// 11: con 11 se degradaba una de cada dos, y la degradacion apaga la comprension de la frase,
+// que es justo lo que se le esta vendiendo al cliente.
+const TECHO_CHAT_MS = 14_000
+
 /** Un fallo puntual del proveedor no puede tumbar una busqueda delante del cliente.
  *  Medido el 10-sep-2026: dos de diez frases devolvieron 502 en una tanda, y la misma frase
  *  funciono al reintentarla. Dos intentos con espera corta cubren eso sin alargar la demo. */
@@ -55,6 +76,7 @@ export async function embeberConsulta(
   const t0 = Date.now()
   const r = await conReintento(() => fetch(`${BASE}/embeddings`, {
     method: 'POST',
+    signal: AbortSignal.timeout(TECHO_EMBEDDING_MS),
     headers: { Authorization: `Bearer ${claveDe(env)}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODELO_EMBED,
@@ -86,6 +108,7 @@ export async function chatJson(
   const t0 = Date.now()
   const r = await conReintento(() => fetch(`${BASE}/chat/completions`, {
     method: 'POST',
+    signal: AbortSignal.timeout(TECHO_CHAT_MS),
     headers: { Authorization: `Bearer ${claveDe(env)}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODELO_CHAT,

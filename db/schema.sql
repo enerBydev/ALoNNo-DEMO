@@ -177,3 +177,74 @@ create table if not exists intereses (
 create index if not exists intereses_plan on intereses (plan_id);
 create index if not exists intereses_persona on intereses (persona_id);
 alter table intereses enable row level security;
+
+
+-- ════════════════════════════════════════════════════════════════════════════════════════
+-- EL GIRO A COCHE COMPARTIDO (11-sep-2026)
+-- ════════════════════════════════════════════════════════════════════════════════════════
+--
+-- `pickando.docx` —el adjunto del encargo de Workana— describe una app de coche compartido,
+-- no un emparejamiento de planes sociales. Ver docs/conocimiento/07-pickando-vs-alonno.md.
+--
+-- El motor de 5 capas NO se toca. Lo que cambia es el dominio, y encaja casi entero:
+--
+--   plans.origin_geo  → donde RECOGE el conductor        plans.geo       → donde DEJA
+--   plans.starts_at   → hora de salida                   plans.seats_open → plazas libres
+--   plans.radius_km   → «pasajeros a 1-2 km de mi ruta»  intereses       → solicitud de plaza
+--   intents.standing  → «preferred route» del docx       profiles.*      → conductor/pasajero
+--
+-- Lo que SI falta, y es lo que a~naden estas columnas: la ruta como linea (no dos puntos),
+-- la tarifa por km, el coche, y la reputacion del conductor con numero y rese~nas.
+
+-- ── La ruta como LINESTRING, no como par de puntos ──────────────────────────────────────
+--
+-- «Passenger: tracking within 1-2 km of all drivers driving on the same route» no es lo mismo
+-- que «cerca de mi». Un conductor Berlin→Potsdam pasa a 800 m de alguien de Wannsee que no
+-- esta ni en el origen ni en el destino: con dos puntos ese pasajero no existe; con la
+-- polilinea, `ST_DWithin(ruta, pasajero, 2000)` lo encuentra.
+--
+-- `geography(linestring,4326)` mide en METROS sobre el elipsoide, asi que el radio del docx
+-- se escribe tal cual: 2000. No hay que proyectar nada.
+alter table plans add column if not exists ruta geography(linestring,4326);
+alter table plans add column if not exists via  text[];            -- los barrios por los que pasa
+create index if not exists plans_ruta_gist on plans using gist (ruta);
+
+-- ── Tarifa: «the system gives a parameter (min. and max.) for the price/km» ──────────────
+--
+-- El docx pide que el precio se calcule por km y que el rango sea CONFIGURABLE. Se guarda la
+-- distancia ya calculada (la ruta no cambia) y el precio por km que puso el conductor; el
+-- total es una multiplicacion, no un servicio.
+alter table plans add column if not exists distancia_km   numeric(6,1);
+alter table plans add column if not exists precio_por_km  numeric(4,2);   -- EUR/km
+alter table plans add column if not exists recurrente     text;           -- null | weekdays | daily
+
+-- ── El coche y quien lo conduce ─────────────────────────────────────────────────────────
+alter table profiles add column if not exists conduce      boolean not null default false;
+alter table profiles add column if not exists coche        text;          -- «VW Golf · gris»
+alter table profiles add column if not exists plazas_coche int;
+alter table profiles add column if not exists desde_offset int;           -- meses como miembro
+
+-- ── Driver rating & review ──────────────────────────────────────────────────────────────
+--
+-- El esquema ya tenia `verification` (0..3), `completed_plans` y `reports`, y los tres pesan en
+-- el componente `trust` del scoring. Lo que faltaba es lo que el pasajero MIRA antes de subirse:
+-- una nota y rese~nas escritas por personas con nombre.
+--
+-- La nota se guarda DESNORMALIZADA en el perfil porque la demo la lee en cada tarjeta de
+-- resultado y no vamos a hacer un `avg()` por fila; `valoraciones` es la fuente y el trigger
+-- no existe a proposito (regla 1: sin migraciones, el seed escribe las dos cosas coherentes).
+alter table profiles add column if not exists nota          numeric(2,1);  -- 0.0 .. 5.0
+alter table profiles add column if not exists notas_conteo  int not null default 0;
+
+create table if not exists valoraciones (
+  id           uuid primary key default gen_random_uuid(),
+  conductor_id uuid not null references profiles(id) on delete cascade,
+  autor_id     uuid not null references profiles(id) on delete cascade,
+  estrellas    int  not null check (estrellas between 1 and 5),
+  texto        text,
+  texto_lang   text,                                -- de | en — la demo es bilingue tambien aqui
+  dia_offset   int  not null default -7,            -- relativo, como TODA fecha del seed (regla 3)
+  creado       timestamptz not null default now()
+);
+create index if not exists valoraciones_conductor on valoraciones (conductor_id);
+alter table valoraciones enable row level security;

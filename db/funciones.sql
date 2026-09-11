@@ -14,6 +14,13 @@
 -- el mismo cast, Postgres ignora el indice y hace un escaneo secuencial. Devuelve lo mismo,
 -- mas lento, y sin avisar de nada.
 
+-- `create or replace` NO basta cuando cambia el tipo de retorno: Postgres responde
+-- `42P13 cannot change return type of existing function`. Y aqui cambia cada vez que el motor
+-- aprende a devolver un dato nuevo —paso el 11-sep-2026 al a~nadir la ruta del viaje—, asi que
+-- el fichero empieza tirandolas. Sigue siendo idempotente: `if exists` no falla si no estan.
+drop function if exists buscar_personas(halfvec, text, text, double precision, double precision, int, date, date, uuid, int);
+drop function if exists buscar_planes(halfvec, text, text, double precision, double precision, int, date, date, text, text, uuid, int);
+
 -- ── Personas ────────────────────────────────────────────────────────────────────────────
 create or replace function buscar_personas(
   q_vector      halfvec(2048),
@@ -109,13 +116,28 @@ create or replace function buscar_planes(
   origin_city text, dest_city text, is_travel boolean, venue text, subject text, tags text[],
   starts_at timestamptz, ends_at timestamptz, seats_open int, radius_km int,
   budget_band text, pace text, language_pref text[],
-  km double precision, similitud double precision, rrf double precision
+  via text[], distancia_km numeric, precio_por_km numeric, recurrente text,
+  -- El conductor viaja CON el viaje. Sin esto la tarjeta de un resultado no puede ense~nar
+  -- quien conduce, y «driver rating & review» del docx obligaria a una segunda consulta por
+  -- fila —el N+1 clasico— para pintar una estrella.
+  conductor text, conductor_coche text, conductor_nota numeric, conductor_notas int,
+  conductor_verificado int, conductor_viajes int,
+  km double precision, km_ruta double precision, similitud double precision, rrf double precision
 )
 language sql stable as $$
   with filtrados as (
     select p.*,
+           -- A que distancia esta quien pregunta de ESTE viaje. Para un concierto es la
+           -- distancia al sitio; para un coche es la distancia A LA RUTA, que casi siempre es
+           -- menor: el conductor pasa cerca de ti sin salir ni llegar donde tu estas.
            case when q_lon is null then null
-                else st_distance(p.geo, st_point(q_lon, q_lat)::geography) / 1000.0 end as km_calc
+                else least(
+                  st_distance(p.geo, st_point(q_lon, q_lat)::geography),
+                  coalesce(st_distance(p.ruta, st_point(q_lon, q_lat)::geography), 1e12)
+                ) / 1000.0 end as km_calc,
+           case when q_lon is null or p.ruta is null then null
+                else st_distance(p.ruta, st_point(q_lon, q_lat)::geography) / 1000.0
+           end as km_ruta_calc
     from plans p
     where (q_excluir is null or p.owner_id <> q_excluir)
       -- Un plan al que se llega es un plan futuro. Lo pasado no es un match peor: no es match.
@@ -127,6 +149,14 @@ language sql stable as $$
       and (
         q_dest_city is not null or q_lon is null
         or st_dwithin(p.geo, st_point(q_lon, q_lat)::geography,
+                      greatest(q_radio_km, p.radius_km) * 1000.0)
+        -- EL REQUISITO CENTRAL DE `pickando.docx`: «Passenger: tracking within 1-2 km of all
+        -- drivers driving on the same route». Un pasajero de Wannsee no esta ni en Berlin-Mitte
+        -- ni en Potsdam, pero el conductor le pasa a 800 m. Con dos puntos ese pasajero NO
+        -- EXISTE; con la polilinea, aparece. Es la diferencia entre «cerca de mi» y «va por
+        -- donde yo voy», y es la unica consulta que distingue un coche compartido de un
+        -- tablon de anuncios.
+        or st_dwithin(p.ruta, st_point(q_lon, q_lat)::geography,
                       greatest(q_radio_km, p.radius_km) * 1000.0)
       )
       and (q_desde is null
@@ -155,8 +185,12 @@ language sql stable as $$
          f.origin_city, f.dest_city, f.is_travel, f.venue, f.subject, f.tags,
          f.starts_at, f.ends_at, f.seats_open, f.radius_km,
          f.budget_band, f.pace, f.language_pref,
-         f.km_calc, fu.sim, fu.rrf
-  from fusion fu join filtrados f on f.id = fu.id
+         f.via, f.distancia_km, f.precio_por_km, f.recurrente,
+         d.display_name, d.coche, d.nota, d.notas_conteo, d.verification, d.completed_plans,
+         f.km_calc, f.km_ruta_calc, fu.sim, fu.rrf
+  from fusion fu
+  join filtrados f on f.id = fu.id
+  left join profiles d on d.id = f.owner_id
   order by fu.rrf desc
   limit q_limite;
 $$;

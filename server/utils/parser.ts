@@ -26,6 +26,10 @@ export interface Intencion {
   subject_specificity: 'named' | 'genre' | 'open'
   language: 'de' | 'en'
   category: string | null
+  /** La frase va de moverse en coche: ofrecer o buscar plaza. `pickando.docx`. */
+  trayecto: boolean
+  /** Adonde va, tal y como lo escribio: puede ser un barrio, no solo una ciudad. */
+  hacia: string | null
   subject: string | null
   city: string | null
   dest_city: string | null
@@ -93,20 +97,36 @@ Usa siempre la grafia sin dieresis: Dusseldorf, Koln, Munchen.
 
 ## Resto de campos
 
-- "category": uno de concert, football, weekend_trip, holiday, restaurant, activity. null si la
-  frase no lo dice ("algo espontaneo" -> null).
+- "category": uno de concert, football, weekend_trip, holiday, restaurant, activity, commute,
+  errands, nightlife, gym. null si la frase no lo dice ("algo espontaneo" -> null).
+  Las cuatro ultimas son MOTIVOS DE VIAJE EN COCHE: "commute" es ir o volver del trabajo,
+  "errands" recados o compras, "nightlife" salir de noche, "gym" entrenar.
+- "trayecto": true si la frase va de MOVERSE EN COCHE — ofrecer o buscar plaza, una ruta, una
+  hora de salida, un sitio al que llegar. "Ich fahre morgen um 8 nach Mitte, zwei Plaetze frei"
+  -> true. "Ich habe ein Ticket fuer Burna Boy" -> false: eso es un plan, no un viaje.
+- "hacia": el sitio AL QUE SE VA cuando es un trayecto, tal y como lo escribe la persona —
+  puede ser un barrio ("Mitte", "Ehrenfeld"), no solo una ciudad. null si no lo dice.
+  OJO: "dest_city" es SOLO una ciudad. Un barrio va en "hacia", nunca en "dest_city".
 - "subject_specificity": "named" si nombra un artista, equipo o sitio concreto; "genre" si solo
   dice el estilo (techno, afrobeats); "open" si no dice nada.
-- "must_match" / "nice_to_have": etiquetas cortas en ingles, snake_case.
+- "must_match" / "nice_to_have": etiquetas cortas en ingles, snake_case. **Maximo 3 en total
+  entre las dos listas**: cada token que escribes es tiempo que el usuario espera mirando una
+  pantalla, y tres etiquetas ya discriminan.
 - "confidence": 0..1. Si dudas entre dos arquetipos, pon el segundo en "archetype_secundario".
-- "unparsed": trozos de la frase que no supiste colocar.
+- "unparsed": trozos de la frase que no supiste colocar. Deja la lista VACIA salvo que de
+  verdad haya algo que no encajaba en ningun campo.
 
 Devuelve exactamente estas claves: archetype, archetype_secundario, has_concrete_event,
 user_has_booking, subject_specificity, language, category, subject, city, dest_city,
 fecha {expresion, mes}, seats_open, must_match, nice_to_have, pace, budget_band, confidence,
-unparsed.`
+unparsed, trayecto, hacia.`
 
-const CATEGORIAS = ['concert', 'football', 'weekend_trip', 'holiday', 'restaurant', 'activity']
+// Las seis primeras son planes; las cuatro ultimas, motivos de viaje en coche. Conviven en la
+// misma columna a proposito: el motor no distingue «plan» de «trayecto», y por eso el mismo
+// motor sirve a los dos productos del hilo de Workana (docs/conocimiento/07-pickando-vs-alonno.md).
+const CATEGORIAS = ['concert', 'football', 'weekend_trip', 'holiday', 'restaurant', 'activity',
+  'commute', 'errands', 'nightlife', 'gym']
+const CATEGORIAS_DE_COCHE = ['commute', 'errands', 'nightlife', 'gym']
 const ARQUETIPOS: Arquetipo[] = ['plan_seeks_person', 'plan_seeks_plan', 'intent_seeks_any', 'standing_interest']
 const MESES = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august',
   'september', 'october', 'november', 'december']
@@ -142,6 +162,10 @@ export function normalizar(bruto: any): Intencion {
         ? String(bruto.fecha.mes).toLowerCase() : null,
     },
     seats_open: Number.isFinite(bruto?.seats_open) ? Number(bruto.seats_open) : null,
+    // Una categoria de coche implica trayecto aunque el modelo no marque la bandera: el codigo
+    // aplica el arbol, el modelo solo extrae hechos (la regla que sostiene toda la Capa 0).
+    trayecto: Boolean(bruto?.trayecto) || CATEGORIAS_DE_COCHE.includes(bruto?.category),
+    hacia: typeof bruto?.hacia === 'string' && bruto.hacia.trim() ? bruto.hacia.trim() : null,
     must_match: lista(bruto?.must_match),
     nice_to_have: lista(bruto?.nice_to_have),
     pace: ['relaxed', 'moderate', 'intense'].includes(bruto?.pace) ? bruto.pace : null,
@@ -278,14 +302,57 @@ export function resolverVentana(i: Intencion, ahora = new Date()): Ventana {
  * normal, y la regla 8 prohibe disimularlo. */
 export function parsearSinModelo(q: string): Intencion {
   const t = q.toLowerCase()
+  // «Düsseldorf» y «Duesseldorf» son la misma ciudad, y la segunda es como la escribe media
+  // Alemania en un teclado que no es el suyo. Sin plegar los digrafos, la frase 1 de Helder
+  // escrita «Duesseldorf» perdia la ciudad entera: `city: null`, sin centro y sin radio.
   const sinTildes = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/ae/g, 'a').replace(/oe/g, 'o').replace(/ue/g, 'u').replace(/\u00df/g, 'ss')
   const aleman = /\b(ich|nicht|und|habe|suche|jemanden|moechte|mochte|wochenende|freund)\b/.test(sinTildes)
 
   const CIUDADES = ['berlin', 'dusseldorf', 'koln', 'frankfurt', 'munchen', 'munich', 'cologne', 'barcelona']
   const encontrada = CIUDADES.find((c) => sinTildes.includes(c)) ?? null
-  const ciudad = encontrada
+  let ciudad = encontrada
     ? { munich: 'Munchen', cologne: 'Koln' }[encontrada] ?? encontrada[0].toUpperCase() + encontrada.slice(1)
     : null
+
+  // ── LOS TRAYECTOS, SIN MODELO ───────────────────────────────────────────────────────────
+  //
+  // Esto no es un adorno del respaldo: es lo que hace que la demo no dependa del proveedor.
+  // Medido el 11-sep-2026, la Capa 0 se degrado en 3 de 7 busquedas seguidas —el proveedor
+  // tardaba mas de 11 s— y el respaldo devolvia `city: null` y `trayecto: false`, o sea sin
+  // centro geografico y sin radio de 2 km: a un berlines se le contestaba con coches de
+  // Dusseldorf. Un respaldo que no entiende la frase mas comun del producto no es un respaldo.
+  //
+  // «von X nach Y», «from X to Y», «nach Y», «to Y», «Richtung Y», «towards Y». El nombre del
+  // sitio se deja tal cual: `centroDe()` ya resuelve barrios y ciudades, y sin diacriticos.
+  const DE_A = [
+    /\bvon\s+([a-zaeoeuess.\- ]{3,28}?)\s+nach\s+([a-zaeoeuess.\- ]{3,28}?)(?=[,.;!?]|\s+(?:um|am|gegen|morgen|heute|mit|und|zwei|ein)\b|$)/,
+    /\bfrom\s+([a-z.\- ]{3,28}?)\s+to\s+([a-z.\- ]{3,28}?)(?=[,.;!?]|\s+(?:at|on|around|tomorrow|today|with|and|every|each|most|in|for)\b|$)/,
+  ]
+  const SOLO_A = [
+    /\b(?:nach|richtung)\s+([a-zaeoeuess.\- ]{3,28}?)(?=[,.;!?]|\s+(?:um|am|gegen|morgen|heute|mit|und|zwei|ein|fahren|faehrt)\b|$)/,
+    /\b(?:to|towards|toward)\s+([a-z.\- ]{3,28}?)(?=[,.;!?]|\s+(?:at|on|around|tomorrow|today|with|and|every|each|most)\b|$)/,
+  ]
+  const limpiar = (x: string) => x.trim().replace(/\s+/g, ' ').replace(/[.,;]+$/, '')
+  let desde: string | null = null
+  let hacia: string | null = null
+  for (const re of DE_A) {
+    const m = sinTildes.match(re)
+    if (m) { desde = limpiar(m[1]); hacia = limpiar(m[2]); break }
+  }
+  if (!hacia) {
+    for (const re of SOLO_A) {
+      const m = sinTildes.match(re)
+      if (m) { hacia = limpiar(m[1]); break }
+    }
+  }
+  // Las palabras que delatan un coche aunque la frase no diga ni origen ni destino.
+  const hayCoche = /\b(mitfahr|mitfahrgelegenheit|fahre|faehrt|fahrt|fahren|platz frei|plaetze frei|plaetze|auto|beifahrer|pendel|rideshare|ride|lift|driving|drive|drives|car|seat|seats|carpool|commute)\b/
+    .test(sinTildes)
+  const trayecto = Boolean(hacia) || hayCoche
+  // El origen manda sobre la ciudad suelta: «von Neukolln nach Mitte» centra en Neukolln, no en
+  // el primer nombre de ciudad que aparezca en la frase.
+  if (desde) ciudad = desde
 
   let expresion: Expresion = 'sin_fecha'
   if (/\b(morgen|tomorrow)\b/.test(sinTildes)) expresion = 'manana'
@@ -300,20 +367,31 @@ export function parsearSinModelo(q: string): Intencion {
   const conReserva = /\b(habe noch ein ticket|extra ticket|spare ticket|reserviert|booked|gebucht|have an extra)\b/
     .test(sinTildes)
 
+  // Un trayecto de diario se pide para hoy o para ma~nana, no «alguna vez»: si la frase habla de
+  // coche y no dice cuando, se asume hoy. Sin esto el filtro de fecha no acota nada y salen
+  // viajes de dentro de tres semanas por delante del de las 08:10.
+  if (trayecto && expresion === 'sin_fecha' && /\b(frueh|morgens|jetzt|gleich|now|early|morning)\b/.test(sinTildes)) {
+    expresion = 'hoy'
+  }
+
   return normalizar({
     archetype: 'intent_seeks_any',
     has_concrete_event: conReserva,
     user_has_booking: conReserva && !sinReserva,
-    subject_specificity: 'open',
+    subject_specificity: hacia ? 'named' : 'open',
     language: aleman ? 'de' : 'en',
-    category: null,
-    subject: null,
+    category: trayecto ? 'commute' : null,
+    subject: hacia,
     city: ciudad,
     dest_city: null,
     fecha: { expresion, mes: null },
+    trayecto,
+    hacia,
     must_match: [],
     nice_to_have: [],
     confidence: 0,
-    unparsed: ['la Capa 0 no respondio: esto es un analisis de reserva por reglas'],
+    unparsed: [trayecto
+      ? 'la Capa 0 no respondio: el trayecto se leyo por reglas (origen, destino y hora)'
+      : 'la Capa 0 no respondio: esto es un analisis de reserva por reglas'],
   })
 }
