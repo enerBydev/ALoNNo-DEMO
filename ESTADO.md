@@ -1,4 +1,4 @@
-# ESTADO — las 5 capas funcionando, dias 2 a 7 hechos (10 de septiembre de 2026)
+# ESTADO — prototipo navegable y las 5 capas (11 de septiembre de 2026)
 
 Entrega: **miercoles 16 de septiembre**. Ventana de feedback pedida: **3 dias habiles → hasta el
 lunes 21**. Quedan 6 dias de construccion.
@@ -193,6 +193,19 @@ contrario al de la consulta — el criterio del §3.
   demo**. Si el limite de 12 s salta, la respuesta usa el parser de reglas y **lo declara**.
 - **La cache se invalida subiendo la version de la clave** (`v5:` hoy). Hay que subirla al tocar
   CUALQUIER capa, no solo el scoring: paso hoy y las frases seguian dando el resultado viejo.
+
+## Lo que cambio el 10-11 de septiembre
+
+- **El prototipo** (ADR-0004): la demo pasa de una pagina a **ocho rutas** con los tres flujos
+  que vende la propuesta —*create a plan, find a person, agree to meet*— y sesion basica.
+  Verificado en Chromium: publicar un plan nuevo y **encontrarlo el primero** al buscarlo en
+  lenguaje natural.
+- **Workers Builds conectado**: el despliegue sale de `main`, no de esta maquina. Cierra REL-5 y
+  sostiene el *"nothing is staged for a demo; the demo is the branch"* de la propuesta.
+- **Aparecio `pickando.docx`** y cambia el panorama: el encargo publicado en Workana describe una
+  **app de coche compartido**, no ALoNNo. El paneo esta en el repo privado, en
+  `conocimiento/07-pickando-vs-alonno.md`.
+  **Hay que preguntarle a Helder cual de los dos productos esta vivo antes de seguir.**
 
 ## La lista de comprobacion del dia 16, antes de mandar el link
 
