@@ -1,7 +1,15 @@
-# ESTADO — prototipo navegable y las 5 capas (11 de septiembre de 2026)
+# ESTADO — la demo es un coche compartido (11 de septiembre de 2026)
 
 Entrega: **miercoles 16 de septiembre**. Ventana de feedback pedida: **3 dias habiles → hasta el
-lunes 21**. Quedan 6 dias de construccion.
+lunes 21**. Quedan 5 dias de construccion.
+
+> **El giro del dia.** Hasta hoy la demo emparejaba **planes sociales**. `pickando.docx` —el
+> adjunto del encargo publicado en Workana— describe una **app de coche compartido**, y es lo que
+> el anuncio paga. La demo pasa a ser eso **sin tirar el motor**, porque los dos productos son el
+> mismo problema: alguien con plazas libres y una ventana de tiempo, y alguien que quiere
+> coincidir en espacio, direccion y hora. Las 10 frases de Helder siguen funcionando.
+>
+> **Sigue haciendo falta preguntarle a Helder cual de los dos productos esta vivo** (`86bbyvz4w`).
 
 ## Lo que hay construido, verificado hoy
 
@@ -9,209 +17,144 @@ lunes 21**. Quedan 6 dias de construccion.
 |---|---|
 | Nuxt 4.5.2 + Nitro, preset `cloudflare_module` | desplegado: <https://alonno-demo.enerby212.workers.dev> |
 | Base en **Frankfurt** (`qbrgwphcpflbwhfqhffc`) | pgvector 0.8.2 · PostGIS 3.3.7 · pg_trgm 1.6 |
-| `db/schema.sql` aplicado | `profiles`/`plans`/`intents` · **`vector(2048)`** · 12 indices · HNSW sobre **`halfvec(2048)`** · idempotencia probada |
-| La app alcanza la base | `/api/salud` → `{"estado":"ok","bd":"ok","region_bd":"eu-central-1 (Frankfurt)"}` — hace una lectura real de `profiles` |
-| methodOS | `just ci` exit 0 · `methodos-doctor.py .` GATE VERDE · revisor maquina aprobando los PR |
-| Base de conocimiento | **13 informes** de auditoria en `docs/conocimiento/`, **9.114 lineas** (repo privado) |
-| RLS activo en las tres tablas | INSERT anonimo → `401 violates row-level security`; probado como codigo en `tests/rls.test.ts` |
-| Gate de documentacion | `just hechos` dentro de `just ci`: al instalarlo cazo 8 afirmaciones falsas |
+| El esquema, con la capa de coche | `profiles`/`plans`/`intents`/`intereses`/`valoraciones` · `vector(2048)` · HNSW sobre `halfvec(2048)` · `ruta geography(linestring)` con indice GiST |
+| El mundo sembrado | 240 perfiles (**120 conductores**) · 300 planes, de los que **120 son trayectos de diario** y **254 tienen ruta** · 42 intents · **1.185 valoraciones** bilingues, nota media **4,72** |
+| La app alcanza la base | `/api/salud` → `{"estado":"ok","bd":"ok","region_bd":"eu-central-1 (Frankfurt)"}` |
+| methodOS | `just ci` exit 0 · **50 tests** · gitleaks sin fugas · `hechos` y `superficie` en verde · revisor maquina aprobando los PR |
+| Base de conocimiento | **16 informes** en `docs/conocimiento/` (repo privado), con los tres de hoy |
+| RLS activo en las cinco tablas | INSERT anonimo → `401 violates row-level security`; probado en `tests/rls.test.ts` |
 
-### Dia 3 · el seed (hecho)
+## El motor, ahora que empareja coches
 
-240 perfiles · 180 planes · 42 intents sembrados en Frankfurt con sus embeddings. De ellos,
-**100 perfiles y 40 planes plantados a mano**, uno por cada frase de Helder, con su match
-perfecto y sus cuatro near-miss. `db/seed.json` **no contiene ni una fecha**: el tiempo son
-desplazamientos que `just sembrar` materializa y `just reanclar` desplaza. Determinismo
-comprobado por `just seed-determinista`.
+Las cinco capas del §6 siguen exactamente donde estaban. Lo que cambio es el **dominio** y una
+consulta:
 
-### Dia 4 · Capas 0, 1 y 2 (hecho)
+- **La ruta es una linea, no dos puntos.** `st_dwithin(p.ruta, punto, 2000)` encuentra al
+  conductor que **pasa** por tu barrio sin salir ni llegar alli. Es el requisito central del
+  docx —*«tracking within 1-2 km of all drivers driving on the same route»*— y es literalmente
+  invisible con dos puntos. Medido: **8 conductores pasan por Kreuzberg** sin salir ni llegar
+  a menos de 1,2 km de alli.
+- **Dos radios, una consulta**: 2 km si la frase es un trayecto, 40 km si es un plan.
+- **La nota del conductor pesa en el score.** Hasta hoy `trust` estaba clavado a 0,6 porque no
+  habia dato. Con menos de 3 valoraciones la nota **no cuenta** (ni se ense~na): un 5,0 de una
+  persona no es mejor que un 4,7 de treinta y siete.
+- **Una tercera banda de calibracion**, medida y no estimada. El texto de un viaje son quince
+  palabras; el de un plan, dos frases. Con la banda de los planes, el viaje perfecto se quedaba
+  en 74 %. Con la suya —piso 0,30, techo 0,60, sacados de 29 similitudes reales— da **87 %**.
 
-`GET /api/buscar?q=<frase>` responde con la intencion interpretada y los candidatos.
+## Los cuatro fallos que rompian la demo antes que ningun diseno
 
-- **Capa 0** — el modelo extrae los HECHOS; **el codigo aplica el arbol del §9-A**. Medido: el
-  modelo acertaba `user_has_booking` y fallaba la taxonomia, clasificando la frase 6 como
-  `plan_seeks_person`. Ahora el arquetipo lo decide `decidirArquetipo()`, que esta probado.
-  Tambien **el modelo no escribe fechas**: devuelve una expresion de un conjunto cerrado y
-  `resolverVentana()` la resuelve contra el reloj.
-- **Capa 1 y 2** — en Postgres (`db/funciones.sql`): filtros duros con PostGIS y fusion RRF de
-  HNSW + `tsvector`.
-- **`thinking: false` NO es opcional**: medido, baja la Capa 0 de 6,9 s a 0,5 s en una llamada
-  simple. Sin el, el modelo gasta los 300 tokens de salida enteros razonando.
+Los encontro la critica de UI/UX **usando el producto desplegado con un navegador real**, no
+leyendo el codigo. Los cuatro estan arreglados y tres tienen test:
 
-### Dia 5 · Capas 3 y 4 (hecho)
+1. **Ninguna llamada al proveedor tenia techo.** Una busqueda tardo **82 s** con las capas 0-3
+   sumando 10: los otros 70 eran una peticion colgada. Ahora hay techo por llamada (6 s
+   embedding, 14 s chat) y **presupuesto de 20 s** para la peticion entera; la Capa 4 —la prosa,
+   la unica capa que el cliente no necesita— cobra lo que sobre y se salta si no sobra.
+2. **El desglose no sumaba.** `28+18+15+15+10+4+3` son **93** y la pantalla decia **91**. Reparto
+   del resto mayor, con `tests/reparto.test.ts`. Golpeaba la unica promesa que la demo hace en
+   voz alta: *«a number you can check by hand»*.
+3. **El orden contradecia al numero.** La lista salia `91·72·71·69·63·60·54·54·**86**·46`: un
+   86 % nueve puestos por debajo de dos 54 %, porque se ordenaba por el numero ya multiplicado y
+   se ense~naba el numero sin multiplicar. Ahora son **dos listas**, cada una con su orden.
+4. **`centroDe` conocia nueve ciudades** y la Capa 0 devuelve barrios. Sin centro no hay filtro
+   de radio: a un berlines se le contestaba con coches de Dusseldorf. Los 63 barrios se
+   **generan** de los catalogos del seed (`scripts/generar-lugares.py`) para que no haya dos
+   verdades sobre donde esta Kreuzberg.
 
-- **Capa 3 · scoring determinista.** Los siete pesos del §7 intactos; lo que se a~nade es la
-  normalizacion del ADR-0002 (piso y techo declarados por componente). **19 pruebas**, entre
-  ellas que un match impecable entra en la banda **88-95%** que exige el §9.
-- **Capa 4 · explicaciones.** El modelo recibe los tres componentes que mas aportan, **con sus
-  puntos ya calculados**, y escribe una frase. Si se cuela un numero en la prosa, se borra: el
-  modelo escribe la oracion, nunca el numero (regla 6).
-- **La regla de mezcla por arquetipo.** El §9-A pide cosas distintas segun la frase: la 1 quiere
-  personas (quien pregunta ya tiene la entrada), la 7 quiere planes, la 6 mezcla. Es un
-  multiplicador por tipo, no un filtro: los dos siguen apareciendo y etiquetados (§10.4).
-- **Cache sobre KV**: la misma frase pasa de **15,9 s a 0,33 s**. Las 10 frases son clicables y
-  se van a repetir el dia de la revision.
-- **Resistencia**: reintento con espera en las llamadas al proveedor —dos de diez frases dieron
-  502 en una tanda y funcionaron al reintentar— y un **parser de reserva por reglas** si la Capa
-  0 no responde. Se pierde precision, no la demo, y la respuesta lo declara con `degradado: true`.
+Y uno mas, que no estaba en la lista: **`/buscar?q=…` entraba en bucle de redirecciones** porque
+`navigateTo()` corria en SSR y Nuxt reescribia `%20` como `+`. Ningun enlace a una busqueda
+funcionaba, ni recargar la pagina.
 
-**Las 10 frases de Helder devuelven resultado**, todas con un resultado del top 3 en el idioma
-contrario al de la consulta. `just frases` lo comprueba y de paso calienta la cache.
+## La demo ya no depende del proveedor de IA
 
-### Dia 6 · la UI (hecho)
+Es el cambio que mas tranquilidad compra para el dia 16. **El respaldo por reglas entiende
+trayectos** («von X nach Y», «Richtung Y», «from X to Y», los digrafos `ue`/`oe`/`ae`), asi que
+con la Capa 0 **apagada** la busqueda perfecta sigue dando **87 %** y el mundo sigue filtrado por
+ciudad y radio. Antes, degradarse significaba `city: null` y contestar con coches de otra ciudad.
 
-Una sola pagina, como pide el §10. **Sin selector de modo**: el sistema deduce el arquetipo, que
-es la respuesta de producto a «no quiero que los usuarios llenen 20 filtros».
+Ademas, **los campos Desde / Hasta / Cuando son un camino que no toca el modelo**: corregir uno
+relanza la busqueda en menos de un segundo, siempre.
 
-- Un textarea, y debajo **las 10 frases de Helder, verbatim y clicables** (regla 4).
-- **Panel «asi lo entendi»**: el arquetipo en lenguaje humano —«You have a plan and you are
-  looking for a person»—, mas ciudad, categoria, tema y fecha.
-- Resultados **etiquetados PERSONA / PLAN**, con el porcentaje grande, la explicacion en el
-  idioma de la consulta, y un desplegable con **los 7 componentes y sus puntos**.
-- Enlace **«ver descartados»** con el motivo de cada uno.
-- Pie con el **desglose de tiempos por capa** y el aviso de datos sinteticos.
-- Selector DE/EN de la interfaz.
+## La cara nueva
 
-**Verificado en un navegador real** (Chromium + Playwright, no un `curl`): la pagina monta, las
-10 frases son clicables, una busqueda devuelve 12 resultados, el desglose tiene 7 filas y **suma
-exactamente el porcentaje que ense~na**, y no hay ni un error de consola.
+- **Un color de accion y uno de alarma.** El naranja anterior era marca, boton, barra, avatar,
+  etiquetas y enlaces a la vez. Y dos colores fallaban: `--tenue` sobre `--papel` daba **4,37:1**
+  —por debajo de AA— justo en la linea que decide la compra, y `--linea` daba **1,25:1**, o sea
+  bordes invisibles.
+- **Inter auto-alojada** por `@nuxt/fonts` (sin `<link>` a Google: el cliente es aleman), cifras
+  tabulares, escala 12/13/15/16/18/22/28/40 y espaciado de 4 px.
+- **La portada ES el producto**, con una busqueda ya hecha y cacheada. Antes era una pagina que
+  explicaba el producto y lo dejaba a dos clics — el mismo error que hizo que este cliente dijera
+  que no entendia lo que le ense~naban.
+- **Mapa** con la ruta, el circulo metrico de 2 km y la posicion del pasajero.
+- **La tarjeta de viaje** con jerarquia de movilidad: hora de salida a 22 px, ruta a 18, el
+  desvio («pasa a 0,3 km de ti») siempre visible, foto, nota, coche, plazas, precio, y el
+  porcentaje en su propia columna.
 
-### Dia 7 · calibracion (hecho)
+## El ecosistema: dos paquetes, no diez
 
-**El match impecable de la frase 1 pasa de 68% a 91%**, dentro de la banda 88-95% que exige el
-§9 y coherente con el 92% que el cliente tiene en su PDF.
+Medido en un banco de pruebas con el mismo Nuxt y el mismo preset, construyendo ocho veces:
+**`@nuxt/ui` 4.11.1** y **`@nuxtjs/leaflet` 1.3.2**. DevTools ya venia dentro de Nuxt y estaba
+apagado. Se descartan con numeros **Content** (+148 KB gzip de Worker para tres paginas de
+texto), **Image** (imposible: su proveedor de Cloudflare exige una zona y la demo vive en
+`workers.dev`) y **MapLibre** (5,5x mas pesado y exige WebGL).
 
-La leccion del dia 7, medida: **la similitud coseno no vive en el mismo sitio segun que se
-compare.** Consulta contra la bio de una persona da como maximo **0,424** en este corpus;
-consulta contra el texto de un plan llega a **0,724**. Con una sola banda de normalizacion, un
-perfil perfecto se quedaba en 12,5 de los 30 puntos que el peso del gusto promete. Ahora hay dos
-bandas declaradas, y **los pesos del §7 siguen intactos** — que es lo que la regla 7 protege.
-
-Y un fallo que las pruebas no cazaban: `reforzarFecha` corregia la fecha **despues** de que
-`normalizar` hubiera decidido el arquetipo, asi que la correccion no llegaba a ninguna parte. La
-prueba unitaria llamaba a las dos funciones por separado — que es justo lo que el codigo real no
-hace. Corregido, y la prueba ahora comprueba el objeto que devuelve la funcion.
-
-## Decisiones cerradas (§8 dice: decidir el dia 2 y no volver a tocarlo)
-
-- **Hosting**: Cloudflare Workers. **Base**: Supabase Frankfurt, org `enerbydev`.
-- **Embeddings**: **`nvidia/nemotron-3-embed-1b`** · **2048 dim** · via NVIDIA NIM. Elegido
-  midiendo (`scripts/gate-embeddings.py`): recall@1 8/8 y margen +0.340 sobre 8 pares DE↔EN de
-  las frases reales de Helder, frente a 8/8 y +0.319 de `text-embedding-3-small`. **Decidio el
-  cupo, no la calidad**: el AI Gateway de Vercel corta con `429` a la segunda tanda y sembrar son
-  ~420 items.
-  **Es ASIMETRICO**: `input_type` = `passage` al sembrar, `query` al consultar. Sin ese parametro
-  el recall cae a 7/8 y el margen se hunde a +0.091 — **sin dar ningun error**.
-- **LLM (Capas 0 y 4)**: `nvidia/nemotron-3.5-lightning-30b-a3b`.
-- **Multilingue nativo**: NO hay que traducir al ingles antes de embeber. Se cae la opcion C del
-  §8 que se planeo cuando el candidato era `gte-small`.
-- **Indice sobre `halfvec(2048)`**: HNSW con el tipo `vector` topa en 2000 dimensiones. La columna
-  guarda precision completa. **Toda consulta tiene que llevar el mismo cast** o el planner ignora
-  el indice sin avisar. Comprobado con EXPLAIN: `Index Scan using profiles_embedding_hnsw`.
-
-## Dos incidentes cerrados hoy
-
-1. **`/api/diagnostico-ia` reenviaba `Authorization: Bearer NVIDIA_API_KEY`** al host que le
-   pasaran por `?base=`. Publico, sin auth, ~19 h expuesto. Retirado y desplegado.
-   → `incidentes/2026-09-10-proxy-abierto.md`
-2. **La base aceptaba escritura anonima**: RLS apagado en las tres tablas. Comprobado insertando
-   una fila real con la clave publishable (**HTTP 201**) y borrandola. Cerrado, llevado al
-   esquema y probado como codigo. → `incidentes/2026-09-10-rls-apagado.md`
-
-**Pendiente de Rene: rotar la clave `nvidia-nim`.**
-
-## Lo que la auditoria cambio del plan (y hay que decidir HOY)
-
-1. **El §12 dimensiona mal el riesgo nº1.** Manda re-sembrar el 16 antes de enviar el link, pero
-   la ventana de feedback llega al **lunes 21**: si Helder abre la demo el 18, «Bayern gegen
-   Dortmund morgen» ya caduco y **5 de las 10 frases devuelven vacio**. Re-sembrar una vez no
-   basta: **las fechas tienen que rodar solas** (Cron Trigger diario que re-ancle, o fechas
-   calculadas como offset desde `now()`).
-2. **La escala del scoring no llega a lo prometido.** Con las formulas del §7 tal cual, un match
-   impecable da **~72%** y como maximo 79%. El brief §9 exige la banda **88–95%** y el PDF que el
-   cliente tiene en la mano ense~na un **92%**. La discriminacion relativa si funciona (~72%
-   frente a ~42% del near-miss). Falta decidir **la normalizacion de cada componente**.
-3. **La frase 6 falla por dise~no del propio brief.** El §6 deja `has_concrete_event=true` para
-   ella, pero la regla de mezcla del §7 solo sube los planes cuando es `false` — justo la unica
-   frase donde el brief exige un plan en el top-1. Arreglo propuesto: separar
-   `has_concrete_event` (¿existe el evento?) de `user_has_booking` (¿lo tiene el usuario?) y atar
-   la regla de mezcla a la segunda.
-4. **El gate de este repo no mide documentacion.** `ESTADO.md` afirmaba `vector(384)` y
-   `gte-small` mientras el esquema era `vector(2048)` y el modelo nemotron — y **`just ci` paso en
-   verde con esa contradiccion dentro**. Este repo corre 7 verbos de los 12 del kernel: le faltan
-   `docs` y `hechos`, que son los que cazan exactamente esto.
-5. **El medidor da dos verdes falsos**: REL-5 y OPS-5 dicen git-connect, pero los 9 despliegues
-   son `source: wrangler` y Workers Builds responde `12000 Not found`.
-
-## El plan revisado
-
-**`docs/conocimiento/PLAN.md`**: el recorte de las 69,3 h que propusieron los auditores a las
-~10 h de aparato que caben sin robarle tiempo al motor, con el reparto dia a dia del 11 al 16.
-
-## Lo verificado contra el despliegue
-
-| Frase | Resultado |
-|---|---|
-| **1** (DE, Burna Boy) | `plan_seeks_person` · Dusseldorf · «am Samstag» → 2026-09-12 exacta. Top 1: **Amara, bio en INGLES**, a 0,5 km, con Burna Boy en sus artistas — el cross-lingua del §3, demostrado |
-| **6** (EN, Coldplay) | `intent_seeks_any` ✓ (el modelo decia `plan_seeks_person`; lo corrige el arbol). `has_concrete_event: true` + `user_has_booking: false`, que es justo la distincion del ADR-0003 |
-| **9** (DE, afrobeats) | `standing_interest` ✓ · Koln · **sin ventana temporal**, que es lo que la frase pide |
-
-## El problema abierto, y es de latencia
-
-La Capa 0 tarda entre **3,9 s y 15 s** contra el mismo modelo y la misma frase: la variabilidad
-es del proveedor, no del codigo (con `thinking:false` y el prompt real, tres frases seguidas dan
-3,8 · 3,8 · 3,9 s). **La demo no puede depender de eso en vivo.**
-
-La respuesta esta en el plan y hay que construirla el dia 5: **cache por frase normalizada** y
-**pre-calentado de las 10 frases de Helder** antes de mandar el link. Las diez frases clicables
-no deben tocar el LLM en vivo.
-
-## Las 10 frases de Helder, ahora mismo
-
-| # | Arquetipo | Top 1 | |
-|---|---|---|---|
-| 1 · DE Burna Boy | `plan_seeks_person` | **91%** PERSONA [en] Amara | ✓ |
-| 2 · EN Colonia | `plan_seeks_plan` | 61% PLAN | ~ hibrida: deberia mezclar persona y plan |
-| 3 · DE techno | `intent_seeks_any` | 72% PERSONA [en] | ✓ |
-| 4 · EN Bayern | `plan_seeks_person` | 79% PERSONA [en] | ✓ |
-| 5 · DE Frankfurt | `plan_seeks_person` | 72% PERSONA [en] | ✓ |
-| **6 · EN Coldplay** | `intent_seeks_any` | **89% PLAN [de] «ein Ticket übrig»** | ✓ **el momento estrella** |
-| 7 · DE Barcelona | `plan_seeks_plan` | 74% PLAN | ✓ |
-| 8 · EN Berlin abierto | `intent_seeks_any` | 70% PLAN [de] Livemusik | ✓ |
-| 9 · DE afrobeats | `standing_interest` | 66-81% PERSONA | ✓ sin fecha, como pide |
-| 10 · EN senderismo | `plan_seeks_person` | 80% PERSONA [en] | ✓ |
-
-**Las 10 devuelven resultado**, y en 9 de 10 hay un resultado del top 3 escrito en el idioma
-contrario al de la consulta — el criterio del §3.
+El Worker pesa **1,46 MB** sin comprimir: el **2,3 %** del limite de 64 MiB.
 
 ## Lo que queda flojo, y se dice (regla 8)
 
-- **La frase 2 es hibrida** y hoy resuelve como `plan_seeks_plan`: deberia devolver personas
-  **y** planes mezclados. El brief lo marca como caso limite y la auditoria tambien.
-- **La latencia en frio va de 13 s a 46 s** por variabilidad del proveedor. Con la cache
-  caliente son **0,2-0,4 s**, y por eso `just frases` se corre **siempre antes de ense~nar la
-  demo**. Si el limite de 12 s salta, la respuesta usa el parser de reglas y **lo declara**.
-- **La cache se invalida subiendo la version de la clave** (`v5:` hoy). Hay que subirla al tocar
-  CUALQUIER capa, no solo el scoring: paso hoy y las frases seguian dando el resultado viejo.
+1. **`main` no esta protegida.** El unico ruleset es `prueba-de-disponibilidad-BORRAR`,
+   desactivado, y se ve en un repo publico.
+2. **`/api/salud` siempre responde `ok`.** Contesto en 0,29 s mientras `/api/buscar` colgaba
+   92 s. Una sonda que no puede estar en rojo no es una sonda.
+3. **La latencia en frio sigue siendo del proveedor**: la Capa 0 tarda entre **6,8 y 9,2 s**
+   (medido dos veces seguidas, 1.108 tokens de entrada y 190 de salida — el coste esta en la
+   salida). Con cache, 0,3 s. El plan para el dia 16 es **calentar la cache** de todas las frases
+   antes de mandar el link, y que el camino de los campos exista para lo que el cliente teclee.
+4. **El contador de solicitudes en la cabecera** no esta. Pedir plaza si responde: sale un aviso
+   y el boton cambia en el sitio.
+5. **Las bios del seed se repiten**: cuatro perfiles con el mismo texto literal pueden salir en
+   la misma pantalla, y eso se lee como datos falsos.
 
-## Lo que cambio el 10-11 de septiembre
+## Workers Builds SI despliega desde `main` — y el indicador que decia lo contrario miente
 
-- **El prototipo** (ADR-0004): la demo pasa de una pagina a **ocho rutas** con los tres flujos
-  que vende la propuesta —*create a plan, find a person, agree to meet*— y sesion basica.
-  Verificado en Chromium: publicar un plan nuevo y **encontrarlo el primero** al buscarlo en
-  lenguaje natural.
-- **Workers Builds conectado**: el despliegue sale de `main`, no de esta maquina. Cierra REL-5 y
-  sostiene el *"nothing is staged for a demo; the demo is the branch"* de la propuesta.
-- **Aparecio `pickando.docx`** y cambia el panorama: el encargo publicado en Workana describe una
-  **app de coche compartido**, no ALoNNo. El paneo esta en el repo privado, en
-  `conocimiento/07-pickando-vs-alonno.md`.
-  **Hay que preguntarle a Helder cual de los dos productos esta vivo antes de seguir.**
+La auditoria de DevOps de hoy concluyo que Workers Builds no estaba conectado, porque **las 39
+versiones del Worker decian `source: wrangler`**. La conclusion era razonable y es **falsa**, y
+conviene que conste por que:
+
+**Workers Builds ejecuta `npx wrangler deploy` DENTRO de la construccion**, asi que la version
+que crea queda etiquetada igual que un despliegue desde un portatil. El campo `source` no
+distingue las dos cosas, y no hay ningun otro campo que lo haga.
+
+Comprobado hoy extremo a extremo, que es la unica forma:
+
+| | |
+|---|---|
+| merge del PR #20 a `main` | 10:42 |
+| version 40 del Worker | **10:43:37**, 73 s despues |
+| ¿desplego alguien a mano? | no: nadie corrio `wrangler deploy`, y `.github/workflows/` solo tiene `ci.yml`, que **no despliega** |
+| ¿sirve produccion el codigo nuevo? | si: `<title>ALoNNo — find the driver going your way</title>`, mapa con 10 teselas y 6 tarjetas, en Firefox real |
+
+La leccion es la de siempre en este repo: **un campo que se lee como una prueba no siempre lo
+es**. Lo que prueba el git-connect es la cadena entera —empujar, esperar, y ver el cambio en
+produccion—, no un `source` en una respuesta JSON.
+
+## Lo siguiente, en orden
+
+1. Proteger `main` y borrar el ruleset de prueba.
+2. `/api/salud` que pueda estar en rojo: que toque el proveedor de IA y la base, con tiempos.
+3. Diversificar las bios del seed.
+4. **Re-sembrar el dia 16** y calentar la cache antes de mandar el link.
+5. El mensaje de entrega con la contrapropuesta y **la pregunta de cual de los dos productos
+   esta vivo**.
 
 ## La lista de comprobacion del dia 16, antes de mandar el link
 
 1. `just seed` y `just sembrar` — **re-sembrar**, para que las fechas vuelvan a ser relativas a
-   ese dia. Es el riesgo numero 1 del §12.
-2. Subir la version de la clave de cache en `server/api/buscar.get.ts` y desplegar.
-3. `just frases` — comprueba las 10 y **deja la cache caliente**: el cliente no espera nunca.
-4. Comprobar que no hay rutas de diagnostico publicadas.
-5. Escribir el mensaje del §13 en ingles, con los 11 puntos, **incluido lo que no quedo**.
+   ese dia. Es el bug mas probable de todo el proyecto y ocurre delante del cliente.
+2. `just frases` — las 10 frases de Helder, y que ninguna devuelva vacio.
+3. Abrir la demo en un navegador de verdad, no con `curl`.
+4. Calentar la cache de las frases y de los ejemplos de coche compartido.
+5. Escribir en el mensaje lo que **no** entra: pagos, tiempo real, chat, notificaciones, apps
+   nativas. Es literalmente lo que hizo que este cliente volviera despues de desaparecer una vez.
