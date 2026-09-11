@@ -155,7 +155,7 @@ const avatar = computed(() => {
         <span class="avatar" :style="{ background: avatar.color }">{{ avatar.inicial }}</span>
         <span class="nombre">{{ c.nombre }}</span>
         <span v-if="notaUtil" class="nota">
-          <UIcon name="i-lucide-star" class="estrella" />{{ c.nota.toFixed(1) }}
+          <span class="estrella" aria-hidden="true">★</span>{{ c.nota.toFixed(1) }}
           <span class="conteo">({{ c.notas }})</span>
         </span>
         <span v-else class="etiqueta ambar">New · {{ c.viajes }} rides</span>
@@ -239,7 +239,7 @@ const avatar = computed(() => {
 }
 .nombre { font-size: var(--t-16); font-weight: 600; }
 .nota { display: inline-flex; align-items: center; gap: 2px; font-size: var(--t-15); font-weight: 600; }
-.estrella { color: #E8A33D; }
+.estrella { color: #E8A33D; font-size: 1.05em; line-height: 1; }
 .conteo { font-size: var(--t-13); font-weight: 400; color: var(--tinta-3); }
 .coche { font-size: var(--t-13); color: var(--tinta-2); }
 

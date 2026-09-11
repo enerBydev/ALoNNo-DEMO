@@ -203,3 +203,21 @@ language sql stable as $$
   order by fu.rrf desc
   limit q_limite;
 $$;
+
+
+-- ── La geometria de un viaje, en GeoJSON ────────────────────────────────────────────────
+--
+-- PostgREST devuelve una columna `geography` como WKB HEXADECIMAL: una cadena de 300 caracteres
+-- que el navegador no sabe dibujar. La conversion la hace Postgres, que ya tiene la funcion.
+--
+-- Va como funcion y no como columna calculada porque la ficha de un viaje la pide UNA vez, y
+-- meterla en el `select=*` de todas las consultas de planes seria pagarla siempre.
+create or replace function geometria_de_plan(p_id uuid)
+returns json language sql stable as $$
+  select json_build_object(
+    'ruta',    case when p.ruta is null then null else st_asgeojson(p.ruta)::json end,
+    'origen',  st_asgeojson(p.origin_geo)::json,
+    'destino', st_asgeojson(p.geo)::json,
+    'radio_km', p.radius_km)
+  from plans p where p.id = p_id;
+$$;
