@@ -17,6 +17,16 @@ vence = "2026-12-08"
 estado = "nuevo"
 id = "GHSA:GHSA-82fw-gwwq-j7x9"
 
+[hallazgo."GHSA:GHSA-g7r4-m6w7-qqqr"]
+paquete = "esbuild"
+gravedad = "baja"
+titulo = "esbuild allows arbitrary file read when running the development server on Windows"
+origen = "pnpm-audit o npm-audit"
+visto = "2026-09-11"
+vence = "2027-03-10"
+estado = "nuevo"
+id = "GHSA:GHSA-g7r4-m6w7-qqqr"
+
 [hallazgo."GHSA:GHSA-rgj7-g3m4-5g8c"]
 paquete = "sharp"
 gravedad = "alta"

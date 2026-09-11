@@ -113,6 +113,11 @@ def texto_perfil(p):
 def texto_plan(p):
     partes = [p["title"], p["description"], p.get("subject") or "",
               " ".join(p.get("tags") or []), p["category"]]
+    # Los barrios por los que pasa la ruta entran en el embedding a proposito: «Ich suche eine
+    # Mitfahrgelegenheit durch Kreuzberg» tiene que encontrar al conductor que NO sale de
+    # Kreuzberg pero pasa por alli. Con solo origen y destino, ese conductor es invisible.
+    if p.get("via"):
+        partes.append("via " + " ".join(p["via"]))
     return " · ".join(x for x in partes if x)
 
 
@@ -161,6 +166,14 @@ def punto(g):
     return f"'SRID=4326;POINT({g[0]} {g[1]})'"
 
 
+def linea(puntos):
+    """La ruta como `geography(linestring)`. `null` cuando el plan no se conduce (un vuelo)."""
+    if not puntos or len(puntos) < 2:
+        return "null"
+    pares = ",".join(f"{p[0]} {p[1]}" for p in puntos)
+    return f"'SRID=4326;LINESTRING({pares})'"
+
+
 def rango(d):
     """Un tramo de disponibilidad, materializado contra `now()` como el resto del tiempo."""
     return (f"daterange((now() + interval '{d['desde_offset']} days')::date, "
@@ -199,7 +212,8 @@ def main():
     with open(SEED, encoding="utf-8") as f:
         seed = json.load(f)
     perfiles, planes, intents = seed["perfiles"], seed["planes"], seed["intents"]
-    print(f"seed: {len(perfiles)} perfiles · {len(planes)} planes · {len(intents)} intents")
+    print(f"seed: {len(perfiles)} perfiles · {len(planes)} planes · {len(intents)} intents "
+          f"· {len(seed.get('valoraciones') or [])} valoraciones")
 
     clave_nim = os.environ.get("NVIDIA_API_KEY") or secreto_gcp("nvidia-nim")
     print("  embeddings de perfiles…")
@@ -212,7 +226,7 @@ def main():
         emb_int = embeber([texto_intent(p) for p in intents], clave_nim)
 
     print("  vaciando…")
-    sql("truncate intents, plans, profiles restart identity cascade", token)
+    sql("truncate valoraciones, intereses, intents, plans, profiles restart identity cascade", token)
 
     # El ancla se fija UNA vez, antes de insertar, para que todas las filas cuelguen del mismo
     # instante. Si se tomara `now()` por fila, dos filas de la misma tanda quedarian a distinta
@@ -236,11 +250,15 @@ def main():
                 f"{lit(p.get('top_teams'))}::text[], {lit(p.get('cuisines'))}::text[], "
                 f"{lit(p.get('pace'))}, {lit(p.get('budget_band'))}, {lit(p.get('group_pref'))}, "
                 f"{disp}, {lit(p.get('verification', 0))}, {lit(p.get('completed_plans', 0))}, "
-                f"{lit(p.get('reports', 0))}, {vec(e)}::vector, "
+                f"{lit(p.get('reports', 0))}, "
+                f"{lit(bool(p.get('conduce')))}, {lit(p.get('coche'))}, "
+                f"{lit(p.get('plazas_coche'))}, {lit(p.get('desde_offset'))}, "
+                f"{lit(p.get('nota'))}, {lit(p.get('notas_conteo', 0))}, {vec(e)}::vector, "
                 f"to_tsvector({lit('german' if p['bio_lang'] == 'de' else 'english')}, {lit(texto_perfil(p))}))")
         sql("insert into profiles (id, display_name, age, city, geo, languages, bio_lang, bio, "
             "interests, top_artists, top_teams, cuisines, pace, budget_band, group_pref, "
-            "availability, verification, completed_plans, reports, embedding, fts) values "
+            "availability, verification, completed_plans, reports, conduce, coche, "
+            "plazas_coche, desde_offset, nota, notas_conteo, embedding, fts) values "
             + ",".join(filas), token)
         print(f"    {min(i + LOTE_SQL, len(perfiles))}/{len(perfiles)}", flush=True)
 
@@ -258,11 +276,15 @@ def main():
                 f"{inicio} + interval '{p.get('duracion_h', 3)} hours', "
                 f"{lit(p.get('radius_km', 40))}, {lit(p.get('seats_open', 1))}, "
                 f"{lit(p.get('subject'))}, {lit(p['tags'])}::text[], {lit(p.get('budget_band'))}, "
-                f"{lit(p.get('pace'))}, {lit(p.get('language_pref'))}::text[], {vec(e)}::vector, "
+                f"{lit(p.get('pace'))}, {lit(p.get('language_pref'))}::text[], "
+                f"{linea(p.get('ruta'))}, {lit(p.get('via'))}::text[], "
+                f"{lit(p.get('distancia_km'))}, {lit(p.get('precio_por_km'))}, "
+                f"{lit(p.get('recurrente'))}, {vec(e)}::vector, "
                 f"to_tsvector({lit('german' if p['desc_lang'] == 'de' else 'english')}, {lit(texto_plan(p))}))")
         sql("insert into plans (id, owner_id, title, description, desc_lang, category, origin_city, "
             "dest_city, is_travel, venue, geo, origin_geo, date_precision, starts_at, ends_at, "
-            "radius_km, seats_open, subject, tags, budget_band, pace, language_pref, embedding, fts) "
+            "radius_km, seats_open, subject, tags, budget_band, pace, language_pref, "
+            "ruta, via, distancia_km, precio_por_km, recurrente, embedding, fts) "
             "values " + ",".join(filas), token)
         print(f"    {min(i + LOTE_SQL, len(planes))}/{len(planes)}", flush=True)
 
@@ -287,8 +309,28 @@ def main():
                 "radius_km, window_start, window_end, standing, tags, embedding, fts) values "
                 + ",".join(filas), token)
 
+    valoraciones = seed.get("valoraciones") or []
+    if valoraciones:
+        print("  insertando valoraciones…")
+        # Sin embedding: una rese~na no se busca por semantica, se LEE en la ficha del conductor.
+        # Embeber 1.200 frases cortas y repetidas seria pagar por ruido.
+        for i in range(0, len(valoraciones), 60):
+            filas = []
+            for v in valoraciones[i:i + 60]:
+                filas.append(
+                    f"({lit(v['id'])}::uuid, {lit(v['conductor_id'])}::uuid, "
+                    f"{lit(v['autor_id'])}::uuid, {lit(v['estrellas'])}, {lit(v.get('texto'))}, "
+                    f"{lit(v.get('texto_lang'))}, {lit(v['dia_offset'])}, "
+                    f"now() + interval '{v['dia_offset']} days')")
+            sql("insert into valoraciones (id, conductor_id, autor_id, estrellas, texto, "
+                "texto_lang, dia_offset, creado) values " + ",".join(filas), token)
+        print(f"    {len(valoraciones)}/{len(valoraciones)}", flush=True)
+
     r = sql("select (select count(*) from profiles) perfiles, (select count(*) from plans) planes, "
-            "(select count(*) from intents) intents, (select anclado from seed_meta where id=1) anclado", token)
+            "(select count(*) from intents) intents, "
+            "(select count(*) from valoraciones) valoraciones, "
+            "(select count(*) from plans where ruta is not null) con_ruta, "
+            "(select anclado from seed_meta where id=1) anclado", token)
     print("sembrado:", json.dumps(r[0] if isinstance(r, list) and r else r, ensure_ascii=False))
 
 

@@ -153,3 +153,121 @@ DESC_EN = [
     "Nothing fancy, just a good plan with one seat left.",
     "Planned this weeks ago. The person coming with me cancelled, so the place is free.",
 ]
+
+
+# ══════════════════════════════════════════════════════════════════════════════════════════
+# COCHE COMPARTIDO (11-sep-2026) — lo que pide `pickando.docx`
+# ══════════════════════════════════════════════════════════════════════════════════════════
+#
+# «This app is to be used privately by anyone on the way to work, shopping, etc.»
+# El mundo de la demo necesita dos clases de trayecto, y las dos salen de aqui:
+#
+#   * el de diario   — Kreuzberg → Mitte a las 8:10, de lunes a viernes
+#   * el del evento  — Berlin → el estadio de Munich el sabado
+#
+# El segundo es el que hace que las 10 frases de Helder sigan devolviendo resultados: el
+# destino del trayecto ES el plan. Un conductor que va al Bayern-Dortmund y lleva dos plazas
+# libres es, a la vez, el resultado de «busco a alguien que vaya al partido» y un viaje.
+
+COCHES = [
+    "VW Golf · gris", "Skoda Octavia · azul", "Opel Corsa · blanco", "Ford Focus · negro",
+    "Toyota Yaris · rojo", "Renault Clio · gris", "Seat Leon · blanco", "BMW 1er · negro",
+    "Audi A3 · plata", "Mazda 3 · azul", "Hyundai i30 · blanco", "Fiat 500 · verde",
+    "Peugeot 208 · gris", "Kia Ceed · azul", "Nissan Leaf · blanco", "Tesla Model 3 · negro",
+    "VW ID.3 · azul", "Dacia Sandero · gris", "Citroen C3 · rojo", "Mini Cooper · verde",
+]
+
+# Corredores reales de cada ciudad: (barrio de salida, [barrios por los que pasa], barrio destino).
+# Los `via` son lo que convierte «dos puntos» en «una ruta»: el pasajero de en medio solo existe
+# si la ruta pasa por su barrio. Es literalmente el requisito del docx — «tracking within 1-2 km
+# of all drivers driving on the same route».
+CORREDORES = {
+    "Berlin": [
+        ("Neukolln", ["Kreuzberg"], "Mitte"),
+        ("Friedrichshain", ["Kreuzberg"], "Schoneberg"),
+        ("Prenzlauer Berg", ["Mitte"], "Charlottenburg"),
+        ("Wedding", ["Moabit"], "Mitte"),
+        ("Treptow", ["Friedrichshain"], "Prenzlauer Berg"),
+        ("Charlottenburg", ["Moabit"], "Mitte"),
+    ],
+    "Dusseldorf": [
+        ("Bilk", ["Unterbilk"], "Altstadt"),
+        ("Gerresheim", ["Flingern"], "Pempelfort"),
+        ("Oberbilk", ["Flingern"], "Derendorf"),
+        ("Oberkassel", ["Altstadt"], "Pempelfort"),
+    ],
+    "Koln": [
+        ("Kalk", ["Deutz"], "Altstadt"),
+        ("Ehrenfeld", ["Nippes"], "Altstadt"),
+        ("Sulz", ["Sudstadt"], "Altstadt"),
+        ("Lindenthal", ["Ehrenfeld"], "Nippes"),
+    ],
+    "Frankfurt": [
+        ("Bornheim", ["Nordend"], "Westend"),
+        ("Sachsenhausen", ["Ostend"], "Bornheim"),
+        ("Riedberg", ["Bockenheim"], "Gallus"),
+        ("Gallus", ["Bockenheim"], "Westend"),
+    ],
+    "Munchen": [
+        ("Giesing", ["Haidhausen"], "Maxvorstadt"),
+        ("Sendling", ["Glockenbach"], "Altstadt"),
+        ("Bogenhausen", ["Haidhausen"], "Altstadt"),
+        ("Neuhausen", ["Maxvorstadt"], "Altstadt"),
+    ],
+}
+
+# El motivo del trayecto. `commute` y `errands` son los dos que nombra el docx por su nombre;
+# el resto salen del mundo que ya existia.
+MOTIVOS_TRAYECTO = ["commute", "commute", "commute", "errands", "nightlife", "gym"]
+
+TITULO_TRAYECTO_DE = [
+    "{o} → {d}, {h}",
+    "Fahrt nach {d} um {h}",
+    "{o} raus, {d} rein — {h}",
+    "Jeden Morgen {o} → {d}",
+]
+TITULO_TRAYECTO_EN = [
+    "{o} → {d}, {h}",
+    "Driving to {d} at {h}",
+    "{o} to {d} — {h}",
+    "Same run every morning: {o} → {d}",
+]
+DESC_TRAYECTO_DE = [
+    "Ich fahre die Strecke sowieso. Wer unterwegs mitkommen will, sagt kurz Bescheid.",
+    "Feste Zeit, feste Strecke. Ich halte nur da, wo ich ohnehin an der Ampel stehe.",
+    "Musik leise, Fenster auf. Zwei Plaetze sind frei, Sprit teilen wir uns.",
+    "Ich nehme gern jemanden mit, der puenktlich ist. Umwege mache ich keine grossen.",
+]
+DESC_TRAYECTO_EN = [
+    "I drive this route anyway. Say the word and I will stop where I already stop.",
+    "Fixed time, fixed route. I do not do big detours, but I pass close to a lot of places.",
+    "Two seats free, we split the fuel. Quiet in the morning, talkative on the way back.",
+    "Same run most days. Happy to take someone who is on time.",
+]
+
+# Rese~nas de conductor. El docx pide «driver rating & review»; una nota sin frases es un numero
+# sin prueba, y lo que convence a un pasajero es leer a otra persona.
+RESENAS_DE = [
+    "Puenktlich, ruhige Fahrweise, angenehmes Gespraech. Gerne wieder.",
+    "Hat genau da gehalten, wo es abgesprochen war. Sehr entspannt.",
+    "Faehrt sicher und haelt sich an die Zeit. Auto war sauber.",
+    "Nette Fahrt, gute Musik, kein Stress im Berufsverkehr.",
+    "Kurz verspaetet, aber vorher Bescheid gesagt. Alles gut.",
+    "Sehr hilfsbereit, hat mir mit dem Gepaeck geholfen.",
+    "Gute Kommunikation vorab. Man weiss genau, woran man ist.",
+]
+RESENAS_EN = [
+    "On time, calm driver, easy conversation. Would ride again.",
+    "Stopped exactly where we agreed. Very relaxed.",
+    "Drives safely and keeps to the time. Clean car.",
+    "Good music, no stress in rush hour traffic.",
+    "Ran a few minutes late but messaged first. No problem at all.",
+    "Helped me with my bag without being asked.",
+    "Clear communication before the trip. You know exactly what to expect.",
+]
+
+# Tarifa: el docx pide «price should be calculated per km» con min y max configurables.
+# Estos son los limites que la demo ense~na, y son los de una app de gastos compartidos
+# alemana, no los de un taxi: no se gana dinero, se reparte el combustible.
+PRECIO_KM_MIN = 0.05   # EUR/km
+PRECIO_KM_MAX = 0.15

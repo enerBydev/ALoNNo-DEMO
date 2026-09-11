@@ -3,6 +3,10 @@ allowBuilds:
   # `workerd` es el runtime de Workers y entra por wrangler. Sin permiso, `pnpm install`
   # sale 1 con ERR_PNPM_IGNORED_BUILDS y tumba el gate entero.
   workerd: true
+  # `vue-demi` entra dentro de Nuxt UI y tiene postinstall. MEDIDO por la auditoria del
+  # ecosistema (11-sep-2026): sin este permiso, `pnpm install` sale 1 con
+  # ERR_PNPM_IGNORED_BUILDS y tumba `just ci` ENTERO — no solo la instalacion.
+  vue-demi: true
 
 catalog:
   wrangler: 4.129.0

@@ -41,6 +41,8 @@ ESPACIO = uuid.UUID("a10c0de0-0000-4000-8000-000000000000")  # "alonno" en hex v
 
 OBJETIVO_PERFILES = 240
 OBJETIVO_PLANES = 180
+# Trayectos de diario. Son los que el docx pone PRIMERO y los que la demo no tenia.
+OBJETIVO_TRAYECTOS = 120
 
 R = random.Random(SEMILLA)
 
@@ -188,6 +190,150 @@ def plan_relleno(n, duenno):
     }
 
 
+# ── coche compartido: la flota, las rutas y la reputacion ─────────────────────────────────
+#
+# Se a~nade DESPUES de construir perfiles y planes, y sobre los dos mundos a la vez (plantados y
+# relleno), porque un conductor no es otra clase de persona: es la misma persona con coche. El
+# due~no del plan «Bayern-Dortmund» conduce hasta el estadio y le sobran dos plazas — y eso es,
+# a la vez, el resultado de la frase 4 de Helder y un viaje del docx.
+
+import math
+
+
+def _haversine(a, b):
+    """km entre dos [lon, lat]. Suficiente para una tarifa: el error es < 0,5 % a esta escala."""
+    (lon1, lat1), (lon2, lat2) = a, b
+    r = 6371.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp, dl = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
+    h = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(h))
+
+
+def trazar(origen, vias, destino):
+    """La ruta como lista de puntos, y su longitud.
+
+    No es una ruta de carreteras: es la polilinea por la que pasa el conductor. Basta para lo
+    que el docx pide —«all drivers driving on the same route»—, porque lo que se pregunta es
+    `ST_DWithin(ruta, pasajero, 2000)`, y para eso lo que importa es por donde pasa, no por que
+    calle. Calcular rutas reales exigiria un servicio de routing y no cambia la demostracion.
+    """
+    puntos = [origen] + list(vias) + [destino]
+    km = sum(_haversine(puntos[i], puntos[i + 1]) for i in range(len(puntos) - 1))
+    # Las calles no son rectas: +18 % es el factor de rodeo urbano habitual.
+    return puntos, round(km * 1.18, 1)
+
+
+def precio_km():
+    """EUR/km dentro del rango configurable del docx. Reparto de gastos, no tarifa de taxi."""
+    return round(R.uniform(C.PRECIO_KM_MIN, C.PRECIO_KM_MAX), 2)
+
+
+def dar_coche(perfil, i):
+    """Convierte a un perfil en conductor. Determinista: el mismo perfil, el mismo coche."""
+    perfil["conduce"] = True
+    perfil["coche"] = C.COCHES[i % len(C.COCHES)]
+    perfil["plazas_coche"] = R.choice([2, 3, 3, 4])
+    perfil["desde_offset"] = R.randint(2, 40)          # meses en la plataforma
+    # La nota sale de las rese~nas, no al reves: se genera despues y se recalcula.
+    perfil.setdefault("nota", None)
+    perfil.setdefault("notas_conteo", 0)
+    return perfil
+
+
+def resenas_de(conductor, autores, n):
+    """n rese~nas escritas por personas distintas, con su nota.
+
+    La distribucion esta sesgada a 5 a proposito y NO por optimismo: en las plataformas de
+    transporte la media real vive entre 4,6 y 4,9, y un mundo con notas repartidas de 1 a 5 se
+    ve inventado. Lo que discrimina no es la nota, es CUANTAS hay — por eso `notas_conteo`
+    tambien varia mucho.
+    """
+    filas = []
+    for k in range(n):
+        autor = autores[(int(conductor["id"][:8], 16) + k * 7919) % len(autores)]
+        if autor["id"] == conductor["id"]:
+            continue
+        estrellas = R.choices([5, 4, 3], weights=[76, 20, 4])[0]
+        lang = "de" if R.random() < 0.55 else "en"
+        filas.append({
+            "clave": f"{conductor['clave']}/resena-{k:02d}",
+            "id": ident(f"resena/{conductor['clave']}/{k:02d}"),
+            "conductor_id": conductor["id"],
+            "autor_id": autor["id"],
+            "estrellas": estrellas,
+            "texto": R.choice(C.RESENAS_DE if lang == "de" else C.RESENAS_EN),
+            "texto_lang": lang,
+            "dia_offset": -R.randint(2, 180),
+        })
+    return filas
+
+
+def trayecto_relleno(n, duenno):
+    """Un trayecto de diario: casa → trabajo, con los barrios por los que pasa.
+
+    Es el caso que el docx pone primero —«anyone on the way to work, shopping»— y el que la
+    demo no tenia: hasta ahora todo plan era un evento. Sin estos, buscar «Ich fahre morgen
+    frueh nach Mitte» no devuelve nada, y esa es la frase que el cliente va a teclear.
+    """
+    ciudad = duenno["city"]
+    b_origen, b_vias, b_destino = R.choice(C.CORREDORES[ciudad])
+    origen = geo(ciudad, b_origen)
+    vias = [geo(ciudad, b) for b in b_vias]
+    destino = geo(ciudad, b_destino)
+    puntos, km = trazar(origen, vias, destino)
+    motivo = R.choice(C.MOTIVOS_TRAYECTO)
+    lang = "de" if R.random() < 0.55 else "en"
+    hora = R.choice(["07:20", "07:45", "08:00", "08:10", "08:30", "17:30", "18:00", "18:45"]) \
+        if motivo == "commute" else R.choice(["10:30", "16:00", "19:30", "20:30"])
+    # El orden importa: la recurrencia se decide ANTES del titulo. Al reves salian trayectos
+    # titulados «Jeden Morgen Bilk → Altstadt» con `recurrente = null`, y esa incoherencia la ve
+    # cualquiera que mire dos lineas seguidas de la pantalla. «Cada ma~nana» es una afirmacion
+    # sobre el dato, no un adorno del titulo.
+    recurrente = "weekdays" if motivo == "commute" and R.random() < 0.7 else None
+    plantillas = list(C.TITULO_TRAYECTO_DE if lang == "de" else C.TITULO_TRAYECTO_EN)
+    repetidas = [p for p in plantillas if "{o}" in p and ("Jeden" in p or "every" in p)]
+    plantillas = repetidas if recurrente else [p for p in plantillas if p not in repetidas]
+    titulo = R.choice(plantillas).format(o=b_origen, d=b_destino, h=hora)
+    return {
+        "clave": f"relleno-trayecto-{n:03d}",
+        "origen": "relleno",
+        "id": ident(f"plan/relleno-trayecto-{n:03d}"),
+        "owner_id": duenno["id"],
+        "title": titulo,
+        "description": R.choice(C.DESC_TRAYECTO_DE if lang == "de" else C.DESC_TRAYECTO_EN),
+        "desc_lang": lang,
+        "category": motivo,
+        "origin_city": ciudad,
+        "dest_city": ciudad,
+        "is_travel": False,
+        "venue": b_destino,
+        "barrio": b_destino,
+        "geo": destino,
+        "origin_geo": origen,
+        "ruta": puntos,
+        "via": b_vias,
+        "distancia_km": km,
+        "precio_por_km": precio_km(),
+        "recurrente": recurrente,
+        "date_precision": "exact",
+        # Un trayecto de diario vive en los proximos dias, no en seis semanas: el docx habla de
+        # publicar «30-60 min antes de salir».
+        "dia_offset": R.randint(0, 6),
+        "hora": hora,
+        "duracion_h": 1,
+        # EL NUMERO DEL DOCX: «tracking within 1-2 km». Un concierto empareja a 40 km; un coche,
+        # a dos. Es un campo por fila justamente para que convivan los dos mundos.
+        "radius_km": 2,
+        "seats_open": R.choice([1, 2, 2, 3]),
+        "subject": b_destino,
+        "tags": sorted(set([motivo, "rideshare", "commute" if motivo == "commute" else "ride"])),
+        "budget_band": "low",
+        "pace": "relaxed",
+        "language_pref": ["de", "en"] if R.random() < 0.5 else [lang],
+    }
+
+
 # ── los plantados ─────────────────────────────────────────────────────────────────────────
 
 def cargar_plantados():
@@ -279,11 +425,78 @@ def main():
         planes.append(plan_relleno(m, candidatos[m % len(candidatos)]))
         m += 1
 
+    # ── la capa de coche compartido ───────────────────────────────────────────────────────
+    #
+    # Orden importante: primero la flota (quien conduce), despues los trayectos (que cuelgan de
+    # un conductor), y al final las rese~nas —que necesitan que la flota ya exista para saber a
+    # quien valorar—. Cambiar el orden cambia la secuencia de `R` y por tanto el fichero entero;
+    # el gate `just seed-determinista` compara dos ejecuciones, no dos versiones.
+    perfiles.sort(key=lambda p: p["clave"])
+    conductores = []
+    for i, p in enumerate(perfiles):
+        # La mitad conduce. Un mundo donde todos tienen coche no se parece a una ciudad alemana.
+        if i % 2 == 0:
+            conductores.append(dar_coche(p, i))
+        else:
+            p["conduce"] = False
+            p["coche"] = None
+            p["plazas_coche"] = None
+            p["desde_offset"] = R.randint(1, 36)
+            p["nota"] = None
+            p["notas_conteo"] = 0
+
+    # Todo plan con destino alcanzable en coche ES un viaje: quien va al concierto conduce
+    # hasta alli, y le sobran plazas. Es lo que une los dos productos del hilo de Workana.
+    for pl in planes:
+        if "ruta" in pl:
+            continue
+        puntos, km = trazar(pl["origin_geo"], [], pl["geo"])
+        # Mas de 700 km no se conducen para un fin de semana: eso es un vuelo. Y menos de 1,5
+        # no se conducen en absoluto: eso se anda, y una tarifa de 0,14 EUR se ve ridicula.
+        if km > 700 or km < 1.5:
+            pl["ruta"] = None
+            pl["via"] = []
+            pl["distancia_km"] = None
+            pl["precio_por_km"] = None
+            pl["recurrente"] = None
+            continue
+        pl["ruta"] = puntos
+        pl["via"] = []
+        pl["distancia_km"] = km
+        pl["precio_por_km"] = precio_km()
+        pl["recurrente"] = None
+
+    t = 0
+    trayectos = []
+    while len(trayectos) < OBJETIVO_TRAYECTOS:
+        duenno = conductores[t % len(conductores)]
+        trayectos.append(trayecto_relleno(t, duenno))
+        t += 1
+    planes.extend(trayectos)
+
+    # Rese~nas. Un conductor sin ninguna tambien existe —es el que acaba de entrar— y eso es
+    # informacion: en la tarjeta se ense~na «nuevo», no un 0,0 que parece una mala nota.
+    valoraciones = []
+    for c in conductores:
+        cuantas = R.choices([0, 3, 7, 14, 28], weights=[8, 22, 30, 26, 14])[0]
+        filas = resenas_de(c, perfiles, cuantas)
+        valoraciones.extend(filas)
+        if filas:
+            c["notas_conteo"] = len(filas)
+            c["nota"] = round(sum(f["estrellas"] for f in filas) / len(filas), 1)
+        else:
+            c["nota"] = None
+            c["notas_conteo"] = 0
+        # `completed_plans` tiene que ser coherente con las rese~nas: no se puede tener 14
+        # valoraciones y 2 viajes. Es el tipo de incoherencia que el cliente SI mira.
+        c["completed_plans"] = max(c.get("completed_plans", 0), len(filas))
+
     salida = {
         "meta": {
             "semilla": SEMILLA,
             "objetivo_perfiles": OBJETIVO_PERFILES,
             "objetivo_planes": OBJETIVO_PLANES,
+            "objetivo_trayectos": OBJETIVO_TRAYECTOS,
             "plantados": {"perfiles": plantados_perfiles, "planes": plantados_planes,
                           "intents": len(intents), "escenarios": len(escenarios)},
             "aviso": ("Ni una fecha absoluta: el tiempo son desplazamientos que sembrar.py "
@@ -293,6 +506,7 @@ def main():
         "perfiles": perfiles,
         "planes": planes,
         "intents": intents,
+        "valoraciones": valoraciones,
     }
     with open(SALIDA, "w", encoding="utf-8") as f:
         json.dump(salida, f, ensure_ascii=False, indent=1, sort_keys=True)
@@ -302,6 +516,8 @@ def main():
     print(f"  perfiles {len(perfiles):>4}  ({plantados_perfiles} plantados)")
     print(f"  planes   {len(planes):>4}  ({plantados_planes} plantados)")
     print(f"  intents  {len(intents):>4}")
+    print(f"  de los planes, trayectos de diario: {len(trayectos)}")
+    print(f"  conductores {len(conductores):>3}  ·  valoraciones {len(valoraciones)}")
     print(f"  escenarios plantados: {len(escenarios)}")
 
     # Las 10 frases, aparte y en pequeno: la UI las ense~na CLICABLES (regla 4) y no puede

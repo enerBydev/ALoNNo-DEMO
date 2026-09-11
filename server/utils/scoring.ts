@@ -22,6 +22,8 @@ export interface Componente {
   valor: number      // normalizado a [0,1]
   peso: number
   puntos: number     // peso * valor * 100 — lo que aporta al porcentaje final
+  /** El mismo aporte, ya entero y repartido para que los enteros SUMEN el porcentaje. */
+  puntos_enteros: number
   detalle?: string
 }
 
@@ -74,6 +76,22 @@ export const CALIBRACION = {
   taste_persona_techo: 0.44,
   taste_plan_piso: 0.30,
   taste_plan_techo: 0.70,
+  // ── UNA TERCERA BANDA, PARA LOS TRAYECTOS (11-sep-2026) ─────────────────────────────────
+  //
+  // El texto de un viaje es «Neukolln → Mitte, 07:20 · dos plazas frei · commute · via
+  // Kreuzberg»: quince palabras, la mitad nombres propios. El de un plan social es un titulo mas
+  // una descripcion de dos frases. Contra la misma consulta larga, el viaje no puede alcanzar la
+  // similitud de un plan aunque sea el viaje exacto que pedias — le faltan palabras, no encaje.
+  //
+  // MEDIDO, no estimado. Cinco consultas de trayecto reales contra el seed sembrado, 29
+  // similitudes recogidas con `?fresco=1`:
+  //     min 0,182 · p25 0,454 · mediana 0,474 · p90 0,595 · max 0,615
+  // El piso va al p10 redondeado (0,30: por debajo es ruido de otra ciudad) y el techo al max
+  // observado (0,60). Con la banda de los planes, el viaje perfecto de la frase medida daba
+  // 0,54 de valor y el resultado se quedaba en 74 % — por debajo de la banda 88-95 % que el §9
+  // exige para un match impecable, y por una razon que no tiene nada que ver con la calidad.
+  taste_trayecto_piso: 0.30,
+  taste_trayecto_techo: 0.60,
   // El Jaccard entre los pocos tags que sobreviven a una frase y los muchos gustos de una
   // persona es bajo por construccion: el mejor del corpus da 0,222. Exigir mas seria exigir que
   // la frase enumere la vida entera de alguien.
@@ -147,6 +165,33 @@ export function confianza(p: { verification: number; completed_plans: number; re
   return clamp01((verificado * 0.5 + historial * 0.5) - castigo)
 }
 
+/** La confianza de un CONDUCTOR, que no es la de un desconocido con un plan.
+ *
+ *  Hasta el 11-sep-2026 el score de un plan llevaba `trust` clavado a 0,6 y
+ *  `owner_affinity` a 0,5: numeros de relleno, porque no habia dato. Ahora si lo hay
+ *  —`nota`, `notas_conteo`, `verification`, `completed_plans`— y no usarlo seria ense~nar una
+ *  estrella en la tarjeta que no pesa en el numero de al lado. `pickando.docx` pide «driver
+ *  rating & review»; una nota que no cambia nada es decoracion.
+ *
+ *  LA REGLA QUE IMPORTA: **con menos de 3 valoraciones la nota no cuenta.** Un 5,0 de una sola
+ *  persona no es mejor que un 4,7 de treinta y siete, y tratarlo como tal premia al recien
+ *  llegado por encima del veterano. Sin nota utilizable se cae a la se~nal estructural
+ *  (verificacion e historial), que es la misma que usa una persona sin viajes publicados. */
+export function confianzaDeConductor(c: {
+  nota: number | null; notas: number; verificado: number; viajes: number; reports?: number
+}): number {
+  const estructural = confianza({
+    verification: c.verificado ?? 0, completed_plans: c.viajes ?? 0, reports: c.reports ?? 0,
+  })
+  if (c.nota == null || (c.notas ?? 0) < 3) return clamp01(estructural * 0.85)
+  // 4,0 es el suelo util y 5,0 el techo: por debajo de 4 en estas plataformas ya nadie se sube,
+  // asi que repartir la escala de 0 a 5 desperdicia el 80 % del rango donde no hay nadie.
+  const porLaNota = clamp01((c.nota - 4.0) / 1.0)
+  // El conteo modula: 3 valoraciones pesan poco, 30 pesan del todo.
+  const peso = clamp01(Math.log(1 + (c.notas ?? 0)) / Math.log(31))
+  return clamp01(porLaNota * (0.55 + 0.45 * peso) * 0.75 + estructural * 0.25)
+}
+
 /** Las categorias complementarias del §7. Tabla explicita: el brief dice que NO se infieren. */
 const COMPLEMENTARIAS: Record<string, string[]> = {
   holiday: ['weekend_trip', 'restaurant'],
@@ -173,7 +218,40 @@ export function reciprocidad(intereses: string[], tagsDelPlan: string[], categor
 function comp(
   nombre: string, de: string, en: string, crudo: number, valor: number, peso: number, detalle?: string,
 ): Componente {
-  return { nombre, etiqueta_de: de, etiqueta_en: en, crudo, valor, peso, puntos: peso * valor * 100, detalle }
+  return { nombre, etiqueta_de: de, etiqueta_en: en, crudo, valor, peso,
+           puntos: peso * valor * 100, puntos_enteros: 0, detalle }
+}
+
+/** Reparte el porcentaje entre los componentes con el **metodo del resto mayor**, para que los
+ *  enteros de la pantalla sumen EXACTAMENTE el numero de la pantalla.
+ *
+ *  El fallo que lo trajo (medido el 11-sep-2026, critica de UI/UX): la frase 1 ense~naba
+ *  `28+18+15+15+10+4+3` —que son **93**— junto a un total de **91**. Cada componente se
+ *  redondeaba por su cuenta y el total se redondeaba aparte, asi que las dos cifras eran
+ *  correctas y no cuadraban. Da igual que sea trivial: golpea la unica promesa que la demo hace
+ *  en voz alta —«a number you can check by hand»— y quien la revisa es un aleman con formacion
+ *  tecnica que va a sumar siete enteros mientras le hablas.
+ *
+ *  Se elige repartir en vez de ense~nar decimales porque **enteros que suman es lo que el ojo
+ *  verifica**; con decimales hay que fiarse de la coma. */
+function repartirEnteros(componentes: Componente[], total: number): Componente[] {
+  const suelo = componentes.map((c) => Math.floor(c.puntos))
+  let sobra = total - suelo.reduce((s, n) => s + n, 0)
+  // Los restos mas grandes se llevan el punto que sobra; a igualdad, el de mas peso.
+  const orden = componentes
+    .map((c, i) => ({ i, resto: c.puntos - Math.floor(c.puntos), peso: c.peso }))
+    .sort((a, b) => (b.resto - a.resto) || (b.peso - a.peso))
+  for (const { i } of orden) {
+    if (sobra <= 0) break
+    suelo[i] += 1
+    sobra -= 1
+  }
+  // Si `sobra` fuese negativa (el total redondeo hacia abajo), se quita del resto mas peque~no.
+  for (const { i } of [...orden].reverse()) {
+    if (sobra >= 0) break
+    if (suelo[i] > 0) { suelo[i] -= 1; sobra += 1 }
+  }
+  return componentes.map((c, i) => ({ ...c, puntos_enteros: suelo[i] }))
 }
 
 /** El score Plan→Persona del §7, con sus siete componentes. */
@@ -230,9 +308,10 @@ export function puntuarPersona(
   // match». Si llego hasta aqui sin disponibilidad, se marca como descartado y no se rankea.
   const descartado = contexto.hayFecha && disp === 0 ? 'no esta libre esa fecha' : null
 
+  const porcentaje = Math.round(componentes.reduce((s, c) => s + c.puntos, 0))
   return {
-    porcentaje: Math.round(componentes.reduce((s, c) => s + c.puntos, 0)),
-    componentes: componentes.sort((a, b) => b.puntos - a.puntos),
+    porcentaje,
+    componentes: repartirEnteros(componentes, porcentaje).sort((a, b) => b.puntos - a.puntos),
     descartado,
   }
 }
@@ -275,10 +354,27 @@ export function puntuarPlan(
     }
   }
 
+  const confConductor = confianzaDeConductor({
+    nota: plan.conductor_nota ?? null,
+    notas: plan.conductor_notas ?? 0,
+    verificado: plan.conductor_verificado ?? 0,
+    viajes: plan.conductor_viajes ?? 0,
+  })
+  // La afinidad con quien conduce, mientras no haya perfil de quien pregunta, sale de lo unico
+  // observable: que el viaje sea uno de los suyos de siempre. Alguien que repite ruta cada dia
+  // es mas previsible que alguien que publica uno suelto, y eso es exactamente lo que un
+  // pasajero valora. Marcado como aproximacion, no como medida.
+  const afinidadConductor = plan.recurrente ? 0.75 : plan.seats_open >= 2 ? 0.55 : 0.45
+  // Un viaje se reconoce por tener ruta y distancia, no por su categoria: un concierto al que se
+  // conduce tambien es un viaje, y es justo el caso que une los dos productos del hilo.
+  const esTrayecto = plan.distancia_km != null
+
   const componentes = [
     comp('intent_similarity', 'Encaja con lo que pides', 'Matches what you asked',
       plan.similitud,
-      normalizarBanda(plan.similitud, CALIBRACION.taste_plan_piso, CALIBRACION.taste_plan_techo),
+      esTrayecto
+        ? normalizarBanda(plan.similitud, CALIBRACION.taste_trayecto_piso, CALIBRACION.taste_trayecto_techo)
+        : normalizarBanda(plan.similitud, CALIBRACION.taste_plan_piso, CALIBRACION.taste_plan_techo),
       P.intent_similarity),
     comp('subject_match', 'Es justo eso', 'Exactly that', sujeto, sujeto, P.subject_match,
       plan.subject ?? undefined),
@@ -292,14 +388,19 @@ export function puntuarPlan(
     comp('seats_available', 'Queda plaza', 'Seat available',
       plan.seats_open, plan.seats_open > 0 ? 1 : 0.2, P.seats_available,
       plan.seats_open > 0 ? `${plan.seats_open}` : '0'),
-    comp('owner_affinity', 'Afinidad con quien lo organiza', 'Affinity with the organiser',
-      0.5, 0.5, P.owner_affinity),
-    comp('trust', 'Confianza', 'Trust', 0.6, 0.6, P.trust),
+    comp('owner_affinity', 'Afinidad con quien conduce', 'Affinity with the driver',
+      afinidadConductor, afinidadConductor, P.owner_affinity,
+      plan.conductor ?? undefined),
+    comp('trust', 'Confianza', 'Trust', confConductor, confConductor, P.trust,
+      plan.conductor_nota != null && (plan.conductor_notas ?? 0) >= 3
+        ? `${plan.conductor_nota.toFixed(1)} · ${plan.conductor_notas} valoraciones`
+        : `sin nota todavia · ${plan.conductor_viajes ?? 0} viajes`),
   ]
 
+  const porcentaje = Math.round(componentes.reduce((s, c) => s + c.puntos, 0))
   return {
-    porcentaje: Math.round(componentes.reduce((s, c) => s + c.puntos, 0)),
-    componentes: componentes.sort((a, b) => b.puntos - a.puntos),
+    porcentaje,
+    componentes: repartirEnteros(componentes, porcentaje).sort((a, b) => b.puntos - a.puntos),
     descartado: encajeCategoria(contexto.categoria, plan.category) < 0.3 ? 'otra categoria' : null,
   }
 }

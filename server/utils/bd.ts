@@ -1,3 +1,5 @@
+import { CIUDADES, BARRIOS } from './lugares'
+
 // El unico sitio que habla con Postgres. Llama a las funciones de `db/funciones.sql` por RPC:
 // el SQL vive en la base, versionado, y el servidor solo pasa parametros.
 //
@@ -10,6 +12,8 @@ export interface Persona {
   interests: string[]; top_artists: string[] | null; top_teams: string[] | null; cuisines: string[] | null
   pace: string | null; budget_band: string | null; group_pref: string | null; languages: string[]
   verification: number; completed_plans: number; reports: number
+  conduce: boolean; coche: string | null; plazas_coche: number | null
+  nota: number | null; notas_conteo: number | null; desde_offset: number | null
   km: number | null; disponible_exacto: boolean; disponible_finde: boolean
   similitud: number; rrf: number
 }
@@ -20,7 +24,15 @@ export interface Plan {
   venue: string | null; subject: string | null; tags: string[]
   starts_at: string; ends_at: string; seats_open: number; radius_km: number
   budget_band: string | null; pace: string | null; language_pref: string[] | null
-  km: number | null; similitud: number; rrf: number
+  // El viaje. `distancia_km` es null cuando al plan no se llega en coche (un vuelo a Barcelona):
+  // esa es la se~nal que usa la UI para ense~nar un plan en vez de un trayecto.
+  via: string[] | null; distancia_km: number | null; precio_por_km: number | null
+  recurrente: string | null
+  // El conductor viaja con el viaje: sin esto, pintar una estrella costaria una consulta por fila.
+  conductor: string | null; conductor_coche: string | null; conductor_nota: number | null
+  conductor_notas: number | null; conductor_verificado: number | null; conductor_viajes: number | null
+  ruta_geojson: string | null; origen_geojson: string | null; destino_geojson: string | null
+  km: number | null; km_ruta: number | null; similitud: number; rrf: number
 }
 
 function config(env: Record<string, string | undefined>) {
@@ -52,26 +64,42 @@ export async function rpc<T>(
   return { filas: (await r.json()) as T[], ms: Date.now() - t0 }
 }
 
-/** Centro de cada ciudad del cliente. Sirve para anclar el radio cuando la frase nombra una
- *  ciudad pero no un punto — que es siempre. */
-export const CENTROS: Record<string, [number, number]> = {
-  Berlin: [13.4050, 52.5200],
-  Dusseldorf: [6.7763, 51.2277],
-  Koln: [6.9603, 50.9375],
-  Frankfurt: [8.6821, 50.1109],
-  Munchen: [11.5820, 48.1351],
-  Bonn: [7.0980, 50.7340],
-  Leverkusen: [6.9800, 51.0300],
-  Neuss: [6.6900, 51.2000],
-  Barcelona: [2.1700, 41.3870],
+/** Donde esta un sitio, sea ciudad o barrio.
+ *
+ *  EL FALLO QUE LO CAMBIO (11-sep-2026): esto conocia NUEVE ciudades y nada mas, y la Capa 0
+ *  devuelve lo que la persona escribe. «Ich fahre morgen von Neukolln nach Mitte» ponia
+ *  `city: "Neukolln"`, aqui salia `null`, y **sin centro no hay filtro de radio**: a un berlines
+ *  se le contestaba con coches de Dusseldorf. No fallaba: contestaba mal, que es peor.
+ *
+ *  Los 63 barrios salen generados de los mismos catalogos que siembran la base
+ *  (`scripts/generar-lugares.py`), para que no haya dos verdades sobre donde esta Kreuzberg. */
+export function centroDe(lugar: string | null, respaldo: string | null = null): [number, number] | null {
+  const clave = (t: string) =>
+    t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/-/g, ' ').trim()
+
+  const buscar = (t: string | null): [number, number] | null => {
+    if (!t) return null
+    const k = clave(t)
+    if (CIUDADES[k]) return CIUDADES[k]
+    const b = BARRIOS[k]
+    if (b) return [b[0], b[1]]
+    // «Koln-Ehrenfeld», «Berlin Mitte»: la persona escribe las dos mitades y las dos valen.
+    for (const trozo of k.split(/[\s,/]+/).filter(Boolean)) {
+      if (CIUDADES[trozo]) return CIUDADES[trozo]
+      const bb = BARRIOS[trozo]
+      if (bb) return [bb[0], bb[1]]
+    }
+    return null
+  }
+
+  return buscar(lugar) ?? buscar(respaldo)
 }
 
-/** «Dusseldorf», «Düsseldorf» y «dusseldorf» son la misma ciudad. */
-export function centroDe(ciudad: string | null): [number, number] | null {
-  if (!ciudad) return null
-  const limpia = ciudad.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-  for (const [nombre, punto] of Object.entries(CENTROS)) {
-    if (nombre.toLowerCase() === limpia) return punto
-  }
-  return null
+/** La ciudad a la que pertenece un barrio, si se reconoce. Sirve para decir «Kreuzberg, Berlin»
+ *  en la pantalla sin que el usuario tenga que escribir las dos cosas. */
+export function ciudadDe(lugar: string | null): string | null {
+  if (!lugar) return null
+  const k = lugar.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/-/g, ' ').trim()
+  if (CIUDADES[k]) return k
+  return BARRIOS[k]?.[2] ?? null
 }

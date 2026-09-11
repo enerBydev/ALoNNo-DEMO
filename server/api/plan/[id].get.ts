@@ -6,15 +6,26 @@ import { tabla, sesionDe } from '../../utils/sesion'
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
   const [plan] = await tabla<any>(event,
-    `plans?id=eq.${id}&select=*,perfil:profiles!plans_owner_id_fkey(id,display_name,city,bio,bio_lang,interests,top_artists,verification,completed_plans)`)
+    'plans?id=eq.' + id + '&select=*,perfil:profiles!plans_owner_id_fkey(id,display_name,city,bio,bio_lang,interests,top_artists,verification,completed_plans,conduce,coche,plazas_coche,nota,notas_conteo,desde_offset)')
   if (!plan) throw createError({ statusCode: 404, statusMessage: 'ese plan no existe' })
 
   const apuntados = await tabla<any>(event,
     `intereses?plan_id=eq.${id}&select=creado,persona:profiles(id,display_name,city,bio_lang,interests)`)
 
+  // El embedding son 2048 numeros que nadie va a mirar y que multiplican por cuarenta el tama~no
+  // de la respuesta. Y el perfil del conductor viene con nota, coche y antiguedad: sin eso la
+  // ficha de un viaje ense~na un nombre, y nadie se sube al coche de un nombre.
+  delete plan.embedding
+  delete plan.fts
+
+  // La geometria en GeoJSON, para que el mapa pinte la RUTA y no dos chinchetas. PostgREST
+  // devuelve `geography` como WKB hexadecimal, asi que la conversion la hace Postgres.
+  const geo = await tabla<any>(event, `rpc/geometria_de_plan?p_id=${id}`).catch(() => null)
+
   const yo = sesionDe(event)
   return {
     plan,
+    geometria: geo ?? null,
     apuntados: apuntados.map((a) => a.persona),
     yo_apuntado: Boolean(yo && apuntados.some((a) => a.persona?.id === yo.id)),
     soy_el_dueno: Boolean(yo && plan.owner_id === yo.id),
