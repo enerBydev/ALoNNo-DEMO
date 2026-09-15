@@ -110,6 +110,7 @@ export async function chatJson(
   sistema: string,
   usuario: string,
   maxTokens = 500,
+  intentos = 3,
 ): Promise<{ json: any; uso: Uso }> {
   const t0 = Date.now()
   const r = await conReintento(() => fetch(`${BASE}/chat/completions`, {
@@ -128,7 +129,7 @@ export async function chatJson(
       // El razonamiento se factura y aqui no aporta: la tarea es rellenar un formulario.
       chat_template_kwargs: { thinking: false },
     }),
-  }))
+  }), intentos)
   if (!r.ok) {
     throw createError({ statusCode: 502, statusMessage: `chat: ${r.status} ${(await r.text()).slice(0, 120)}` })
   }
