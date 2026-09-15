@@ -1,4 +1,4 @@
--- Sameway DEMO — esquema unico e idempotente (brief §5).
+-- Match Engine DEMO — esquema unico e idempotente (brief §5).
 --
 -- DEMO: sin migraciones versionadas a proposito (regla 1). Este archivo se aplica entero,
 -- tantas veces como haga falta, y deja la base en el mismo sitio.

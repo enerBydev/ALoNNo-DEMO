@@ -44,11 +44,11 @@ LOTE_SQL = 15          # 15 filas x 2048 floats ~ 600 KB por peticion
 # El WAF de Cloudflare que hay delante de la API de Supabase responde **403 con `error code:
 # 1010`** al user-agent por defecto de urllib. No es un permiso: es la firma del cliente.
 # Costo una tanda entera de embeddings descubrirlo (10-sep-2026).
-AGENTE = "sameway-demo-sembrador/1.0"
+AGENTE = "match-engine-sembrador/1.0"
 
 # Cache de embeddings en disco, por hash del texto. Un fallo despues de embeber —como el 1010—
 # no puede obligar a pagar otra vez 420 llamadas.
-CACHE = os.path.join(os.environ.get("TMPDIR", "/tmp"), "sameway-embeddings.json")
+CACHE = os.path.join(os.environ.get("TMPDIR", "/tmp"), "match-engine-embeddings.json")
 
 
 def secreto_gcp(nombre):

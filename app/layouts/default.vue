@@ -29,7 +29,7 @@ const DESTINOS = [
     <header>
       <div class="contenedor barra-nav">
         <NuxtLink to="/" class="marca">
-          <span class="punto" /> Sameway
+          <span class="punto" /> Match Engine
           <UBadge size="sm" color="neutral" variant="subtle">demo</UBadge>
         </NuxtLink>
 

@@ -2,7 +2,7 @@
 // «Sign in» sin contrasena, y con razon: los perfiles son sinteticos y lo que la demo tiene que
 // ense~nar es el producto visto DESDE ALGUIEN. Elegir quien eres es mas honesto que inventar un
 // registro que no protege nada.
-useSeoMeta({ title: 'Sign in — Sameway demo' })
+useSeoMeta({ title: 'Sign in — Match Engine demo' })
 const { entrar } = useSesion()
 const ruta = useRoute()
 const { data, pending } = await useFetch<{ perfiles: any[] }>('/api/perfiles')

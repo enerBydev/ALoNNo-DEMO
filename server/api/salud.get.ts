@@ -72,7 +72,7 @@ export default defineEventHandler(async (event) => {
 
 	return {
 		estado,
-		servicio: "sameway-demo",
+		servicio: "match-engine",
 		bd: bd.estado,
 		bd_ms: bd.ms,
 		ia: ia.estado,

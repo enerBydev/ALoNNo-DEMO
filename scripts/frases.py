@@ -27,7 +27,7 @@ import urllib.parse
 import urllib.request
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-URL = "https://sameway-demo.enerby212.workers.dev"
+URL = "https://match-engine.enerby212.workers.dev"
 
 V = "\033[32m"; R = "\033[31m"; A = "\033[33m"; G = "\033[90m"; N = "\033[0m"
 
@@ -44,7 +44,7 @@ def frases():
 def buscar(base, q):
     url = f"{base}/api/buscar?" + urllib.parse.urlencode({"q": q})
     t0 = time.time()
-    req = urllib.request.Request(url, headers={"User-Agent": "sameway-frases/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "match-engine-frases/1.0"})
     with urllib.request.urlopen(req, timeout=180) as r:
         return json.loads(r.read()), time.time() - t0
 

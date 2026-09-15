@@ -25,7 +25,7 @@ import urllib.parse
 import urllib.request
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE = "https://sameway-demo.enerby212.workers.dev"
+BASE = "https://match-engine.enerby212.workers.dev"
 INTENTOS = 4
 
 # Las mismas que `app/pages/index.vue` ofrece. Si cambian alli, cambian aqui.
@@ -44,7 +44,7 @@ def pedir(base, q, ciudad, fresco):
         params["fresco"] = "1"
     url = f"{base}/api/buscar?{urllib.parse.urlencode(params)}"
     t0 = time.time()
-    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "sameway-calentador/1.0"}),
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "match-engine-calentador/1.0"}),
                                 timeout=60) as r:
         return json.loads(r.read()), round(time.time() - t0, 1)
 

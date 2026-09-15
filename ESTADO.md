@@ -22,7 +22,7 @@ hasta el lunes 21**.
 
 | | Comprobacion |
 |---|---|
-| Nuxt 4.5.2 + Nitro, preset `cloudflare_module` | desplegado: <https://sameway-demo.enerby212.workers.dev> |
+| Nuxt 4.5.2 + Nitro, preset `cloudflare_module` | desplegado: <https://match-engine.enerby212.workers.dev> |
 | Base en **Frankfurt** (`qbrgwphcpflbwhfqhffc`) | pgvector 0.8.2 · PostGIS 3.3.7 · pg_trgm 1.6 |
 | El esquema, con la capa de coche | `profiles`/`plans`/`intents`/`intereses`/`valoraciones` · `vector(2048)` · HNSW sobre `halfvec(2048)` · `ruta geography(linestring)` con indice GiST |
 | El mundo sembrado | 240 perfiles (**120 conductores**) · 300 planes, de los que **120 son trayectos de diario** y **254 tienen ruta** · 42 intents · **1.185 valoraciones** bilingues, nota media **4,72** |
@@ -139,7 +139,7 @@ Comprobado hoy extremo a extremo, que es la unica forma:
 | merge del PR #20 a `main` | 10:42 |
 | version 40 del Worker | **10:43:37**, 73 s despues |
 | ¿desplego alguien a mano? | no: nadie corrio `wrangler deploy`, y `.github/workflows/` solo tiene `ci.yml`, que **no despliega** |
-| ¿sirve produccion el codigo nuevo? | si: `<title>Sameway — find the driver going your way</title>`, mapa con 10 teselas y 6 tarjetas, en Firefox real |
+| ¿sirve produccion el codigo nuevo? | si: `<title>Match Engine — find the driver going your way</title>`, mapa con 10 teselas y 6 tarjetas, en Firefox real |
 
 La leccion es la de siempre en este repo: **un campo que se lee como una prueba no siempre lo
 es**. Lo que prueba el git-connect es la cadena entera —empujar, esperar, y ver el cambio en

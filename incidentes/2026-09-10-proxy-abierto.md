@@ -24,7 +24,7 @@ recibir `Authorization: Bearer <NVIDIA_API_KEY>` en las cabeceras.
 ## Como se comprobo
 
 ```
-curl -s 'https://sameway-demo.enerby212.workers.dev/api/diagnostico-ia?op=chat&base=https://example.com/v1'
+curl -s 'https://match-engine.enerby212.workers.dev/api/diagnostico-ia?op=chat&base=https://example.com/v1'
 → {"op":"chat","base":"https://example.com/v1","http":405,"detalle":"<!doctype html>…Example Domain…"}
 ```
 

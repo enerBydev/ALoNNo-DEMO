@@ -16,7 +16,7 @@ const rep = computed(() => data.value?.reputacion);
 const resenas = computed(() => data.value?.resenas ?? []);
 
 useSeoMeta({
-	title: () => (p.value ? `${p.value.display_name} — Sameway` : "Driver"),
+	title: () => (p.value ? `${p.value.display_name} — Match Engine` : "Driver"),
 });
 
 const fecha = (i: string) =>

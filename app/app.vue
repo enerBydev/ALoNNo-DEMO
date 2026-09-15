@@ -2,10 +2,10 @@
 // SEO por defecto: la seccion K de la propuesta vende que las paginas publicas son un canal de
 // captacion, y eso empieza por que el HTML llegue hecho y con sus etiquetas.
 useSeoMeta({
-  title: 'Sameway — find the driver going your way',
-  description: 'Say it in one sentence, in German or English. Sameway reads it, finds the drivers '
+  title: 'Match Engine — find the driver going your way',
+  description: 'Say it in one sentence, in German or English. Match Engine reads it, finds the drivers '
     + 'whose route passes near you, and explains every match with a number you can check.',
-  ogTitle: 'Sameway — find the driver going your way',
+  ogTitle: 'Match Engine — find the driver going your way',
   ogDescription: 'Natural-language ride matching. Demo with synthetic data.',
 })
 </script>
