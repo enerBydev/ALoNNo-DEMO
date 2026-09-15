@@ -178,6 +178,14 @@ label {
   margin-bottom: var(--e1);
 }
 
+/* El `<select>` nativo, a la medida de los campos de Nuxt UI: el `USelect` rompe la hidratacion
+   en SSR (medido el 11-sep) y el nativo abre la rueda del sistema en movil, que se usa mejor. */
+.nativo {
+  height: 40px; min-height: 40px; border-radius: var(--radio-2);
+  border: 1px solid var(--linea); background: var(--superficie);
+  font-size: var(--t-15); padding: 0 var(--e3); width: 100%;
+}
+
 /* ── el numero, que es el protagonista ────────────────────────────────────────────────── */
 .puntuacion {
   font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: -0.03em;

@@ -7,6 +7,18 @@ const { entrar } = useSesion()
 const ruta = useRoute()
 const { data, pending } = await useFetch<{ perfiles: any[] }>('/api/perfiles')
 const entrando = ref<string | null>(null)
+const verTodos = ref(false)
+
+/** 24 perfiles y 1.143 palabras para elegir con quien pedir una plaza era demasiado (P8 Lo justo
+ *  para decidir): primero cuatro de la ciudad del viaje —si la URL la trae— y el resto detras
+ *  de «Show all». */
+const ciudad = computed(() => String(ruta.query.ciudad || ''))
+const perfiles = computed(() => {
+  const todos = data.value?.perfiles ?? []
+  if (verTodos.value) return todos
+  const cerca = ciudad.value ? todos.filter((p) => p.city === ciudad.value) : todos
+  return (cerca.length ? cerca : todos).slice(0, 4)
+})
 
 async function elegir(p: any) {
   entrando.value = p.id
@@ -24,8 +36,8 @@ async function elegir(p: any) {
       This is a demo over synthetic profiles, so there are no passwords. Pick someone and you will
       see the product from their side: their city, their taste, their plans.
     </p>
-    <p class="minusculo tenue" style="margin-top:.4rem">
-      Tip: pick someone from Düsseldorf who likes afrobeats, then search sentence 1.
+    <p v-if="!ruta.query.volver" class="minusculo tenue" style="margin-top:.4rem">
+      Tip: pick someone from Berlin, then search «Ich fahre morgen um 8 von Neukölln nach Mitte».
     </p>
 
     <div v-if="pending" class="tenue" style="margin-top:2rem">
@@ -33,7 +45,7 @@ async function elegir(p: any) {
     </div>
 
     <div v-else class="rejilla dos" style="margin-top:1.4rem">
-      <button v-for="p in data?.perfiles" :key="p.id" class="tarjeta persona"
+      <button v-for="p in perfiles" :key="p.id" class="tarjeta persona"
               :disabled="entrando === p.id" @click="elegir(p)">
         <div class="fila">
           <span class="avatar">{{ p.display_name.charAt(0) }}</span>
@@ -51,6 +63,11 @@ async function elegir(p: any) {
           </span>
         </div>
       </button>
+    </div>
+    <div v-if="!pending && !verTodos && (data?.perfiles?.length ?? 0) > perfiles.length" style="margin-top:1rem">
+      <UButton variant="ghost" color="neutral" icon="i-lucide-chevron-down" @click="verTodos = true">
+        Show all {{ data?.perfiles?.length }} profiles
+      </UButton>
     </div>
   </div>
 </template>

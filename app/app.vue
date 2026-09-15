@@ -14,6 +14,9 @@ useSeoMeta({
   <!-- `UApp` es obligatorio en Nuxt UI 4: es lo que monta el contenedor de los toasts, los
        modales y los tooltips. Sin el, `useToast()` no pinta nada y no da error. -->
   <UApp>
+    <!-- Barra de progreso arriba al navegar: tras pulsar «View ride» pasaban 1.072 ms sin ninguna
+         se~nal hasta que la ficha tenia sus datos (Motion UI Testing, 15-sep). P9: la espera se ense~na. -->
+    <NuxtLoadingIndicator color="var(--accion)" :height="3" />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

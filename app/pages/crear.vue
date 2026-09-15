@@ -1,114 +1,179 @@
 <script setup lang="ts">
-// FLUJO 2 · «create a plan». Y de paso, la unica pantalla donde se VE la regla 5: el plan se
+// FLUJO 2 · «offer a ride». Y de paso, la unica pantalla donde se VE la regla 5: el viaje se
 // embebe al escribirlo, una vez, y a partir de ahi aparece en las busquedas sin costar nada.
-definePageMeta({ middleware: 'sesion' })
-useSeoMeta({ title: 'Post a plan — Match Engine demo' })
+//
+// REESCRITO EL 15-SEP-2026. La barra decia «Offer a ride» y esta pantalla pedia «Title», «Kind
+// of plan: concert…», «Artist, team or cuisine»: el vocabulario del producto anterior, y cuatro
+// agentes del programa de UX lo marcaron como bloqueante. Ahora pide lo que un conductor sabe
+// sin pensar —de donde, adonde, cuando, cuantas plazas, a cuanto el km— y nada mas (P8 Lo justo
+// para decidir). El titulo se escribe solo.
+definePageMeta({ middleware: "sesion" });
+useSeoMeta({ title: "Offer a ride — Match Engine demo" });
 
-const { sesion } = useSesion()
+const { sesion } = useSesion();
 const form = reactive({
-  title: '', description: '', category: 'concert', dest_city: '', subject: '',
-  dia_offset: 2, seats_open: 1,
-})
-const enviando = ref(false)
-const hecho = ref<any>(null)
-const error = ref<string | null>(null)
+	desde: "",
+	hacia: "",
+	dia_offset: 1,
+	hora: "08:00",
+	recurrente: "",
+	seats_open: 2,
+	precio_por_km: 0.1,
+	nota: "",
+});
+const enviando = ref(false);
+const hecho = ref<any>(null);
+const error = ref<string | null>(null);
 
-const CATEGORIAS = ['concert', 'football', 'weekend_trip', 'holiday', 'restaurant', 'activity']
-const CIUDADES = ['Berlin', 'Dusseldorf', 'Koln', 'Frankfurt', 'Munchen', 'Barcelona']
 const CUANDO = [
-  { v: 0, t: 'today' }, { v: 1, t: 'tomorrow' }, { v: 2, t: 'in 2 days' },
-  { v: 7, t: 'next week' }, { v: 30, t: 'next month' },
-]
+	{ v: 0, t: "Today" },
+	{ v: 1, t: "Tomorrow" },
+	{ v: 2, t: "In 2 days" },
+	{ v: 7, t: "Next week" },
+];
+const HORAS = [
+	"06:30",
+	"07:00",
+	"07:30",
+	"08:00",
+	"08:30",
+	"09:00",
+	"12:00",
+	"16:30",
+	"17:00",
+	"17:30",
+	"18:00",
+	"18:30",
+	"19:00",
+	"20:00",
+	"22:00",
+];
 
-watchEffect(() => { if (sesion.value && !form.dest_city) form.dest_city = sesion.value.city })
+/** El precio antes de pedir (P3): se ense~na mientras se escribe, no despues de publicar. */
+const kmEstimados = computed(() => {
+	// Estimacion de pantalla; la real la calcula el servidor con las coordenadas.
+	const d = form.desde.trim(),
+		h = form.hacia.trim();
+	if (!d || !h) return null;
+	return d.toLowerCase() === h.toLowerCase() ? 0 : 6;
+});
+const precioEstimado = computed(() =>
+	kmEstimados.value
+		? new Intl.NumberFormat("en-GB", {
+				style: "currency",
+				currency: "EUR",
+			}).format(kmEstimados.value * form.precio_por_km)
+		: null,
+);
 
 async function publicar() {
-  enviando.value = true; error.value = null
-  try {
-    hecho.value = await $fetch('/api/plan', { method: 'POST', body: { ...form } })
-  } catch (e: any) {
-    error.value = e?.data?.statusMessage || 'the plan could not be published'
-  } finally { enviando.value = false }
+	enviando.value = true;
+	error.value = null;
+	try {
+		hecho.value = await $fetch("/api/plan", {
+			method: "POST",
+			body: { ...form, recurrente: form.recurrente || null },
+			timeout: 20_000,
+		});
+	} catch (e: any) {
+		error.value =
+			e?.data?.statusMessage || "The ride could not be published. Try again.";
+	} finally {
+		enviando.value = false;
+	}
 }
 </script>
 
 <template>
   <div class="contenedor estrecho">
-    <h1>Post a plan</h1>
-    <p class="tenue" style="margin-top:.5rem">
-      Write it the way you would tell a friend. It becomes searchable the moment you publish —
-      and that is the whole point: <b>the embedding is computed now, not when someone searches</b>.
+    <h1>Offer a ride</h1>
+    <p class="tenue intro">
+      Where you are going anyway, and how many seats you have. It becomes findable the moment you
+      publish — <b>the embedding is computed now, not when someone searches</b>.
     </p>
 
     <div v-if="hecho" class="tarjeta ok">
-      <h2>Published ✓</h2>
+      <h2>Published — {{ hecho.plan.title }}</h2>
       <p class="pequeno">
-        Embedded on write: a <b>{{ hecho.dimension }}-dimension</b> vector, computed once. Every
-        search from now on finds it with an index lookup and no API call.
+        {{ hecho.km }} km · {{ new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(hecho.precio_total) }} per seat ·
+        indexed as a <b>{{ hecho.dimension }}-dimension</b> vector, once. Anyone searching that
+        route from now on finds it without a single extra call.
       </p>
       <div class="acciones">
-        <NuxtLink :to="`/plan/${hecho.plan.id}`" class="boton">See your plan →</NuxtLink>
-        <NuxtLink to="/buscar" class="boton fantasma">Search for it</NuxtLink>
+        <UButton :to="`/plan/${hecho.plan.id}`" icon="i-lucide-route">See your ride</UButton>
+        <UButton :to="`/?desde=${encodeURIComponent(form.desde)}&hacia=${encodeURIComponent(form.hacia)}&q=${encodeURIComponent(`Fahrt von ${form.desde} nach ${form.hacia}`)}`" variant="soft">
+          Search for it
+        </UButton>
       </div>
     </div>
 
     <form v-else class="formulario" @submit.prevent="publicar">
-      <div>
-        <label for="t">Title</label>
-        <input id="t" v-model="form.title" required maxlength="90"
-               placeholder="Burna Boy live — one spare ticket">
-      </div>
-      <div>
-        <label for="d">What is it, in your words</label>
-        <textarea id="d" v-model="form.description" rows="3" required maxlength="400"
-                  placeholder="I have one seat left and I would rather not go alone…" />
-      </div>
       <div class="rejilla dos">
-        <div>
-          <label for="c">Kind of plan</label>
-          <select id="c" v-model="form.category">
-            <option v-for="c in CATEGORIAS" :key="c" :value="c">{{ c.replace('_', ' ') }}</option>
-          </select>
-        </div>
-        <div>
-          <label for="ci">Where</label>
-          <select id="ci" v-model="form.dest_city">
-            <option v-for="c in CIUDADES" :key="c" :value="c">{{ c }}</option>
-          </select>
-        </div>
-      </div>
-      <div class="rejilla dos">
-        <div>
-          <label for="w">When</label>
-          <select id="w" v-model.number="form.dia_offset">
-            <option v-for="c in CUANDO" :key="c.v" :value="c.v">{{ c.t }}</option>
-          </select>
-        </div>
-        <div>
-          <label for="s">Seats open</label>
-          <input id="s" v-model.number="form.seats_open" type="number" min="1" max="4">
-        </div>
-      </div>
-      <div>
-        <label for="su">Artist, team or cuisine <span class="tenue">(optional)</span></label>
-        <input id="su" v-model="form.subject" maxlength="60" placeholder="Burna Boy">
+        <UFormField label="From" required>
+          <UInput v-model="form.desde" placeholder="Neukölln" icon="i-lucide-circle-dot" autocomplete="off" required />
+        </UFormField>
+        <UFormField label="To" required>
+          <UInput v-model="form.hacia" placeholder="Mitte" icon="i-lucide-map-pin" autocomplete="off" required />
+        </UFormField>
       </div>
 
-      <p v-if="error" class="error pequeno">{{ error }}</p>
-      <button class="boton" :disabled="enviando">
-        <span v-if="enviando" class="cargando" />
-        {{ enviando ? 'Embedding and publishing…' : 'Publish plan' }}
-      </button>
-      <p class="minusculo tenue">
-        Publishing runs one embedding call. Searching runs none.
+      <div class="rejilla tres">
+        <UFormField label="Day">
+          <select v-model.number="form.dia_offset" class="nativo" aria-label="Day">
+            <option v-for="c in CUANDO" :key="c.v" :value="c.v">{{ c.t }}</option>
+          </select>
+        </UFormField>
+        <UFormField label="Departs at">
+          <select v-model="form.hora" class="nativo" aria-label="Departure time">
+            <option v-for="h in HORAS" :key="h" :value="h">{{ h }}</option>
+          </select>
+        </UFormField>
+        <UFormField label="Repeats">
+          <select v-model="form.recurrente" class="nativo" aria-label="Repeats">
+            <option value="">Just once</option>
+            <option value="weekdays">Every weekday</option>
+          </select>
+        </UFormField>
+      </div>
+
+      <div class="rejilla dos">
+        <UFormField label="Free seats">
+          <select v-model.number="form.seats_open" class="nativo" aria-label="Free seats">
+            <option v-for="n in 4" :key="n" :value="n">{{ n }}</option>
+          </select>
+        </UFormField>
+        <UFormField label="Price per km" :hint="precioEstimado ? `about ${precioEstimado} per seat` : 'cost sharing, not a fare'">
+          <UInput v-model.number="form.precio_por_km" type="number" min="0.05" max="0.5" step="0.01" icon="i-lucide-euro" />
+        </UFormField>
+      </div>
+
+      <UFormField label="A line for your passengers" hint="optional · German or English">
+        <UTextarea v-model="form.nota" :rows="2" placeholder="Ich fahre die Strecke sowieso. Wer mitkommen will, sagt kurz Bescheid." />
+      </UFormField>
+
+      <UAlert v-if="error" color="error" variant="subtle" icon="i-lucide-triangle-alert" :description="error" />
+
+      <UButton type="submit" size="lg" :loading="enviando" icon="i-lucide-circle-plus" class="publicar">
+        Publish the ride
+      </UButton>
+      <p class="minusculo">
+        Publishing as <b>{{ sesion?.display_name }}</b> from {{ sesion?.city }}. Demo data: nothing here is real.
       </p>
     </form>
   </div>
 </template>
 
 <style scoped>
-.formulario { display: grid; gap: .9rem; margin-top: 1.3rem; }
-.ok { margin-top: 1.3rem; border-color: var(--verde); background: var(--verde-suave); }
-.acciones { display: flex; gap: .5rem; margin-top: .9rem; flex-wrap: wrap; }
-.error { color: #dc2626; }
+h1 { font-size: var(--t-28); }
+.intro { margin: var(--e2) 0 var(--e5); }
+.formulario { display: grid; gap: var(--e4); }
+.rejilla.tres { grid-template-columns: 1fr 1fr 1fr; }
+.ok { border-color: var(--exito); background: var(--exito-suave); }
+.ok h2 { margin-bottom: var(--e2); }
+.acciones { display: flex; gap: var(--e2); margin-top: var(--e4); flex-wrap: wrap; }
+.publicar { justify-self: start; }
+@media (max-width: 640px) {
+  .rejilla.tres { grid-template-columns: 1fr 1fr; }
+  .publicar { justify-self: stretch; }
+}
 </style>

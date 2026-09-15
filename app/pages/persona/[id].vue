@@ -119,7 +119,7 @@ const avatar = computed(() => {
           </template>
         </div>
 
-        <div class="reparto">
+        <div v-if="total >= 10" class="reparto">
           <div v-for="r in rep.reparto" :key="r.estrellas" class="fila-reparto">
             <span class="n">{{ r.estrellas }}</span>
             <UProgress :model-value="total ? (r.cuantas / total) * 100 : 0" size="sm" class="b" />
@@ -150,6 +150,18 @@ const avatar = computed(() => {
         Rates their passengers {{ rep.valora_a_sus_pasajeros_con.toFixed(1) }} on average
       </p>
 
+      <!-- LA ACCION. La ficha no tenia ninguna (0 solidos; tres «Translate» sobre rese~nas), y su
+           unica pregunta es «¿me subo con esta persona?». Si publica viajes, la primaria es pedir
+           plaza en el proximo; si no, ver quien es en la busqueda (P5 Una primaria por pantalla). -->
+      <div class="accion-ficha">
+        <UButton v-if="data.planes.length" size="lg" icon="i-lucide-hand" :to="`/plan/${data.planes[0].id}`">
+          Request a seat on {{ data.planes.length === 1 ? 'the next ride' : `the next of ${data.planes.length} rides` }}
+        </UButton>
+        <UButton v-else size="lg" variant="soft" icon="i-lucide-search" to="/">
+          Find rides near {{ p.city }}
+        </UButton>
+      </div>
+
       <p class="bio" :lang="p.bio_lang">{{ p.bio }}</p>
 
       <!-- ── LAS RESE~NAS ───────────────────────────────────────────────────────────────── -->
@@ -170,10 +182,10 @@ const avatar = computed(() => {
           <p class="texto" :lang="r.idioma">«{{ r.texto }}»</p>
           <p v-if="traducidas[r.id]" class="traducido">→ {{ traducidas[r.id] }}</p>
           <UButton
-            v-else size="xs" variant="ghost" color="neutral" icon="i-lucide-languages"
+            v-else-if="r.idioma !== 'en'" size="sm" variant="ghost" color="neutral" icon="i-lucide-languages"
             :loading="traduciendo === r.id" @click="traducir(r)"
           >
-            Translate from {{ r.idioma.toUpperCase() }}
+            Translate from German
           </UButton>
         </article>
       </section>
@@ -247,6 +259,7 @@ const avatar = computed(() => {
   font-size: var(--t-15); color: var(--accion); font-weight: 500; margin-top: var(--e2);
 }
 .bio { margin: var(--e5) 0; font-size: var(--t-16); color: var(--tinta-2); }
+.accion-ficha { margin-top: var(--e4); }
 
 .bloque { margin-top: var(--e6); }
 .bloque h2 { font-size: var(--t-18); margin-bottom: var(--e3); }
