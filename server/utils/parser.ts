@@ -54,7 +54,7 @@ export interface Ventana {
   exacta: boolean        // true si el filtro duro debe exigir la fecha
 }
 
-export const SISTEMA_PARSER = `Eres el analizador de intenciones de Sameway, un producto que conecta a personas
+export const SISTEMA_PARSER = `Eres el analizador de intenciones de Match Engine, un producto que conecta a personas
 que quieren hacer planes juntas. Recibes UNA frase en aleman o en ingles y devuelves SOLO un
 objeto JSON. Nada de texto alrededor, nada de explicaciones.
 

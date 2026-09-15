@@ -1,4 +1,4 @@
 export default defineEventHandler((event) => {
-  deleteCookie(event, 'sameway_sesion', { path: '/' })
+  deleteCookie(event, 'match_engine_sesion', { path: '/' })
   return { sesion: null }
 })

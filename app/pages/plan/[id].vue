@@ -94,7 +94,7 @@ onMounted(() => {
 });
 
 useSeoMeta({
-	title: () => (p.value ? `${p.value.title} — Sameway` : "Ride — Sameway"),
+	title: () => (p.value ? `${p.value.title} — Match Engine` : "Ride — Match Engine"),
 	description: () => p.value?.description ?? "",
 });
 

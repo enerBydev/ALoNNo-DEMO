@@ -1,13 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO just:*)",
-      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO pnpm lint:*)",
-      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO pnpm typecheck:*)",
-      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO pnpm test:*)",
-      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO pnpm build:*)",
-      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO vitest:*)",
-      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO just:*)",
+      "Bash(nix develop . -c just:*)",
+      "Bash(nix develop . -c pnpm:*)",
+      "Bash(just:*)",
+      "Bash(pnpm:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",

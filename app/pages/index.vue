@@ -14,7 +14,7 @@
 import frases from "../../db/frases.json";
 
 useSeoMeta({
-	title: "Sameway — find the driver going your way",
+	title: "Match Engine — find the driver going your way",
 	description:
 		"Say it in one sentence, in German or English. The engine reads it, filters by " +
 		"route and time, ranks, and explains the number.",

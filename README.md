@@ -1,6 +1,6 @@
-# Sameway — matching demo
+# Match Engine — matching demo
 
-**Live: https://sameway-demo.enerby212.workers.dev**
+**Live: https://match-engine.enerby212.workers.dev**
 
 Type one sentence — in German or in English — and the system works out what you meant, finds
 people and plans that fit, ranks them with a real percentage, and explains each one.
