@@ -1,4 +1,5 @@
 import { CIUDADES, BARRIOS } from './lugares'
+import { claveDeLugar, variantesDeLugar } from './alias'
 
 // El unico sitio que habla con Postgres. Llama a las funciones de `db/funciones.sql` por RPC:
 // el SQL vive en la base, versionado, y el servidor solo pasa parametros.
@@ -74,20 +75,28 @@ export async function rpc<T>(
  *  Los 63 barrios salen generados de los mismos catalogos que siembran la base
  *  (`scripts/generar-lugares.py`), para que no haya dos verdades sobre donde esta Kreuzberg. */
 export function centroDe(lugar: string | null, respaldo: string | null = null): [number, number] | null {
-  const clave = (t: string) =>
-    t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/-/g, ' ').trim()
-
   const buscar = (t: string | null): [number, number] | null => {
     if (!t) return null
-    const k = clave(t)
-    if (CIUDADES[k]) return CIUDADES[k]
-    const b = BARRIOS[k]
-    if (b) return [b[0], b[1]]
-    // «Koln-Ehrenfeld», «Berlin Mitte»: la persona escribe las dos mitades y las dos valen.
-    for (const trozo of k.split(/[\s,/]+/).filter(Boolean)) {
-      if (CIUDADES[trozo]) return CIUDADES[trozo]
-      const bb = BARRIOS[trozo]
-      if (bb) return [bb[0], bb[1]]
+    // «Munich», «Koeln», «Neukölln»: exonimos, grafias sin umlaut y con umlaut, todas al catalogo.
+    for (const k of variantesDeLugar(t)) {
+      if (CIUDADES[k]) return CIUDADES[k]
+      const b = BARRIOS[k]
+      if (b) return [b[0], b[1]]
+    }
+    // «Koln-Ehrenfeld», «Berlin Mitte»: la persona escribe las dos mitades. Primero la clave
+    // compuesta del catalogo, luego un BARRIO entre los trozos —es lo mas preciso—, y la ciudad al
+    // final: «Berlin-Neukölln» centraba en Berlin, a 4,75 km de Neukölln (revision del lote 5).
+    const trozos = claveDeLugar(t).split(/[\s,/]+/).filter(Boolean)
+    if (trozos.length > 1) {
+      for (const compuesta of [trozos.join('/'), [...trozos].reverse().join('/')]) {
+        const b = BARRIOS[compuesta]
+        if (b) return [b[0], b[1]]
+      }
+      for (const trozo of trozos) for (const k of variantesDeLugar(trozo)) {
+        const bb = BARRIOS[k]
+        if (bb) return [bb[0], bb[1]]
+      }
+      for (const trozo of trozos) for (const k of variantesDeLugar(trozo)) if (CIUDADES[k]) return CIUDADES[k]
     }
     return null
   }
@@ -125,7 +134,15 @@ export function barrioDe(punto: [number, number] | null): string | null {
  *  en la pantalla sin que el usuario tenga que escribir las dos cosas. */
 export function ciudadDe(lugar: string | null): string | null {
   if (!lugar) return null
-  const k = lugar.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/-/g, ' ').trim()
-  if (CIUDADES[k]) return k
-  return BARRIOS[k]?.[2] ?? null
+  for (const k of variantesDeLugar(lugar)) {
+    if (CIUDADES[k]) return k
+    if (BARRIOS[k]) return BARRIOS[k][2]
+  }
+  // Compuesto: el barrio dice la ciudad con mas precision que el trozo que suene a ciudad.
+  const trozos = claveDeLugar(lugar).split(/[\s,/]+/).filter(Boolean)
+  if (trozos.length > 1) {
+    for (const trozo of trozos) for (const k of variantesDeLugar(trozo)) if (BARRIOS[k]) return BARRIOS[k][2]
+    for (const trozo of trozos) for (const k of variantesDeLugar(trozo)) if (CIUDADES[k]) return k
+  }
+  return null
 }

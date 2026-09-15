@@ -12,8 +12,10 @@ import {
 	reforzarFecha,
 	resolverVentana,
 	type Intencion,
+	decidirArquetipo,
 } from "../utils/parser";
 import { rpc, centroDe, type Persona, type Plan, barrioDe } from "../utils/bd";
+import { canonizarLugar } from "../utils/alias";
 import { puntuarPersona, puntuarPlan, type Puntuacion } from "../utils/scoring";
 import { explicar, type ParaExplicar } from "../utils/explicar";
 
@@ -109,10 +111,13 @@ async function buscar(event: any) {
 		// de reglas y los campos MANDAN sobre lo que la frase diga. `degradado` se queda en false
 		// porque esto no es una degradacion: es el camino rapido a proposito.
 		intencion = parsearSinModelo(q);
-		if (q_desde) intencion.city = q_desde;
+		// El parser de reglas deja «la Capa 0 no respondio…» en `unparsed`; aqui no se la llamo a
+		// proposito, asi que ese texto era falso (aceptacion v10, B4).
+		intencion.unparsed = [];
+		if (q_desde) intencion.city = canonizarLugar(q_desde);
 		if (q_hacia) {
-			intencion.hacia = q_hacia;
-			intencion.subject = q_hacia;
+			intencion.hacia = canonizarLugar(q_hacia);
+			intencion.subject = intencion.hacia;
 			intencion.subject_specificity = "named";
 		}
 		if (q_desde || q_hacia) intencion.trayecto = true;
@@ -127,6 +132,10 @@ async function buscar(event: any) {
 				"esta_semana",
 				"proximo_mes",
 				"sin_fecha",
+				"este_lunes",
+				"este_martes",
+				"este_miercoles",
+				"este_jueves",
 			] as const;
 			if ((permitidas as readonly string[]).includes(q_cuando)) {
 				intencion.fecha = {
@@ -135,8 +144,11 @@ async function buscar(event: any) {
 				};
 			}
 		}
+		// Con la fecha y el trayecto ya puestos, el arquetipo se vuelve a decidir: con «Monday» en el
+		// desplegable se quedaba en `standing_interest` y las personas salian antes que los viajes.
+		intencion.archetype = decidirArquetipo(intencion);
 	} else {
-		const t0 = Date.now();
+		const t0Capa0 = Date.now();
 		try {
 			// TIEMPO MAXIMO PARA LA CAPA 0. Medido: el mismo modelo y la misma frase tardan entre 3,9 s
 			// y 91 s segun la cola del proveedor. Una demo que se mira en vivo no puede quedarse noventa
@@ -175,13 +187,39 @@ async function buscar(event: any) {
 			);
 			// Lo que tardo en rendirse, no 0: «Why these?» decia «Capa 0: 0 ms» justo cuando se habian
 			// agotado 13,5 s (regresion N3 de la re-verificacion). El tiempo perdido tambien se mide.
-			usoParser.ms = Date.now() - t0;
+			usoParser.ms = Date.now() - t0Capa0;
 		}
 	}
 	// Una expresion temporal explicita en la frase gana sobre el silencio del modelo — salvo en el
 	// camino directo, donde el desplegable ES la verdad y no hay frase que reforzar.
 	if (!directo) intencion = reforzarFecha(intencion, q);
 	const ventana = resolverVentana(intencion);
+
+	// UN «NO» HONESTO PARA UN LUGAR QUE NO CONOCEMOS. Con «Spandau → Marzahn» en los campos,
+	// `centroDe()` caia al centro de Berlin sin avisar y la pantalla decia «7 rides tomorrow ·
+	// Spandau → Marzahn» con los mismos siete viajes de siempre: un titulo que repite lo tecleado sin
+	// haberlo aplicado. El estado de cero resultados era inalcanzable desde los campos (aceptacion
+	// v10, bloqueante B4). Un lugar desconocido corta antes de la base y lo dice.
+	const desconocido = directo
+		? [q_desde, q_hacia].find((x) => x && !centroDe(x, null))
+		: null;
+	if (desconocido) {
+		return {
+			consulta: q,
+			degradado: false,
+			motivo_degradado: null,
+			directo,
+			intencion,
+			ventana,
+			aviso: `We don't know “${desconocido}” yet. This demo covers a handful of districts per city — try Neukölln, Kreuzberg, Mitte, Wedding or Charlottenburg, or just the city name.`,
+			listas: [{ clave: "viajes" as const, titulo: "No rides found", total: 0, resultados: [] }],
+			resultados: [],
+			descartados: [],
+			totales: { candidatos: 0, personas: 0, viajes: 0, mostrados: 0, descartados: 0 },
+			tiempos: { capa_0_llm: 0, embedding: 0, capa_1_2_postgres: 0, capa_3_scoring_ms: 0, capa_4_llm: 0, total: Date.now() - t0 },
+			tokens: { tokens_entrada: 0, tokens_salida: 0, ms: 0 },
+		};
+	}
 
 	// ── CAPA 1 + 2 · filtros duros y recuperacion, las dos dentro de Postgres.
 	const { vector, uso: usoEmbed } = await embeberConsulta(env, q);
@@ -341,6 +379,10 @@ async function buscar(event: any) {
 	}));
 	let frases: Record<string, string> = {};
 	let usoExplicacion: Uso = { tokens_entrada: 0, tokens_salida: 0, ms: 0 };
+	// INCOMPLETO = el numero esta y la prosa no. No es degradado (la Capa 0 hablo), pero tampoco se
+	// guarda en cache ni `calentar` lo da por bueno: la aceptacion de la v10 encontro 9 de 15 frases
+	// cacheadas sin ninguna explicacion, todas con `capa_4_llm = 0` (hallazgo A2).
+	let incompleto = false;
 	try {
 		// LA CAPA 4 TAMBIEN NECESITA UN TECHO. La Capa 0 tenia su `Promise.race` desde el principio
 		// y esta no: medido el 11-sep-2026, una busqueda tardo 82 s en total con las capas 0-3
@@ -371,6 +413,9 @@ async function buscar(event: any) {
 			`[capa-4] sin explicacion: ${String(e?.statusMessage ?? e?.message ?? e).slice(0, 200)}`,
 		);
 	}
+	// La bandera sale del RESULTADO, no de la excepcion: `explicar()` puede contestar sin explicar
+	// (descarta en silencio lo que no sea texto) y eso tambien es incompleto.
+	incompleto = paraExplicar.some((i) => !frases[i.id]);
 
 	const salida = (f: Fila) => ({
 		tipo: f.tipo,
@@ -464,6 +509,7 @@ async function buscar(event: any) {
 		consulta: q,
 		degradado, // true = la Capa 0 no respondio y esto salio de reglas, no del modelo
 		motivo_degradado: motivoDegradado,
+		incompleto, // true = hay resultados pero la Capa 4 no llego a explicarlos
 		directo, // true = se corrigio un campo, asi que no habia nada que interpretar
 		intencion, // el panel «asi lo entendi» del §10: el usuario no configura, corrige
 		ventana,
@@ -552,7 +598,7 @@ function claveDeCache(event: any): string {
 				.toLowerCase(),
 		)
 		.join("|");
-	return `buscar:v13:${ciudad}:${campos}:${q}`;
+	return `buscar:v14:${ciudad}:${campos}:${q}`;
 }
 
 // LA CACHE, A MANO. Antes era `defineCachedEventHandler` de Nitro, y se cambio por un motivo
@@ -655,7 +701,7 @@ export default defineEventHandler(async (event) => {
 
 	const r = await buscar(event);
 	setHeader(event, "x-cache", fresco ? "BYPASS" : "MISS");
-	if (!r.degradado) {
+	if (!r.degradado && !r.incompleto) {
 		await almacen.put(clave, r).catch((e: any) => {
 			console.warn(
 				`[cache] no se pudo guardar ${clave}: ${String(e?.message ?? e).slice(0, 120)}`,

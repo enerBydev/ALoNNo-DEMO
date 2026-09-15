@@ -496,6 +496,35 @@ def main():
         "tags": ["commute", "rideshare"], "budget_band": "low", "pace": "relaxed",
         "language_pref": ["de", "en"],
     })
+    # LOS DOS CHIPS DE LA PORTADA. «Ich brauche eine Fahrt nach Westend am Montag» y «Anyone driving
+    # towards Maxvorstadt tomorrow around 8?» son los dos unicos ejemplos visibles sin abrir la
+    # paleta, y la aceptacion de la v10 midio que ninguno tenia un viaje que lo contestara: salian
+    # unas vacaciones en Frankfurt al 45 % y una entrada de futbol como coche compartido. Se plantan
+    # como el de la portada: a mano y deterministas. El de Westend es de diario (y `fecha_de` lo
+    # pone en lunes cuando toca); el de Maxvorstadt sale ma~nana a las 08:10.
+    for clave, ciudad, b_o, b_v, b_d, titulo, desc, lang, hora, recurrente, offset, precio in [
+        ("chip-westend", "Frankfurt", "Bornheim", ["Nordend"], "Westend",
+         "Jeden Morgen Bornheim → Westend, 08:15",
+         "Ich fahre jeden Werktag ins Westend. Zwei Plaetze frei, ich halte an der Bockenheimer Warte.",
+         "de", "08:15", "weekdays", 4, 0.10),
+        ("chip-maxvorstadt", "Munchen", "Schwabing", [], "Maxvorstadt",
+         "Schwabing → Maxvorstadt, 08:10",
+         "Driving to the Maxvorstadt tomorrow morning anyway. Two seats free, I stop near Odeonsplatz.",
+         "en", "08:10", None, 1, 0.09),
+    ]:
+        conductor = next(c for c in conductores if c["city"] == ciudad)
+        o = geo(ciudad, b_o); vs = [geo(ciudad, v) for v in b_v]; d = geo(ciudad, b_d)
+        pts, kms = trazar(o, vs, d)
+        trayectos.append({
+            "clave": clave, "origen": "portada", "id": ident(f"plan/{clave}"), "owner_id": conductor["id"],
+            "title": titulo, "description": desc, "desc_lang": lang, "category": "commute",
+            "origin_city": ciudad, "dest_city": ciudad, "is_travel": False, "venue": b_d, "barrio": b_d,
+            "geo": d, "origin_geo": o, "ruta": pts, "via": b_v, "distancia_km": kms, "precio_por_km": precio,
+            "recurrente": recurrente, "date_precision": "exact", "dia_offset": offset, "hora": hora,
+            "duracion_h": 1, "radius_km": 2, "seats_open": 2, "subject": b_d,
+            "tags": ["commute", "rideshare"], "budget_band": "low", "pace": "relaxed",
+            "language_pref": ["de", "en"],
+        })
     planes.extend(trayectos)
 
     # Rese~nas. Un conductor sin ninguna tambien existe —es el que acaba de entrar— y eso es

@@ -80,6 +80,15 @@ const CUANDO = [
 	{ value: "este_finde", label: "this weekend" },
 	{ value: "esta_semana", label: "this week" },
 	{ value: "proximo_mes", label: "next month" },
+	// Las que escribe el parser al leer la frase: sin ellas el <select> se pintaba vacio con la lista
+	// ya filtrada al lunes (revision del lote 5).
+	{ value: "viernes_noche", label: "Friday evening" },
+	{ value: "este_sabado", label: "this Saturday" },
+	{ value: "este_domingo", label: "this Sunday" },
+	{ value: "este_lunes", label: "on Monday" },
+	{ value: "este_martes", label: "on Tuesday" },
+	{ value: "este_miercoles", label: "on Wednesday" },
+	{ value: "este_jueves", label: "on Thursday" },
 ];
 
 /** Ejemplos propios del coche compartido. Las diez del cliente siguen estando —son el criterio de
@@ -375,6 +384,11 @@ defineShortcuts({
       <template v-if="datos">
         <!-- El caso degradado SI se avisa en linea: cambia lo que el usuario ve. El resto de
              la telemetria vive detras de «Why these?» (P8). -->
+        <!-- Un lugar que no esta en el catalogo: se dice, no se disimula con los viajes de siempre. -->
+        <UAlert
+          v-if="datos.aviso" color="warning" variant="subtle" icon="i-lucide-map-pin-off" class="hueco"
+          :description="datos.aviso"
+        />
         <UAlert
           v-if="datos.degradado" color="warning" variant="subtle" icon="i-lucide-info" class="hueco"
           description="We couldn't read your sentence in time, so this search ran on rules and the three fields above. Correct one to search again."
@@ -509,7 +523,7 @@ defineShortcuts({
           <p class="grupo-t">Plans — concerts, matches, trips</p>
           <button
             v-for="f in frases" :key="f.escenario" class="ejemplo"
-            @click="paletaAbierta = false; buscar({ frase: f.frase_del_cliente })"
+            @click="paletaAbierta = false; buscar({ frase: f.frase_del_cliente, ciudad: 'Berlin' })"
           >
             <UBadge size="sm" color="neutral" variant="subtle">
               {{ /[äöüßÄÖÜ]|^Ich|^Meine/.test(f.frase_del_cliente) ? 'DE' : 'EN' }}

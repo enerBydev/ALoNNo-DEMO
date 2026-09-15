@@ -4,6 +4,7 @@
 // porque la fallaba. Corre sin red, dentro de `just ci`.
 import { describe, it, expect } from 'vitest'
 import { decidirArquetipo, resolverVentana, normalizar, reforzarFecha, type Intencion } from '../server/utils/parser'
+import { centroDe, ciudadDe } from '../server/utils/bd'
 
 const base = (extra: Partial<Intencion>): Intencion => normalizar({
   archetype: 'intent_seeks_any', has_concrete_event: false, user_has_booking: false,
@@ -95,10 +96,58 @@ describe('el codigo corrige al modelo cuando la frase dice una fecha y el no la 
     expect(r.fecha.expresion).toBe('manana')
   })
 
-  it('NO pisa al modelo cuando el si vio una fecha', () => {
-    // El modelo sabe leer expresiones que estas reglas no; si dijo algo, se respeta.
+  it('SI pisa al modelo cuando la frase lleva un marcador inequivoco (aceptacion v10, B3)', () => {
+    // Hasta el 15-sep-2026 esto se respetaba al reves: «si el modelo dijo algo, se respeta». La
+    // aceptacion de la v10 midio «tomorrow» leido como hoy y «am Montag» como el mes que viene,
+    // congelados seis horas en cache. Un marcador en la frase es un hecho; lo del modelo, una lectura.
     const conFecha = base({ fecha: { expresion: 'proximo_mes', mes: null } })
-    expect(reforzarFecha(conFecha, 'this weekend').fecha.expresion).toBe('proximo_mes')
+    expect(reforzarFecha(conFecha, 'this weekend').fecha.expresion).toBe('este_finde')
+    const hoy = base({ fecha: { expresion: 'hoy', mes: null } })
+    expect(reforzarFecha(hoy, 'I have an extra ticket for Bayern in Munich tomorrow').fecha.expresion).toBe('manana')
+  })
+
+  it('lunes a jueves existen: «am Montag» es el lunes que viene, nunca hoy', () => {
+    const r = reforzarFecha(base({ fecha: { expresion: 'proximo_mes', mes: null } }), 'Ich brauche eine Fahrt nach Westend am Montag')
+    expect(r.fecha.expresion).toBe('este_lunes')
+    const v = resolverVentana(r, new Date('2026-09-21T10:00:00Z')) // un lunes
+    expect(v.desde).toBe('2026-09-28')
+    expect(v.exacta).toBe(true)
+  })
+
+  it('un mes nombrado manda sobre el finde: «a weekend in Cologne in October» es octubre', () => {
+    const r = reforzarFecha(base({ fecha: { expresion: 'este_finde', mes: null } }), 'I already booked a weekend in Cologne in October')
+    expect(r.fecha).toEqual({ expresion: 'mes_nombrado', mes: 'october' })
+    const de = reforzarFecha(base({}), 'Am Oktoberwochenende nach Koeln')
+    expect(de.fecha.mes).toBe('october')
+  })
+
+  it('un mes no es cualquier palabra que empiece igual: Marzahn, Main, Julia, «may be»', () => {
+    expect(reforzarFecha(base({}), 'Ich fahre morgen von Spandau nach Marzahn').fecha.expresion).toBe('manana')
+    expect(reforzarFecha(base({}), 'Ich habe fuer Freitagabend einen Tisch in Frankfurt am Main reserviert').fecha.expresion).toBe('viernes_noche')
+    expect(reforzarFecha(base({}), 'Anyone who may be driving to Mitte tomorrow?').fecha.expresion).toBe('manana')
+    expect(reforzarFecha(base({}), 'Treffen im Augustiner morgen Abend').fecha.expresion).toBe('manana')
+    expect(reforzarFecha(base({}), 'a trip in May').fecha.mes).toBe('may')
+  })
+
+  it('«Montag morgen» es el lunes por la ma~nana', () => {
+    expect(reforzarFecha(base({}), 'Ich fahre am Montag morgen nach Westend').fecha.expresion).toBe('este_lunes')
+  })
+
+  it('en un lugar compuesto el barrio gana a la ciudad', () => {
+    expect(centroDe('Berlin-Neukölln')).toEqual(centroDe('Neukolln'))
+    expect(centroDe('Koln-Ehrenfeld')).toEqual(centroDe('Ehrenfeld'))
+    expect(centroDe('Mitte, Berlin')).toEqual(centroDe('Berlin Mitte'))
+    expect(ciudadDe('Berlin-Neukölln')).toBe('berlin')
+  })
+
+  it('«jeden Morgen» es la ma~nana, no ma~nana', () => {
+    expect(reforzarFecha(base({}), 'Ich fahre jeden Morgen nach Mitte').fecha.expresion).toBe('sin_fecha')
+  })
+
+  it('exonimos: «Munich» y «Cologne» llegan al catalogo como Munchen y Koln (aceptacion v10, B1)', () => {
+    expect(base({ city: 'Munich' }).city).toBe('Munchen')
+    expect(base({ dest_city: 'Cologne' }).dest_city).toBe('Koln')
+    expect(base({ city: 'Koeln' }).city).toBe('Koln')
   })
 
   it('frase 9 sigue sin fecha: no hay ninguna expresion temporal que agarrar', () => {

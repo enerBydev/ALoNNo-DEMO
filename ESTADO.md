@@ -124,7 +124,20 @@ cierra los parciales baratos: el detalle de confianza en ingles, la moneda de la
 timeout sin promesas falsas, y 44 px en los controles que quedaban cortos en telefono. Lo que sigue
 parcial, y se declara: el aviso de hydration mismatch en `/` y `/plan`, el CTA de la tarjeta que
 lleva a la ficha en vez de pedir la plaza (2 clics con sesion, 4 sin), y un salto de 88 px al
-montar el mapa. Lo que queda, en orden de
+montar el mapa. Despues, una **aceptacion final** con tres auditores (UAT frase a frase, walkthrough contra
+los 15 principios, bateria automatizada; docs privados, `ux/07-aceptacion-v10.md`): 41 hallazgos nuevos y
+**4 bloqueantes del criterio de aceptacion** —3 de las 10 frases del cliente y 3 de las 5 de coche sin
+resultado defendible— que no eran de UI: exonimos («Cologne», «Munich») sin alias, la fecha explicita
+de la frase perdiendo contra una lectura equivocada del modelo, `--reanclar` dejando los planes de fin
+de semana en jueves y viernes, y los campos From/To devolviendo los mismos 7 viajes con un titulo falso
+para un barrio fuera del catalogo. El **lote 5** (`86bc0ww56`) cierra los cuatro: alias en
+`normalizar()` y `centroDe()`; «la fecha del texto gana» en `reforzarFecha()` con lunes–jueves y el mes
+nombrado por encima de todo; las fechas del seed ruedan **por dia de la semana** (`fecha_de` en
+`sembrar.py`, en `sembrar` y en `--reanclar`); un «no» honesto con aviso cuando el lugar no existe; y
+`incompleto` cuando la Capa 4 calla —no se cachea y `calentar` insiste— porque 9 de 15 respuestas
+cacheadas no traian ninguna explicacion. Se plantaron ademas dos viajes para los chips de la portada
+(Bornheim → Westend de diario, Schwabing → Maxvorstadt ma~nana) y la clave de cache subio a v14. Lo
+que queda, en orden de
 retorno: los tres experimentos A/B por bandera (§3 del informe 05), Cloudflare Web Analytics
 (15 min, token del dashboard), y los 16 protocolos con personas (5 s, primer clic, card sorting,
 contextual inquiry, UAT del dia 16 en §7 del informe 04).
@@ -173,8 +186,12 @@ produccion—, no un `source` en una respuesta JSON.
 
 ## Lo siguiente, en orden
 
-1. **El dia 16**: `just reanclar` (o `just sembrar`), `just frases`, `just calentar`, y abrir la
-   demo en un navegador de verdad. En ese orden.
+1. **El dia 16**: `just reanclar`, `just frases`, `just calentar` (hasta que diga «todas las frases estan
+   en cache y vienen del modelo»: con el proveedor lento puede hacer falta correrlo dos veces), y abrir
+   la demo en un navegador de verdad. En ese orden. La base se re-sembro entera el 15 por la tarde.
+   **Decision, no bug**: si `just reanclar` se corre un viernes o un sabado, el viaje de la portada
+   (de diario) pasa al lunes y la frase por defecto («morgen um 8») lo encuentra fechado el lunes; es
+   lo honesto —nadie conduce al trabajo un sabado— y no hay que leerlo como regresion.
 2. Mandar el mensaje de entrega (`docs/entrega/mensaje-2026-09-16.md`) con la contrapropuesta y
    **la pregunta de cual de los dos productos esta vivo**.
 3. Rotar `nvidia-nim` y borrar el ruleset de prueba (los dos son de Rene).

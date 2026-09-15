@@ -352,6 +352,7 @@
       "venue": "Restaurant Zedernhof",
       "date_precision": "exact",
       "dia_offset": 1,
+      "dia_semana": 4,
       "hora": "19:30",
       "duracion_h": 3,
       "radius_km": 18,
