@@ -170,7 +170,7 @@ export function confianza(p: { verification: number; completed_plans: number; re
  *  Hasta el 11-sep-2026 el score de un plan llevaba `trust` clavado a 0,6 y
  *  `owner_affinity` a 0,5: numeros de relleno, porque no habia dato. Ahora si lo hay
  *  —`nota`, `notas_conteo`, `verification`, `completed_plans`— y no usarlo seria ense~nar una
- *  estrella en la tarjeta que no pesa en el numero de al lado. `pickando.docx` pide «driver
+ *  estrella en la tarjeta que no pesa en el numero de al lado. el encargo del cliente pide «driver
  *  rating & review»; una nota que no cambia nada es decoracion.
  *
  *  LA REGLA QUE IMPORTA: **con menos de 3 valoraciones la nota no cuenta.** Un 5,0 de una sola

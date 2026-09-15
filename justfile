@@ -128,7 +128,7 @@ seed-determinista:
     if [ "$a" != "$b" ]; then echo "el seed NO es determinista: $a != $b" >&2; exit 1; fi
     echo "seed determinista: $a"
 
-# Las 10 frases de Helder contra la demo desplegada: criterio de aceptacion (regla 4), smoke test
+# Las 10 frases del cliente contra la demo desplegada: criterio de aceptacion (regla 4), smoke test
 # del §11 y pre-calentado de la cache, todo en el mismo comando.
 #
 # FUERA de `just ci` a proposito: necesita red y la URL desplegada, y un gate que depende de un

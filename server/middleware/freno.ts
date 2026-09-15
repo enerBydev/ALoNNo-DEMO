@@ -1,7 +1,7 @@
 // EL FRENO DE PRESUPUESTO. Protege lo unico que hay que proteger: el credito de IA.
 //
 // La demo es una URL PUBLICA con una clave de IA detras. Sin freno, un bucle de `curl` la deja
-// sin credito antes del 16 y Helder abre un link muerto.
+// sin credito antes del 16 y el cliente abre un link muerto.
 //
 // ── POR QUE ESTE FRENO Y NO UNO POR IP, que es lo que la seccion J dice ──────────────────────
 //

@@ -10,7 +10,7 @@ const seed = hay ? JSON.parse(readFileSync(RUTA, 'utf8')) : null
 describe.skipIf(!hay)('db/seed.json', () => {
   it('no contiene NI UNA fecha literal', () => {
     // La regla 3 del proyecto y el §12 del brief: es «el bug mas probable de todo el proyecto».
-    // Una fecha absoluta aqui caduca, y la frase de Helder que dependa de ella devuelve vacio
+    // Una fecha absoluta aqui caduca, y la frase del cliente que dependa de ella devuelve vacio
     // delante del cliente. El tiempo se expresa con desplazamientos; los materializa sembrar.py.
     const texto = JSON.stringify(seed)
     const fechas = texto.match(/\d{4}-\d{2}-\d{2}/g) ?? []

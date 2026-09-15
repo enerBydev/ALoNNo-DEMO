@@ -2,7 +2,7 @@
 export interface Sesion { id: string; display_name: string; city: string }
 
 export function sesionDe(event: any): Sesion | null {
-  const crudo = getCookie(event, 'alonno_sesion')
+  const crudo = getCookie(event, 'sameway_sesion')
   if (!crudo) return null
   try { return JSON.parse(crudo) as Sesion } catch { return null }
 }

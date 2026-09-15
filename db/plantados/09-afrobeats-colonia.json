@@ -1,6 +1,6 @@
 {
   "escenario": "09-afrobeats-colonia",
-  "frase_de_helder": "Meine Freunde interessieren sich nicht für Afrobeats. Ich suche jemanden in Köln oder Umgebung, der gerne auf solche Konzerte und Partys geht.",
+  "frase_del_cliente": "Meine Freunde interessieren sich nicht für Afrobeats. Ich suche jemanden in Köln oder Umgebung, der gerne auf solche Konzerte und Partys geht.",
   "que_debe_devolver": "Personas (no planes) con gusto afrobeats en Colonia y en el area de 40 km, sin ningun filtro de fecha porque el interes es permanente, y con al menos una viviendo fuera de Colonia para que «oder Umgebung» signifique algo.",
   "perfiles": [
     {

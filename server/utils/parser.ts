@@ -26,7 +26,7 @@ export interface Intencion {
   subject_specificity: 'named' | 'genre' | 'open'
   language: 'de' | 'en'
   category: string | null
-  /** La frase va de moverse en coche: ofrecer o buscar plaza. `pickando.docx`. */
+  /** La frase va de moverse en coche: ofrecer o buscar plaza. el encargo del cliente. */
   trayecto: boolean
   /** Adonde va, tal y como lo escribio: puede ser un barrio, no solo una ciudad. */
   hacia: string | null
@@ -54,7 +54,7 @@ export interface Ventana {
   exacta: boolean        // true si el filtro duro debe exigir la fecha
 }
 
-export const SISTEMA_PARSER = `Eres el analizador de intenciones de ALoNNo, un producto que conecta a personas
+export const SISTEMA_PARSER = `Eres el analizador de intenciones de Sameway, un producto que conecta a personas
 que quieren hacer planes juntas. Recibes UNA frase en aleman o en ingles y devuelves SOLO un
 objeto JSON. Nada de texto alrededor, nada de explicaciones.
 
@@ -123,7 +123,7 @@ unparsed, trayecto, hacia.`
 
 // Las seis primeras son planes; las cuatro ultimas, motivos de viaje en coche. Conviven en la
 // misma columna a proposito: el motor no distingue «plan» de «trayecto», y por eso el mismo
-// motor sirve a los dos productos del hilo de Workana (docs/conocimiento/07-pickando-vs-alonno.md).
+// motor sirve a los dos productos del hilo de Workana (el informe 07 de los docs privados).
 const CATEGORIAS = ['concert', 'football', 'weekend_trip', 'holiday', 'restaurant', 'activity',
   'commute', 'errands', 'nightlife', 'gym']
 const CATEGORIAS_DE_COCHE = ['commute', 'errands', 'nightlife', 'gym']
@@ -204,7 +204,7 @@ export function decidirArquetipo(i: Intencion): Arquetipo {
 
 /** EL CODIGO CORRIGE AL MODELO TAMBIEN EN LAS FECHAS.
  *
- * Medido el 10-sep-2026 con la frase 8 de Helder —«I am in Berlin this weekend and would like to
+ * Medido el 10-sep-2026 con la frase 8 del cliente —«I am in Berlin this weekend and would like to
  * do something spontaneous»—: el modelo devolvia `sin_fecha`, y con eso la frase se clasificaba
  * como `standing_interest` (un interes permanente) cuando es una intencion CON ventana. Se
  * perdia el filtro del fin de semana entero.
@@ -303,7 +303,7 @@ export function resolverVentana(i: Intencion, ahora = new Date()): Ventana {
 export function parsearSinModelo(q: string): Intencion {
   const t = q.toLowerCase()
   // «Düsseldorf» y «Duesseldorf» son la misma ciudad, y la segunda es como la escribe media
-  // Alemania en un teclado que no es el suyo. Sin plegar los digrafos, la frase 1 de Helder
+  // Alemania en un teclado que no es el suyo. Sin plegar los digrafos, la frase 1 del cliente
   // escrita «Duesseldorf» perdia la ciudad entera: `city: null`, sin centro y sin radio.
   const sinTildes = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/ae/g, 'a').replace(/oe/g, 'o').replace(/ue/g, 'u').replace(/\u00df/g, 'ss')

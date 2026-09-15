@@ -1,6 +1,6 @@
 {
   "escenario": "04-bayern-dortmund-munich",
-  "frase_de_helder": "I have an extra ticket for Bayern against Dortmund in Munich tomorrow and would rather go with someone who actually likes football.",
+  "frase_del_cliente": "I have an extra ticket for Bayern against Dortmund in Munich tomorrow and would rather go with someone who actually likes football.",
   "que_debe_devolver": "Personas en Munchen a las que les gusta el futbol de verdad y estan libres MANANA, con el hincha del Bayern del mismo barrio arriba y los cuatro near-miss por debajo.",
   "perfiles": [
     {

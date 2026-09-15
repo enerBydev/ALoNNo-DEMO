@@ -1,6 +1,6 @@
 {
   "escenario": "06-coldplay-reciproco",
-  "frase_de_helder": "\"I want to go to a Coldplay concert in Düsseldorf next month. I do not have a ticket yet, but I am looking for someone who is planning to go too.\"",
+  "frase_del_cliente": "\"I want to go to a Coldplay concert in Düsseldorf next month. I do not have a ticket yet, but I am looking for someone who is planning to go too.\"",
   "que_debe_devolver": "Top 1: el plan de Coldplay en Dusseldorf con seats_open=1 — quien TIENE la entrada de sobra —; detras, la gente que quiere ir sin entrada.",
   "perfiles": [
     {

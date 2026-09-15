@@ -17,7 +17,7 @@ DOS REGLAS GOBIERNAN ESTE FICHERO, y las dos vienen del brief:
 
 El mundo tiene dos mitades y se distinguen en el campo `origen` de cada fila:
 
-  * **los plantados** (`db/plantados/*.json`) — escritos a mano, uno por cada frase de Helder.
+  * **los plantados** (`db/plantados/*.json`) — escritos a mano, uno por cada frase del cliente.
     Son el criterio de aceptacion: aqui viven el par reciproco 6↔1 y los cuatro near-miss.
   * **el relleno** — generado por combinatoria para que el mundo se vea denso. Sin el, cada
     busqueda devolveria solo las filas plantadas y la demo se veria de juguete.
@@ -37,7 +37,7 @@ PLANTADOS = os.path.join(RAIZ, "db", "plantados")
 SALIDA = os.path.join(RAIZ, "db", "seed.json")
 
 SEMILLA = 20260910
-ESPACIO = uuid.UUID("a10c0de0-0000-4000-8000-000000000000")  # "alonno" en hex valido
+ESPACIO = uuid.UUID("a10c0de0-0000-4000-8000-000000000000")  # hex valido; NO cambiar: mueve todos los ids
 
 OBJETIVO_PERFILES = 240
 OBJETIVO_PLANES = 180
@@ -195,7 +195,7 @@ def plan_relleno(n, duenno):
 # Se a~nade DESPUES de construir perfiles y planes, y sobre los dos mundos a la vez (plantados y
 # relleno), porque un conductor no es otra clase de persona: es la misma persona con coche. El
 # due~no del plan «Bayern-Dortmund» conduce hasta el estadio y le sobran dos plazas — y eso es,
-# a la vez, el resultado de la frase 4 de Helder y un viaje del docx.
+# a la vez, el resultado de la frase 4 del cliente y un viaje del docx.
 
 import math
 
@@ -349,7 +349,7 @@ def cargar_plantados():
         esc = d.get("escenario") or nombre[:-5]
         escenarios.append({
             "escenario": esc,
-            "frase_de_helder": d.get("frase_de_helder"),
+            "frase_del_cliente": d.get("frase_del_cliente"),
             "que_debe_devolver": d.get("que_debe_devolver"),
         })
         por_clave = {}
@@ -527,7 +527,7 @@ def main():
     with open(ruta_frases, "w", encoding="utf-8") as f:
         json.dump(escenarios, f, ensure_ascii=False, indent=1)
         f.write("\n")
-    print(f"  frases de Helder: {os.path.relpath(ruta_frases, RAIZ)}")
+    print(f"  frases del cliente: {os.path.relpath(ruta_frases, RAIZ)}")
 
 
 if __name__ == "__main__":

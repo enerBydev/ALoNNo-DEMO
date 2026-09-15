@@ -158,7 +158,7 @@ language sql stable as $$
         q_dest_city is not null or q_lon is null
         or st_dwithin(p.geo, st_point(q_lon, q_lat)::geography,
                       greatest(q_radio_km, p.radius_km) * 1000.0)
-        -- EL REQUISITO CENTRAL DE `pickando.docx`: «Passenger: tracking within 1-2 km of all
+        -- EL REQUISITO CENTRAL DEL ENCARGO: «Passenger: tracking within 1-2 km of all
         -- drivers driving on the same route». Un pasajero de Wannsee no esta ni en Berlin-Mitte
         -- ni en Potsdam, pero el conductor le pasa a 800 m. Con dos puntos ese pasajero NO
         -- EXISTE; con la polilinea, aparece. Es la diferencia entre «cerca de mi» y «va por

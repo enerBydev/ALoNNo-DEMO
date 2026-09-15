@@ -1,4 +1,4 @@
 export default defineEventHandler((event) => {
-  deleteCookie(event, 'alonno_sesion', { path: '/' })
+  deleteCookie(event, 'sameway_sesion', { path: '/' })
   return { sesion: null }
 })

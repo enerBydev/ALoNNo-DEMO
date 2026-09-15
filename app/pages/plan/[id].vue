@@ -94,7 +94,7 @@ onMounted(() => {
 });
 
 useSeoMeta({
-	title: () => (p.value ? `${p.value.title} — ALoNNo` : "Ride — ALoNNo"),
+	title: () => (p.value ? `${p.value.title} — Sameway` : "Ride — Sameway"),
 	description: () => p.value?.description ?? "",
 });
 

@@ -24,7 +24,7 @@ import urllib.request
 
 PROYECTO = "qbrgwphcpflbwhfqhffc"
 API_SQL = f"https://api.supabase.com/v1/projects/{PROYECTO}/database/query"
-AGENTE = "alonno-demo-sembrador/1.0"
+AGENTE = "sameway-demo-sembrador/1.0"
 
 
 def token():

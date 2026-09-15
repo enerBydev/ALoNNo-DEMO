@@ -44,7 +44,7 @@ export default defineCachedEventHandler(async (event) => {
   const q = String(getQuery(event).q ?? '').trim()
   if (!q) throw createError({ statusCode: 400, statusMessage: 'falta ?q=<frase>' })
   if (q.length > 500) throw createError({ statusCode: 400, statusMessage: 'frase demasiado larga' })
-  // DE DONDE SALE QUIEN PREGUNTA. `pickando.docx` lo pide con nombre propio —«Pickup location:
+  // DE DONDE SALE QUIEN PREGUNTA. el encargo del cliente lo pide con nombre propio —«Pickup location:
   // automatically allows you to find a driver based on a passenger's location»— y sin esto una
   // frase como «Ich suche eine Mitfahrgelegenheit nach Mitte» no tiene centro: devuelve coches
   // de Dusseldorf a alguien de Berlin. La ciudad de la frase SIEMPRE gana; esto es el respaldo.
@@ -380,7 +380,7 @@ export default defineCachedEventHandler(async (event) => {
   }
 }, {
   // LA CACHE. La Capa 0 tarda entre 3,9 s y 15 s por variabilidad del proveedor, y las 10 frases
-  // de Helder son clicables: se van a repetir. Cacheadas, la segunda vez cuestan una lectura de
+  // del cliente son clicables: se van a repetir. Cacheadas, la segunda vez cuestan una lectura de
   // KV y cero llamadas a la IA — que es ademas el control 4 de la seccion E de la propuesta.
   //
   // La clave la construye Nitro con la URL, y por eso este endpoint es un GET: con un POST el
