@@ -53,6 +53,18 @@
   --sombra: 0 1px 2px #0e111608, 0 6px 20px #0e11160a;
   --lectura: 720px;           /* 920 px de linea son ~130 caracteres: el doble de lo legible */
 
+  /* ALIAS DE LA PALETA VIEJA. Cuatro pantallas (entrar, crear, como-funciona, mio) seguian usando
+     `--acento`, `--acento-suave`, `--verde` y `--verde-suave`, que la reescritura del 11-sep
+     borro: avatares con letra blanca sobre transparente, bordes invisibles. 24 usos en total,
+     medidos por el programa de UX. Los alias los hacen apuntar a la paleta actual sin tocar las
+     cuatro pantallas; cuando se reescriban, se quitan. */
+  --acento: var(--accion);
+  --acento-suave: var(--accion-suave);
+  --verde: var(--exito);
+  --verde-suave: var(--exito-suave);
+  --tenue: var(--tinta-2);
+  --papel-2: var(--superficie);
+
   color-scheme: light dark;
 }
 
@@ -145,13 +157,21 @@ a { color: inherit; }
 .pequeno   { font-size: var(--t-15); }
 .minusculo { font-size: var(--t-13); color: var(--tinta-3); }
 
-input, textarea, select {
-  font: inherit; color: inherit; background: var(--superficie); width: 100%;
-  border: 1px solid var(--linea-fuerte); border-radius: var(--radio-2);
-  padding: 10px var(--e3); min-height: 44px;
-}
-input:focus, textarea:focus, select:focus {
-  outline: 2px solid var(--foco); outline-offset: 1px; border-color: var(--foco);
+/* EN LA CAPA `base` DE TAILWIND, NO SUELTO. Estas reglas para los formularios propios (entrar,
+   crear) estaban fuera de toda capa, y el CSS sin capa gana SIEMPRE al CSS en capa, sea cual sea
+   su especificidad: el `padding: 10px 12px` pisaba el `ps-9` (36 px) de los `UInput` de Nuxt UI,
+   y el icono del campo tapaba la primera letra del valor — «◎eukolln», «⌖itte» — en los tres
+   campos de la portada. Lo midieron cuatro agentes del programa de UX (15-sep-2026). Dentro de
+   `@layer base`, las utilidades de Tailwind (capa `utilities`) vuelven a mandar. */
+@layer base {
+  input, textarea, select {
+    font: inherit; color: inherit; background: var(--superficie); width: 100%;
+    border: 1px solid var(--linea-fuerte); border-radius: var(--radio-2);
+    padding: 10px var(--e3); min-height: 44px;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: 2px solid var(--foco); outline-offset: 1px; border-color: var(--foco);
+  }
 }
 label {
   display: block; font-size: var(--t-13); font-weight: 500; color: var(--tinta-2);

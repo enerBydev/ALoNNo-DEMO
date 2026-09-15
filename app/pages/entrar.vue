@@ -11,13 +11,15 @@ const entrando = ref<string | null>(null)
 async function elegir(p: any) {
   entrando.value = p.id
   await entrar(p.id)
-  await navigateTo(String(ruta.query.volver || '/buscar'))
+  // `/buscar` ya no existe como pantalla: volver ahi era un redirect en navegacion cliente que
+  // acababa en una pagina en blanco (medido). Sin `volver`, a la portada.
+  await navigateTo(String(ruta.query.volver || '/'))
 }
 </script>
 
 <template>
   <div class="contenedor estrecho">
-    <h1>Who are you today?</h1>
+    <h1>{{ ruta.query.volver ? 'Pick a profile to ask for the seat' : 'Pick a profile to try the demo' }}</h1>
     <p class="tenue" style="margin-top:.6rem">
       This is a demo over synthetic profiles, so there are no passwords. Pick someone and you will
       see the product from their side: their city, their taste, their plans.

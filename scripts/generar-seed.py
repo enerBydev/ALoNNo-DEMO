@@ -291,10 +291,13 @@ def trayecto_relleno(n, duenno):
     # cualquiera que mire dos lineas seguidas de la pantalla. «Cada ma~nana» es una afirmacion
     # sobre el dato, no un adorno del titulo.
     recurrente = "weekdays" if motivo == "commute" and R.random() < 0.7 else None
-    plantillas = list(C.TITULO_TRAYECTO_DE if lang == "de" else C.TITULO_TRAYECTO_EN)
-    repetidas = [p for p in plantillas if "{o}" in p and ("Jeden" in p or "every" in p)]
-    plantillas = repetidas if recurrente else [p for p in plantillas if p not in repetidas]
-    titulo = R.choice(plantillas).format(o=b_origen, d=b_destino, h=hora)
+    if recurrente:
+        momento = "manana" if int(hora.split(":")[0]) < 12 else "tarde"
+        titulo = (C.TITULO_RECURRENTE_DE if lang == "de" else C.TITULO_RECURRENTE_EN)[momento] \
+            .format(o=b_origen, d=b_destino, h=hora)
+    else:
+        plantillas = C.TITULO_TRAYECTO_DE if lang == "de" else C.TITULO_TRAYECTO_EN
+        titulo = R.choice(plantillas).format(o=b_origen, d=b_destino, h=hora)
     return {
         "clave": f"relleno-trayecto-{n:03d}",
         "origen": "relleno",
@@ -472,6 +475,27 @@ def main():
         duenno = conductores[t % len(conductores)]
         trayectos.append(trayecto_relleno(t, duenno))
         t += 1
+    # EL VIAJE DE LA PORTADA. La busqueda por defecto de `/` es «Ich fahre morgen um 8 von Neukolln
+    # nach Mitte, zwei Plaetze frei»; sin un viaje que la conteste de verdad, el primer vistazo
+    # del cliente depende de la suerte del relleno (paso el 15-sep: el mejor era uno de las 19:30
+    # con un 64 %). Se planta como se plantan las 10 frases: a mano y determinista.
+    duenna = next(c for c in conductores if c["city"] == "Berlin" and (c.get("notas_conteo") or 0) == 0
+                  or c["city"] == "Berlin")
+    origen = geo("Berlin", "Neukolln"); vias = [geo("Berlin", "Kreuzberg")]; destino = geo("Berlin", "Mitte")
+    puntos, km = trazar(origen, vias, destino)
+    trayectos.append({
+        "clave": "portada-neukolln-mitte", "origen": "portada",
+        "id": ident("plan/portada-neukolln-mitte"), "owner_id": duenna["id"],
+        "title": "Jeden Morgen Neukolln → Mitte, 08:00",
+        "description": "Ich fahre die Strecke sowieso, jeden Werktag. Wer unterwegs mitkommen will, sagt kurz Bescheid.",
+        "desc_lang": "de", "category": "commute", "origin_city": "Berlin", "dest_city": "Berlin",
+        "is_travel": False, "venue": "Mitte", "barrio": "Mitte", "geo": destino, "origin_geo": origen,
+        "ruta": puntos, "via": ["Kreuzberg"], "distancia_km": km, "precio_por_km": 0.09,
+        "recurrente": "weekdays", "date_precision": "exact", "dia_offset": 1, "hora": "08:00",
+        "duracion_h": 1, "radius_km": 2, "seats_open": 2, "subject": "Mitte",
+        "tags": ["commute", "rideshare"], "budget_band": "low", "pace": "relaxed",
+        "language_pref": ["de", "en"],
+    })
     planes.extend(trayectos)
 
     # Rese~nas. Un conductor sin ninguna tambien existe —es el que acaba de entrar— y eso es

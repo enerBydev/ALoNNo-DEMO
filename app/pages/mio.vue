@@ -4,7 +4,7 @@ definePageMeta({ middleware: 'sesion' })
 useSeoMeta({ title: 'Mine — Match Engine demo' })
 const { data, pending } = await useFetch<any>('/api/mio')
 const fecha = (i: string) => new Date(i).toLocaleDateString('en-GB',
-  { weekday: 'short', day: 'numeric', month: 'short' })
+  { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Berlin' })
 </script>
 
 <template>

@@ -30,6 +30,8 @@ export interface Intencion {
   trayecto: boolean
   /** Adonde va, tal y como lo escribio: puede ser un barrio, no solo una ciudad. */
   hacia: string | null
+  /** La hora de salida que nombra la frase (0-23), o null. «um 8», «at 8», «8 Uhr», «8am». */
+  hora: number | null
   subject: string | null
   city: string | null
   dest_city: string | null
@@ -107,6 +109,8 @@ Usa siempre la grafia sin dieresis: Dusseldorf, Koln, Munchen.
 - "hacia": el sitio AL QUE SE VA cuando es un trayecto, tal y como lo escribe la persona —
   puede ser un barrio ("Mitte", "Ehrenfeld"), no solo una ciudad. null si no lo dice.
   OJO: "dest_city" es SOLO una ciudad. Un barrio va en "hacia", nunca en "dest_city".
+- "hora": la hora de salida que nombra la frase, como entero de 0 a 23 ("um 8" -> 8, "at 6pm"
+  -> 18, "gegen halb neun" -> 8). null si la frase no dice hora. NO la inventes.
 - "subject_specificity": "named" si nombra un artista, equipo o sitio concreto; "genre" si solo
   dice el estilo (techno, afrobeats); "open" si no dice nada.
 - "must_match" / "nice_to_have": etiquetas cortas en ingles, snake_case. **Maximo 3 en total
@@ -119,7 +123,7 @@ Usa siempre la grafia sin dieresis: Dusseldorf, Koln, Munchen.
 Devuelve exactamente estas claves: archetype, archetype_secundario, has_concrete_event,
 user_has_booking, subject_specificity, language, category, subject, city, dest_city,
 fecha {expresion, mes}, seats_open, must_match, nice_to_have, pace, budget_band, confidence,
-unparsed, trayecto, hacia.`
+unparsed, trayecto, hacia, hora.`
 
 // Las seis primeras son planes; las cuatro ultimas, motivos de viaje en coche. Conviven en la
 // misma columna a proposito: el motor no distingue «plan» de «trayecto», y por eso el mismo
@@ -166,6 +170,7 @@ export function normalizar(bruto: any): Intencion {
     // aplica el arbol, el modelo solo extrae hechos (la regla que sostiene toda la Capa 0).
     trayecto: Boolean(bruto?.trayecto) || CATEGORIAS_DE_COCHE.includes(bruto?.category),
     hacia: typeof bruto?.hacia === 'string' && bruto.hacia.trim() ? bruto.hacia.trim() : null,
+    hora: Number.isInteger(bruto?.hora) && bruto.hora >= 0 && bruto.hora <= 23 ? Number(bruto.hora) : null,
     must_match: lista(bruto?.must_match),
     nice_to_have: lista(bruto?.nice_to_have),
     pace: ['relaxed', 'moderate', 'intense'].includes(bruto?.pace) ? bruto.pace : null,
@@ -350,6 +355,24 @@ export function parsearSinModelo(q: string): Intencion {
   const hayCoche = /\b(mitfahr|mitfahrgelegenheit|fahre|faehrt|fahrt|fahren|platz frei|plaetze frei|plaetze|auto|beifahrer|pendel|rideshare|ride|lift|driving|drive|drives|car|seat|seats|carpool|commute)\b/
     .test(sinTildes)
   const trayecto = Boolean(hacia) || hayCoche
+
+  // LA HORA. «morgen um 8 nach Mitte» devolvia un viaje de las 20:00 en primer lugar (medido
+  // por tres agentes del programa de UX, 15-sep-2026): la ventana era el DIA entero y la hora
+  // se tiraba. «um 8» / «at 8» / «8 Uhr» / «8am» / «6pm» / «um halb neun» (8) — la hora que
+  // dice la persona es la que manda en el ranking.
+  let hora: number | null = null
+  const mHalb = sinTildes.match(/\b(?:um\s+)?halb\s+(\d{1,2})\b/)
+  const mUhr = sinTildes.match(/\b(\d{1,2})(?::(\d{2}))?\s*uhr\b/)
+  const mAmPm = sinTildes.match(/\b(\d{1,2})(?::\d{2})?\s*(am|pm)\b/)
+  const mUm = sinTildes.match(/\b(?:um|at|around|gegen|towards|ab)\s+(\d{1,2})(?::\d{2})?\b/)
+  if (mHalb) hora = Number(mHalb[1]) - 1
+  else if (mUhr) hora = Number(mUhr[1])
+  else if (mAmPm) hora = (Number(mAmPm[1]) % 12) + (mAmPm[2] === 'pm' ? 12 : 0)
+  else if (mUm) hora = Number(mUm[1])
+  if (hora !== null && (hora < 0 || hora > 23)) hora = null
+  // «um 8» sin mas es de la ma~nana si la frase habla de ir al trabajo o de la ma~nana; una
+  // frase de noche («abends um 8») son las 20. Sin pista, se deja como esta: 8.
+  if (hora !== null && hora <= 11 && /\b(abend|abends|evening|tonight|nacht|night)\b/.test(sinTildes)) hora += 12
   // El origen manda sobre la ciudad suelta: «von Neukolln nach Mitte» centra en Neukolln, no en
   // el primer nombre de ciudad que aparezca en la frase.
   if (desde) ciudad = desde
@@ -387,6 +410,7 @@ export function parsearSinModelo(q: string): Intencion {
     fecha: { expresion, mes: null },
     trayecto,
     hacia,
+    hora,
     must_match: [],
     nice_to_have: [],
     confidence: 0,

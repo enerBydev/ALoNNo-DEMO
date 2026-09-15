@@ -24,6 +24,9 @@ const props = defineProps<{
 const emit = defineEmits<{ (e: "alternar"): void; (e: "pedir"): void }>();
 
 const v = computed(() => props.r.viaje);
+/** «0.38 €» a mano no era ni en-GB («€0.38») ni de-DE («0,38 €»). Intl decide. */
+const euros = (n: number) =>
+	new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR" }).format(n);
 const c = computed(() => props.r.conductor);
 
 /** La hora de salida, y la de llegada estimada si sabemos cuanto dura. */
@@ -31,7 +34,7 @@ const horas = computed(() => {
 	if (!props.r.cuando) return null;
 	const sale = new Date(props.r.cuando);
 	const hh = (d: Date) =>
-		d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+		d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
 	if (!v.value?.km) return hh(sale);
 	// 28 km/h de media urbana: es lo que se mueve un coche en una ciudad alemana en hora punta,
 	// y lo que hace que «37 min» se parezca a la verdad en vez de a una division de folleto.
@@ -59,6 +62,7 @@ const cuentaAtras = computed(() => {
 const fecha = computed(() =>
 	props.r.cuando
 		? new Date(props.r.cuando).toLocaleDateString("en-GB", {
+				timeZone: "Europe/Berlin",
 				weekday: "short",
 				day: "numeric",
 				month: "short",
@@ -125,7 +129,7 @@ const avatar = computed(() => {
       <header class="linea1">
         <span v-if="horas" class="hora">{{ horas }}</span>
         <span v-if="v" class="ruta">{{ v.desde }} → {{ v.hasta }}</span>
-        <span v-else class="ruta">{{ r.titulo }}</span>
+        <span v-else class="ruta" :lang="r.idioma">{{ r.titulo }}</span>
       </header>
 
       <p class="linea2">
@@ -154,19 +158,19 @@ const avatar = computed(() => {
       <div v-if="c?.nombre" class="quien">
         <span class="avatar" :style="{ background: avatar.color }">{{ avatar.inicial }}</span>
         <span class="nombre">{{ c.nombre }}</span>
-        <span v-if="notaUtil" class="nota">
-          <span class="estrella" aria-hidden="true">★</span>{{ c.nota.toFixed(1) }}
-          <span class="conteo">({{ c.notas }})</span>
+        <span v-if="notaUtil" class="nota" :aria-label="`Rated ${c.nota.toFixed(1)} out of 5 from ${c.notas} ratings`">
+          <span class="estrella" aria-hidden="true">★</span><span aria-hidden="true">{{ c.nota.toFixed(1) }}</span>
+          <span class="conteo" aria-hidden="true">({{ c.notas }})</span>
         </span>
-        <span v-else class="etiqueta ambar">New · {{ c.viajes }} rides</span>
+        <span v-else class="etiqueta gris">New · {{ c.viajes }} rides</span>
         <span v-if="c.verificado >= 1" class="etiqueta verde"><UIcon name="i-lucide-badge-check" /> ID</span>
         <span v-if="c.coche" class="coche">{{ c.coche }}</span>
         <span v-if="idiomaDistinto" class="etiqueta gris">{{ r.idioma.toUpperCase() }}</span>
       </div>
 
       <!-- 4 · por que encaja -->
-      <p v-if="r.explicacion" class="porque">{{ r.explicacion }}</p>
-      <p v-else-if="!v" class="porque recorte">{{ r.subtitulo }}</p>
+      <p v-if="r.explicacion" class="porque" :lang="idiomaConsulta">{{ r.explicacion }}</p>
+      <p v-else-if="!v" class="porque recorte" :lang="r.idioma">{{ r.subtitulo }}</p>
 
       <!-- 5 · lo que cuesta, y las acciones -->
       <footer class="acciones">
@@ -174,13 +178,22 @@ const avatar = computed(() => {
           {{ r.plazas }} {{ r.plazas === 1 ? 'seat' : 'seats' }}
         </span>
         <span v-else-if="c?.plazas_coche" class="dato">{{ c.plazas_coche }}-seat car</span>
-        <span v-if="v?.precio_total" class="dato">· {{ v.precio_total.toFixed(2) }} €</span>
+        <span v-if="v?.precio_total" class="dato">· {{ euros(v.precio_total) }}</span>
         <span v-if="r.motivo_descarte" class="etiqueta gris">{{ r.motivo_descarte }}</span>
         <span class="empuja" />
-        <UButton size="xs" color="neutral" variant="ghost" @click="emit('alternar')">
+        <UButton size="sm" color="neutral" variant="ghost" class="tactil" @click="emit('alternar')">
           {{ abierto ? 'Hide' : `Why ${r.porcentaje}%` }}
         </UButton>
-        <UButton size="xs" :to="r.tipo === 'PLAN' ? `/plan/${r.id}` : `/persona/${r.id}`" variant="soft">
+        <UButton
+          v-if="r.tipo === 'PLAN' && !r.motivo_descarte"
+          size="sm" class="tactil" :to="`/plan/${r.id}`" icon="i-lucide-hand"
+        >
+          Request a seat
+        </UButton>
+        <UButton
+          v-else size="sm" class="tactil" variant="soft"
+          :to="r.tipo === 'PLAN' ? `/plan/${r.id}` : `/persona/${r.id}`"
+        >
           {{ r.tipo === 'PLAN' ? 'View ride' : 'View profile' }}
         </UButton>
       </footer>
@@ -229,7 +242,9 @@ const avatar = computed(() => {
   display: inline-flex; align-items: center; gap: var(--e1);
   font-size: var(--t-13); font-weight: 600; color: var(--tinta-2);
 }
-.desvio.cerca { color: var(--alta); }
+.desvio.cerca { color: var(--tinta); }
+/* 44 px de objetivo tactil (WCAG 2.5.8): 23 de 30 controles median menos, medido a 390 px. */
+.tactil { min-height: 44px; }
 
 .quien { display: flex; align-items: center; gap: var(--e2); flex-wrap: wrap; }
 .avatar {

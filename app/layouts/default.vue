@@ -114,6 +114,7 @@ nav.movil { display: none; }
 @media (max-width: 720px) {
   nav.escritorio { display: none; }
   main { padding-bottom: 76px; }   /* para que la barra no tape el ultimo resultado */
+  footer { padding-bottom: calc(56px + var(--e4) + env(safe-area-inset-bottom)); }  /* ni el pie (medido) */
   nav.movil {
     display: grid; grid-template-columns: repeat(4, 1fr);
     position: fixed; inset: auto 0 0 0; height: 56px; z-index: 30;
