@@ -10,7 +10,11 @@ import { rpc, centroDe, type Persona, type Plan } from '../utils/bd'
 import { puntuarPersona, puntuarPlan, type Puntuacion } from '../utils/scoring'
 import { explicar, type ParaExplicar } from '../utils/explicar'
 
-const TOP_EXPLICADO = 5
+// CUATRO, NO CINCO. Medido contra produccion el 11-sep-2026: las 10 frases tardaban 20,3 s
+// cada una, o sea el presupuesto ENTERO, y el que se lo comia era la Capa 4 — la prosa. Cada
+// explicacion menos son ~1,5 s menos de espera, y la quinta cae en una posicion que el usuario
+// casi nunca mira: tres en la lista que manda y una en la otra.
+const TOP_EXPLICADO = 4
 
 /** PostGIS devuelve GeoJSON como texto. Se lee aqui, una vez, y con guardia: una geometria rota
  *  no puede tumbar una busqueda entera por un mapa que es accesorio. */
@@ -402,6 +406,6 @@ export default defineCachedEventHandler(async (event) => {
     const campos = [g.desde, g.hacia, g.cuando].map((x) => String(x ?? '').trim().toLowerCase()).join('|')
     // La ciudad entra en la clave porque cambia el resultado: la misma frase desde Berlin y
     // desde Koln devuelve coches distintos. Olvidarla serviria el resultado del otro.
-    return `v9:${ciudad}:${campos}:${q}`
+    return `v10:${ciudad}:${campos}:${q}`
   },
 })
