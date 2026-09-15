@@ -155,6 +155,9 @@ const zoom = computed(() => {
    **2 px** de alto con las cuatro teselas ya descargadas y colocadas fuera de la vista. */
 .marco-mapa .leaflet-container {
   width: 100%;
+  /* A 390 px, el panel de teselas sobresalia 427 px del contenedor y empujaba la pagina a lo
+     ancho. Leaflet coloca las teselas en absoluto y no recorta por su cuenta. */
+  overflow: hidden;
   border-radius: var(--radio);
   border: 1px solid var(--linea);
   background: var(--papel);
