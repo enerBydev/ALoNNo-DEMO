@@ -163,11 +163,22 @@ async function apuntarse(quitar = false) {
 		enviando.value = false;
 	}
 }
+
+/** «€0.63», como en la tarjeta (Intl en-GB): la ficha lo escribia a mano, «0.63 €» (#24). */
+const euros = (n: number) =>
+	new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR" }).format(n);
 </script>
 
 <template>
   <div class="contenedor estrecho">
-    <p v-if="error" class="tarjeta">That ride does not exist.</p>
+    <!-- P15 Una salida en cada no: la ficha de un viaje inexistente daba 200 y cero enlaces. -->
+    <div v-if="error" class="tarjeta sin-viaje">
+      <p><b>That ride does not exist.</b> It may have been removed, or the link is old.</p>
+      <div class="salidas-ficha">
+        <UButton to="/" icon="i-lucide-search">Find rides</UButton>
+        <UButton to="/crear" variant="ghost" color="neutral">Offer a ride</UButton>
+      </div>
+    </div>
 
     <template v-else-if="p">
 <a href="/" class="volver minusculo" @click.prevent="volver">← back to search</a>
@@ -185,11 +196,11 @@ async function apuntarse(quitar = false) {
       <!-- La linea que decide: cuando sale, cuanto dura, cuanto cuesta. -->
       <p class="cuando">{{ cuando }}</p>
       <p class="hechos">
-        <span v-if="esViaje">{{ p.origin_city }} → {{ p.venue ?? p.dest_city }}</span>
+        <span v-if="esViaje">{{ p.desde ?? p.origin_city }} → {{ p.venue ?? p.dest_city }}</span>
         <span v-else>{{ p.venue || p.dest_city }}</span>
         <span v-if="p.via?.length">· via {{ p.via.join(', ') }}</span>
         <span v-if="esViaje">· {{ p.distancia_km }} km · about {{ duracion }} min</span>
-        <span v-if="precioTotal">· <b>{{ precioTotal.toFixed(2) }} €</b> ({{ p.precio_por_km }} €/km)</span>
+        <span v-if="precioTotal">· <b>{{ euros(precioTotal) }}</b> ({{ euros(p.precio_por_km) }}/km)</span>
       </p>
 
       <NuxtErrorBoundary v-if="paraMapa.length && mapaListo">
@@ -278,6 +289,9 @@ async function apuntarse(quitar = false) {
 </template>
 
 <style scoped>
+.salidas-ficha { display: flex; gap: var(--e2); margin-top: var(--e3); flex-wrap: wrap; }
+/* El «Request a seat» de la ficha media 151x36 a 390 px (re-verificacion #37): 44 es el minimo tactil. */
+.plazas :deep(button) { min-height: 44px; }
 .volver { display: inline-block; margin-bottom: var(--e3); text-decoration: none; }
 .fila-titulo { display: flex; gap: var(--e1); margin-bottom: var(--e2); flex-wrap: wrap; }
 h1 { font-size: var(--t-28); }
