@@ -110,11 +110,18 @@ El Worker pesa **1,46 MB** sin comprimir: el **2,3 %** del limite de 64 MiB.
 Seis agentes con navegadores reales, axe-core, pixelmatch y `@vue/test-utils` contra la demo
 desplegada, con **15 principios de la psicologia de Uber medidos en uber.com** como referencia
 (docs privados, `conocimiento/ux/`). 126 hallazgos: 11 bloqueantes, 43 altos, 46 medios, 26 bajos.
-**Los 11 bloqueantes y los altos baratos estan aplicados** (PR #27 y #28). Lo que queda, en orden
-de retorno: el mapa de escritorio a columna derecha con rotulo (3 h), los tres experimentos A/B por
-bandera (§3 del informe 05), Cloudflare Web Analytics (15 min, token del dashboard), y los 16
-protocolos con personas (5 s, primer clic, card sorting, contextual inquiry, UAT del dia 16 en §7
-del informe 04).
+**Tres lotes aplicados** (PR #27, #28 y #30: los 11 bloqueantes, los altos baratos y el primer
+viewport de escritorio segun la especificacion). Despues, una **re-verificacion** con los mismos
+navegadores contra produccion: 32 hallazgos cerrados, 18 parciales, 4 abiertos — y **6 regresiones
+causadas por los propios lotes**, dos de ellas bloqueantes: la portada desbordaba 5 px en telefono
+y el SSR de la portada no leia el KV (15-20 s por visitante mientras la API contestaba en 0,15 s;
+el `$fetch` interno crea un evento sin `context.cloudflare`, y ahora un middleware guarda el
+binding para el). Las seis, mas los cuatro abiertos baratos —un solo verde de accion, chips de
+verificacion legibles, vocabulario propio para las consultas que no son trayectos, y el tiempo real
+de la Capa 0 cuando se agota— van en el PR de la tarea `86bc0u8f3`. Lo que queda, en orden de
+retorno: los tres experimentos A/B por bandera (§3 del informe 05), Cloudflare Web Analytics
+(15 min, token del dashboard), y los 16 protocolos con personas (5 s, primer clic, card sorting,
+contextual inquiry, UAT del dia 16 en §7 del informe 04).
 
 ## Lo que queda flojo, y se dice (regla 8)
 
@@ -128,6 +135,12 @@ del informe 04).
 3. **El ruleset `prueba-de-disponibilidad-BORRAR`** sigue ahi, desactivado: borrarlo exige un
    permiso que esta sesion no tiene. Es un clic en Settings → Rules.
 4. **La clave `nvidia-nim` sigue sin rotar** (`86bbyrbb1`). Funciona, pero estuvo expuesta.
+5. **La barra de progreso mientras se busca es un temporizador**, no el estado real de las capas
+   (hallazgo #46 del programa). Los tiempos de «Why these?» si son medidos; la barra de espera es
+   una estimacion.
+6. **El parser de reglas** —el que entra cuando el proveedor no contesta— resuelve mal alguna
+   frase: «kreuzberg» como ciudad devuelve 0 resultados. Con la cache caliente no ocurre; ocurre en
+   frio y con el proveedor caido, y la pantalla lo declara.
 
 ## Workers Builds SI despliega desde `main` — y el indicador que decia lo contrario miente
 

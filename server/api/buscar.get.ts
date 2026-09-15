@@ -13,7 +13,7 @@ import {
 	resolverVentana,
 	type Intencion,
 } from "../utils/parser";
-import { rpc, centroDe, type Persona, type Plan } from "../utils/bd";
+import { rpc, centroDe, type Persona, type Plan, barrioDe } from "../utils/bd";
 import { puntuarPersona, puntuarPlan, type Puntuacion } from "../utils/scoring";
 import { explicar, type ParaExplicar } from "../utils/explicar";
 
@@ -135,7 +135,8 @@ async function buscar(event: any) {
 				};
 			}
 		}
-	} else
+	} else {
+		const t0 = Date.now();
 		try {
 			// TIEMPO MAXIMO PARA LA CAPA 0. Medido: el mismo modelo y la misma frase tardan entre 3,9 s
 			// y 91 s segun la cola del proveedor. Una demo que se mira en vivo no puede quedarse noventa
@@ -172,7 +173,11 @@ async function buscar(event: any) {
 			console.warn(
 				`[capa-0] degradada: ${motivoDegradado} · frase=${JSON.stringify(q.slice(0, 80))}`,
 			);
+			// Lo que tardo en rendirse, no 0: «Why these?» decia «Capa 0: 0 ms» justo cuando se habian
+			// agotado 13,5 s (regresion N3 de la re-verificacion). El tiempo perdido tambien se mide.
+			usoParser.ms = Date.now() - t0;
 		}
+	}
 	// Una expresion temporal explicita en la frase gana sobre el silencio del modelo — salvo en el
 	// camino directo, donde el desplegable ES la verdad y no hay frase que reforzar.
 	if (!directo) intencion = reforzarFecha(intencion, q);
@@ -387,7 +392,8 @@ async function buscar(event: any) {
 		viaje:
 			f.tipo === "PLAN" && (f as any).distancia_km != null
 				? {
-						desde: (f as any).origin_city,
+						// El barrio de salida por el punto de origen; la ciudad solo si no cae en ninguno.
+						desde: barrioDe(leerPunto((f as any).origen_geojson)) ?? (f as any).origin_city,
 						hasta: (f as any).venue ?? (f as any).dest_city,
 						via: (f as any).via ?? [],
 						km: Number((f as any).distancia_km),
@@ -577,7 +583,10 @@ const VIDA_S = 60 * 60 * 6;
 const memoria = new Map<string, { hasta: number; valor: any }>();
 
 function kvDe(event: any): { get: (k: string) => Promise<any>; put: (k: string, v: any) => Promise<void> } {
-	const kv = (event.context as any)?.cloudflare?.env?.CACHE;
+	// Primero el contexto del evento; si no lo trae (el $fetch interno del SSR), el binding que
+	// capturo `server/middleware/bindings.ts` en la peticion de fuera. Sin esto la portada no
+	// leia el KV y tardaba 15-20 s (regresion N2 de la re-verificacion).
+	const kv = (event.context as any)?.cloudflare?.env?.CACHE ?? (globalThis as any).__bindingsCache;
 	if (kv?.get && kv?.put) {
 		return {
 			get: (k) => kv.get(k, "json"),
@@ -611,7 +620,7 @@ function kvDe(event: any): { get: (k: string) => Promise<any>; put: (k: string, 
 const TECHO_DIARIO = 800;
 
 async function cobrarPresupuesto(event: any) {
-	const kv = (event.context as any)?.cloudflare?.env?.CACHE;
+	const kv = (event.context as any)?.cloudflare?.env?.CACHE ?? (globalThis as any).__bindingsCache;
 	if (!kv) return; // en local no hay binding: no se frena lo que no se puede medir
 	const clave = `gasto:${new Date().toISOString().slice(0, 10)}`;
 	const gastado = Number((await kv.get(clave)) ?? 0);

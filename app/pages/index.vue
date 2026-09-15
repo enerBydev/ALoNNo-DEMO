@@ -245,7 +245,9 @@ function tituloDe(l: any): string {
 		const que = d?.intencion?.trayecto ? (n === 1 ? "ride" : "rides") : (n === 1 ? "plan" : "plans");
 		return `${n} ${que} ${cuando}${ruta}`;
 	}
-	return `${n} ${n === 1 ? "driver" : "drivers"} who match you`;
+	return d?.intencion?.trayecto
+		? `${n} ${n === 1 ? "driver" : "drivers"} who match you`
+		: `${n} ${n === 1 ? "person" : "people"} who fit you`;
 }
 const capitalizar = (t: string) => t.replace(/(^|[\s-])(\p{L})/gu, (m) => m.toUpperCase());
 
@@ -525,7 +527,11 @@ defineShortcuts({
 /* Dos columnas en escritorio: 600 de producto, 20 de aire, 360 de mapa (spec §4.3 del informe
    05). Antes el mapa ocupaba el 28 % del viewport y la primera respuesta quedaba bajo el
    pliegue a 1280x800 (medido). En movil, una columna y el mapa tras un chip. */
-.pagina { display: grid; grid-template-columns: 1fr; gap: var(--e5); align-items: start; }
+/* `minmax(0, 1fr)` y no `1fr`: `1fr` es `minmax(auto, 1fr)` y el ancho minimo del contenido
+   (un chip sin salto, un campo xl) empujaba la columna a 379 px en un telefono de 390 y la
+   pagina desbordaba 5 px (regresion N1 de la re-verificacion, medida a 360 y 390). */
+.pagina { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e5); align-items: start; }
+.producto { min-width: 0; }
 .lateral { display: none; }
 @media (min-width: 1024px) {
   .pagina { grid-template-columns: 600px 360px; column-gap: 20px; }
@@ -654,10 +660,10 @@ defineShortcuts({
   /* Dos filas de 44 px —From | To · When | Search— como pide la especificacion del primer
      viewport: apilado a ancho completo, la primera respuesta quedaba a y=1041 en una pantalla
      de 844 (medido). */
-  .campos { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e2); align-items: end; }
+  .campos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--e2); align-items: end; }
   .campo, .estrecho-campo { flex: none; min-width: 0; }
   .campos > :deep(button) { width: 100%; }
-  .ejemplos-linea .chip-ejemplo { max-width: 100%; }
+  .ejemplos-linea .chip-ejemplo { max-width: 100%; white-space: normal; text-align: left; }
   .comp { grid-template-columns: 1fr 70px 44px; }
   .comp-b { display: none; }
 }

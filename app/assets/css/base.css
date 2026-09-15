@@ -98,12 +98,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 { line-height: 1.2; margin: 0; letter-spacing: -0.02em; font-weight: 600; }
-h1 { font-size: var(--t-28); }
-h2 { font-size: var(--t-22); }
-h3 { font-size: var(--t-18); }
-p { margin: 0; }
-a { color: inherit; }
+/* En `@layer base`, como los controles de formulario: `a { color: inherit }` fuera de capa
+   ganaba al `text-inverted` de los botones-enlace de Nuxt UI y el «Request a seat» de la tarjeta
+   salio con texto oscuro sobre verde, 4,17:1 (regresion N4 de la re-verificacion). */
+@layer base {
+  h1, h2, h3 { line-height: 1.2; margin: 0; letter-spacing: -0.02em; font-weight: 600; }
+  h1 { font-size: var(--t-28); }
+  h2 { font-size: var(--t-22); }
+  h3 { font-size: var(--t-18); }
+  p { margin: 0; }
+  a { color: inherit; }
+}
 
 :focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; border-radius: 4px; }
 

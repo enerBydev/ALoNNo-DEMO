@@ -131,7 +131,7 @@ const avatar = computed(() => {
       <div class="hechos">
         <UBadge
           v-for="v in rep.verificaciones" :key="v.clave"
-          :color="v.hecha ? 'success' : 'neutral'" :variant="v.hecha ? 'subtle' : 'outline'"
+          :color="v.hecha ? 'primary' : 'neutral'" :variant="v.hecha ? 'soft' : 'outline'"
         >
           <UIcon :name="v.hecha ? 'i-lucide-badge-check' : 'i-lucide-circle-dashed'" />
           {{ v.etiqueta }}

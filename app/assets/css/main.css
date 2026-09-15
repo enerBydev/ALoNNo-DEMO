@@ -16,13 +16,17 @@
   --color-marca-100: #DCEEEB;
   --color-marca-200: #B6DDD8;
   --color-marca-300: #82C4BD;
-  --color-marca-400: #4CA49B;
-  --color-marca-500: #2A837B;
-  --color-marca-600: #146E68;
-  --color-marca-700: #0B5F5A;
-  --color-marca-800: #084744;
-  --color-marca-900: #06332F;
-  --color-marca-950: #032220;
+  /* El 500 ES `--accion` (#0B5F5A): Nuxt UI pinta los botones con el 500, y con la rampa
+     anterior habia dos verdes de accion en la misma pantalla —rgb(42,131,123) en los botones y
+     rgb(11,95,90) en el porcentaje y los enlaces— (hallazgo #15, abierto en la re-verificacion).
+     El 400 es el `--accion` del modo oscuro, que es el que Nuxt UI usa ahi. */
+  --color-marca-400: #4FD1C5;
+  --color-marca-500: #0B5F5A;
+  --color-marca-600: #084744;
+  --color-marca-700: #06332F;
+  --color-marca-800: #04241F;
+  --color-marca-900: #031A17;
+  --color-marca-950: #021110;
 
   /* La familia tipografica la auto-aloja `@nuxt/fonts`, que entra dentro de Nuxt UI: la descarga
      en construccion y escribe los `@font-face` contra `public/_fonts`. Se hace asi y NO con un
