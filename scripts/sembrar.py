@@ -176,18 +176,23 @@ def linea(puntos):
     return f"'SRID=4326;LINESTRING({pares})'"
 
 
-def fecha_de(hoy, dia_offset, recurrente, generado):
+def fecha_de(hoy, dia_offset, recurrente, generado, dia_semana=None):
     """La fecha real de un plan a partir de su desplazamiento, CONSERVANDO EL DIA DE LA SEMANA.
 
     Un `dia_offset` se eligio mirando el calendario del dia en que se genero el seed: «este finde»
     desde un jueves son +2 y +3. Desplazar por dias enteros desde OTRO dia mueve el finde a jueves y
     viernes, y «Techno-Festival am Wochenende» devolvia cero planes (aceptacion v10, bloqueante B2).
+      * `dia_semana` (0 = lunes) manda sobre todo: «el proximo <dia>, contando hoy». Es para lo que
+        se planto con un dia de la semana en mente pero un offset de 0 o 1 («Freitagabend» generado
+        un jueves);
       * offset 0 y 1 significan «hoy» y «ma~nana»: se respetan tal cual;
       * un offset mayor conserva el dia de la semana que tenia al generarse, en la fecha mas cercana
         (±3 dias) y nunca antes de pasado ma~nana;
       * un viaje de diario («weekdays») que caiga en sabado o domingo pasa al lunes.
     """
-    if dia_offset <= 1:
+    if dia_semana is not None:
+        d = hoy + timedelta(days=(dia_semana - hoy.weekday()) % 7)
+    elif dia_offset <= 1:
         d = hoy + timedelta(days=dia_offset)
     else:
         objetivo = hoy + timedelta(days=dia_offset)
@@ -195,7 +200,9 @@ def fecha_de(hoy, dia_offset, recurrente, generado):
         k = min((k for k in range(-3, 4) if (objetivo + timedelta(days=k)).weekday() == dia_semana),
                 key=abs)
         d = objetivo + timedelta(days=k)
-        if d < hoy + timedelta(days=2):
+        # Nunca en el pasado —pero hoy vale: «este finde» dicho un sabado ES este sabado. Con un suelo
+        # de dos dias, re-anclar un viernes mandaba el sabado a la semana siguiente (revision del lote 5).
+        if d < hoy:
             d += timedelta(days=7)
     if recurrente == "weekdays" and d.weekday() >= 5:
         d += timedelta(days=7 - d.weekday())
@@ -211,10 +218,17 @@ def hoy_berlin():
     return datetime.now(ZoneInfo("Europe/Berlin")).date()
 
 
-def rango(d):
-    """Un tramo de disponibilidad, materializado contra `now()` como el resto del tiempo."""
-    return (f"daterange((now() + interval '{d['desde_offset']} days')::date, "
-            f"(now() + interval '{d['hasta_offset']} days')::date, '[]')")
+def rango(d, hoy, generado):
+    """Un tramo de disponibilidad, con las MISMAS reglas de fecha que los planes: la gente «de este
+    finde» del escenario 8 se desplazaba por dias enteros y caia en jueves y viernes."""
+    desde = fecha_de(hoy, d["desde_offset"], None, generado)
+    hasta = desde + timedelta(days=max(0, d["hasta_offset"] - d["desde_offset"]))
+    return f"daterange(date '{desde.isoformat()}', date '{hasta.isoformat()}', '[]')"
+
+
+def disponibilidad_sql(p, hoy, generado):
+    return ("array[" + ",".join(rango(d, hoy, generado) for d in p["disponible"]) + "]::daterange[]") \
+        if p.get("disponible") else "'{}'::daterange[]"
 
 
 def main():
@@ -256,15 +270,21 @@ def main():
         with open(SEED, encoding="utf-8") as f:
             seed = json.load(f)
         hoy = hoy_berlin(); gen = generado_del_seed(seed["meta"])
+        # Hora y duracion vienen del SEED, no de la fila: el desplazamiento por dias enteros de arriba
+        # cruza el cambio de hora de octubre y dejaba las 20:00 en 19:00. Asi el re-anclado es
+        # idempotente desde el seed, no desde el estado anterior.
         valores = ",".join(
-            f"('{p['id']}'::uuid, date '{fecha_de(hoy, p['dia_offset'], p.get('recurrente'), gen).isoformat()}')"
+            f"('{p['id']}'::uuid, date '{fecha_de(hoy, p['dia_offset'], p.get('recurrente'), gen, p.get('dia_semana')).isoformat()}', "
+            f"time '{p['hora']}', interval '{p.get('duracion_h', 1)} hours')"
             for p in seed["planes"])
         r2 = sql(f"""
             update plans p
-               set starts_at = (v.d + (p.starts_at at time zone 'Europe/Berlin')::time) at time zone 'Europe/Berlin',
-                   ends_at   = (v.d + (p.starts_at at time zone 'Europe/Berlin')::time) at time zone 'Europe/Berlin'
-                               + (p.ends_at - p.starts_at)
-              from (values {valores}) as v(id, d)
+               set starts_at = (v.d + v.h) at time zone 'Europe/Berlin',
+                   ends_at   = ((v.d + v.h) at time zone 'Europe/Berlin') + v.dur
+              from (values {valores}) as v(id, d, h, dur)
+             where p.id = v.id;
+            update profiles p set availability = v.a
+              from (values {",".join(f"('{q['id']}'::uuid, {disponibilidad_sql(q, hoy, gen)})" for q in seed["perfiles"])}) as v(id, a)
              where p.id = v.id;
             select count(*) filter (where extract(isodow from starts_at at time zone 'Europe/Berlin') in (6, 7)) as en_finde,
                    count(*) as planes from plans;""", token)
@@ -303,8 +323,7 @@ def main():
         filas = []
         for p, e in zip(perfiles[i:i + LOTE_SQL], emb_perf[i:i + LOTE_SQL]):
             # `availability` se materializa contra `now()`, igual que el resto del tiempo.
-            disp = ("array[" + ",".join(rango(d) for d in p["disponible"]) + "]") \
-                if p["disponible"] else "'{}'::daterange[]"
+            disp = disponibilidad_sql(p, hoy_berlin(), generado_del_seed(seed["meta"]))
             filas.append(
                 f"({lit(p['id'])}::uuid, {lit(p['display_name'])}, {lit(p['age'])}, {lit(p['city'])}, "
                 f"{punto(p['geo'])}, {lit(p['languages'])}::text[], {lit(p['bio_lang'])}, {lit(p['bio'])}, "
@@ -332,7 +351,7 @@ def main():
             # de la sesion (UTC): un viaje sembrado «08:00» salia a las 10:00 en la pantalla en cuanto
             # esta empezo a pintar la hora de Berlin (programa de UX, 15-sep-2026). La demo es
             # Alemania: la hora que escribe el conductor es la de Alemania.
-            dia = fecha_de(hoy_berlin(), p["dia_offset"], p.get("recurrente"), generado_del_seed(seed["meta"]))
+            dia = fecha_de(hoy_berlin(), p["dia_offset"], p.get("recurrente"), generado_del_seed(seed["meta"]), p.get("dia_semana"))
             inicio = f"(date '{dia.isoformat()}' + time '{p['hora']}') at time zone 'Europe/Berlin'"
             filas.append(
                 f"({lit(p['id'])}::uuid, {lit(p['owner_id'])}::uuid, {lit(p['title'])}, "

@@ -4,6 +4,7 @@
 // porque la fallaba. Corre sin red, dentro de `just ci`.
 import { describe, it, expect } from 'vitest'
 import { decidirArquetipo, resolverVentana, normalizar, reforzarFecha, type Intencion } from '../server/utils/parser'
+import { centroDe, ciudadDe } from '../server/utils/bd'
 
 const base = (extra: Partial<Intencion>): Intencion => normalizar({
   archetype: 'intent_seeks_any', has_concrete_event: false, user_has_booking: false,
@@ -118,6 +119,25 @@ describe('el codigo corrige al modelo cuando la frase dice una fecha y el no la 
     expect(r.fecha).toEqual({ expresion: 'mes_nombrado', mes: 'october' })
     const de = reforzarFecha(base({}), 'Am Oktoberwochenende nach Koeln')
     expect(de.fecha.mes).toBe('october')
+  })
+
+  it('un mes no es cualquier palabra que empiece igual: Marzahn, Main, Julia, «may be»', () => {
+    expect(reforzarFecha(base({}), 'Ich fahre morgen von Spandau nach Marzahn').fecha.expresion).toBe('manana')
+    expect(reforzarFecha(base({}), 'Ich habe fuer Freitagabend einen Tisch in Frankfurt am Main reserviert').fecha.expresion).toBe('viernes_noche')
+    expect(reforzarFecha(base({}), 'Anyone who may be driving to Mitte tomorrow?').fecha.expresion).toBe('manana')
+    expect(reforzarFecha(base({}), 'Treffen im Augustiner morgen Abend').fecha.expresion).toBe('manana')
+    expect(reforzarFecha(base({}), 'a trip in May').fecha.mes).toBe('may')
+  })
+
+  it('«Montag morgen» es el lunes por la ma~nana', () => {
+    expect(reforzarFecha(base({}), 'Ich fahre am Montag morgen nach Westend').fecha.expresion).toBe('este_lunes')
+  })
+
+  it('en un lugar compuesto el barrio gana a la ciudad', () => {
+    expect(centroDe('Berlin-Neukölln')).toEqual(centroDe('Neukolln'))
+    expect(centroDe('Koln-Ehrenfeld')).toEqual(centroDe('Ehrenfeld'))
+    expect(centroDe('Mitte, Berlin')).toEqual(centroDe('Berlin Mitte'))
+    expect(ciudadDe('Berlin-Neukölln')).toBe('berlin')
   })
 
   it('«jeden Morgen» es la ma~nana, no ma~nana', () => {

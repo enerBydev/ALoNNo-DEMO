@@ -83,13 +83,20 @@ export function centroDe(lugar: string | null, respaldo: string | null = null): 
       const b = BARRIOS[k]
       if (b) return [b[0], b[1]]
     }
-    // «Koln-Ehrenfeld», «Berlin Mitte»: la persona escribe las dos mitades y las dos valen.
-    for (const trozo of claveDeLugar(t).split(/[\s,/]+/).filter(Boolean)) {
-      for (const k of variantesDeLugar(trozo)) {
-        if (CIUDADES[k]) return CIUDADES[k]
+    // «Koln-Ehrenfeld», «Berlin Mitte»: la persona escribe las dos mitades. Primero la clave
+    // compuesta del catalogo, luego un BARRIO entre los trozos —es lo mas preciso—, y la ciudad al
+    // final: «Berlin-Neukölln» centraba en Berlin, a 4,75 km de Neukölln (revision del lote 5).
+    const trozos = claveDeLugar(t).split(/[\s,/]+/).filter(Boolean)
+    if (trozos.length > 1) {
+      for (const compuesta of [trozos.join('/'), [...trozos].reverse().join('/')]) {
+        const b = BARRIOS[compuesta]
+        if (b) return [b[0], b[1]]
+      }
+      for (const trozo of trozos) for (const k of variantesDeLugar(trozo)) {
         const bb = BARRIOS[k]
         if (bb) return [bb[0], bb[1]]
       }
+      for (const trozo of trozos) for (const k of variantesDeLugar(trozo)) if (CIUDADES[k]) return CIUDADES[k]
     }
     return null
   }
@@ -130,6 +137,12 @@ export function ciudadDe(lugar: string | null): string | null {
   for (const k of variantesDeLugar(lugar)) {
     if (CIUDADES[k]) return k
     if (BARRIOS[k]) return BARRIOS[k][2]
+  }
+  // Compuesto: el barrio dice la ciudad con mas precision que el trozo que suene a ciudad.
+  const trozos = claveDeLugar(lugar).split(/[\s,/]+/).filter(Boolean)
+  if (trozos.length > 1) {
+    for (const trozo of trozos) for (const k of variantesDeLugar(trozo)) if (BARRIOS[k]) return BARRIOS[k][2]
+    for (const trozo of trozos) for (const k of variantesDeLugar(trozo)) if (CIUDADES[k]) return k
   }
   return null
 }

@@ -189,6 +189,9 @@ produccion—, no un `source` en una respuesta JSON.
 1. **El dia 16**: `just reanclar`, `just frases`, `just calentar` (hasta que diga «todas las frases estan
    en cache y vienen del modelo»: con el proveedor lento puede hacer falta correrlo dos veces), y abrir
    la demo en un navegador de verdad. En ese orden. La base se re-sembro entera el 15 por la tarde.
+   **Decision, no bug**: si `just reanclar` se corre un viernes o un sabado, el viaje de la portada
+   (de diario) pasa al lunes y la frase por defecto («morgen um 8») lo encuentra fechado el lunes; es
+   lo honesto —nadie conduce al trabajo un sabado— y no hay que leerlo como regresion.
 2. Mandar el mensaje de entrega (`docs/entrega/mensaje-2026-09-16.md`) con la contrapropuesta y
    **la pregunta de cual de los dos productos esta vivo**.
 3. Rotar `nvidia-nim` y borrar el ruleset de prueba (los dos son de Rene).

@@ -15232,6 +15232,7 @@
    "description": "Der Tisch steht seit zwei Wochen: halb acht abends, kleine libanesische Küche in Sachsenhausen. Meine Begleitung ist abgesprungen. Ich hätte gern jemanden dabei, der Mezze teilt und sich Zeit zum Essen nimmt. Bezahlt wird getrennt.",
    "dest_city": "Frankfurt",
    "dia_offset": 1,
+   "dia_semana": 4,
    "distancia_km": null,
    "duracion_h": 3,
    "geo": [

@@ -12,6 +12,7 @@ import {
 	reforzarFecha,
 	resolverVentana,
 	type Intencion,
+	decidirArquetipo,
 } from "../utils/parser";
 import { rpc, centroDe, type Persona, type Plan, barrioDe } from "../utils/bd";
 import { canonizarLugar } from "../utils/alias";
@@ -143,6 +144,9 @@ async function buscar(event: any) {
 				};
 			}
 		}
+		// Con la fecha y el trayecto ya puestos, el arquetipo se vuelve a decidir: con «Monday» en el
+		// desplegable se quedaba en `standing_interest` y las personas salian antes que los viajes.
+		intencion.archetype = decidirArquetipo(intencion);
 	} else {
 		const t0Capa0 = Date.now();
 		try {
@@ -402,7 +406,6 @@ async function buscar(event: any) {
 		frases = r.frases;
 		usoExplicacion = r.uso;
 	} catch (e: any) {
-		incompleto = paraExplicar.length > 0;
 		// La explicacion es prosa: si el proveedor falla, la demo sigue ense~nando el numero y su
 		// desglose, que es lo que de verdad hay que poder defender.
 		frases = {};
@@ -410,6 +413,9 @@ async function buscar(event: any) {
 			`[capa-4] sin explicacion: ${String(e?.statusMessage ?? e?.message ?? e).slice(0, 200)}`,
 		);
 	}
+	// La bandera sale del RESULTADO, no de la excepcion: `explicar()` puede contestar sin explicar
+	// (descarta en silencio lo que no sea texto) y eso tambien es incompleto.
+	incompleto = paraExplicar.some((i) => !frases[i.id]);
 
 	const salida = (f: Fila) => ({
 		tipo: f.tipo,

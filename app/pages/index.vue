@@ -80,6 +80,15 @@ const CUANDO = [
 	{ value: "este_finde", label: "this weekend" },
 	{ value: "esta_semana", label: "this week" },
 	{ value: "proximo_mes", label: "next month" },
+	// Las que escribe el parser al leer la frase: sin ellas el <select> se pintaba vacio con la lista
+	// ya filtrada al lunes (revision del lote 5).
+	{ value: "viernes_noche", label: "Friday evening" },
+	{ value: "este_sabado", label: "this Saturday" },
+	{ value: "este_domingo", label: "this Sunday" },
+	{ value: "este_lunes", label: "on Monday" },
+	{ value: "este_martes", label: "on Tuesday" },
+	{ value: "este_miercoles", label: "on Wednesday" },
+	{ value: "este_jueves", label: "on Thursday" },
 ];
 
 /** Ejemplos propios del coche compartido. Las diez del cliente siguen estando —son el criterio de

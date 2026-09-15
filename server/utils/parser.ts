@@ -224,6 +224,10 @@ export function decidirArquetipo(i: Intencion): Arquetipo {
  * Una expresion temporal explicita en la frase gana sobre el silencio del modelo. Al reves no:
  * si el modelo SI vio una fecha, se respeta — el sabe leer «am zweiten Oktoberwochenende» y
  * estas reglas no. */
+/** «morgen» = ma~nana; «jeden Morgen», «am Morgen», «Montag morgen» = la ma~nana de un dia, no ma~nana.
+ *  Una sola regex para el parser de reglas y para `reforzarFecha`, que antes divergian. */
+const RE_MANANA = /(?<!\b(?:jeden|am|guten|heute|fruh|frueh|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\s)\b(morgen|tomorrow)\b/
+
 export function reforzarFecha(i: Intencion, q: string): Intencion {
   // LA FECHA DEL TEXTO GANA AL MODELO. Hasta el 15-sep-2026 esto solo corregia cuando el modelo
   // decia `sin_fecha`: una lectura EQUIVOCADA («tomorrow» → hoy, «am Montag» → proximo_mes) no se
@@ -233,7 +237,7 @@ export function reforzarFecha(i: Intencion, q: string): Intencion {
   const t = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   const reglas: Array<[RegExp, Expresion]> = [
     // «morgen» = ma~nana; «jeden Morgen» / «am Morgen» / «guten Morgen» = la ma~nana, no el dia.
-    [/(?<!\b(?:jeden|am|guten|heute|fruh|frueh)\s)\b(morgen|tomorrow)\b/, 'manana'],
+    [RE_MANANA, 'manana'],
     [/\b(heute|today|tonight)\b/, 'hoy'],
     [/\b(freitagabend|freitag abend|friday (evening|night))\b/, 'viernes_noche'],
     [/\b(samstag|saturday)\b/, 'este_sabado'],
@@ -254,8 +258,13 @@ export function reforzarFecha(i: Intencion, q: string): Intencion {
     januar: 'january', februar: 'february', marz: 'march', april: 'april', mai: 'may', juni: 'june',
     juli: 'july', august: 'august', september: 'september', oktober: 'october', november: 'november', dezember: 'december',
   }
-  const mes = MESES.find((m) => new RegExp(`\\b${m}\\b`).test(t))
-    ?? Object.entries(MESES_DE).find(([de]) => new RegExp(`\\b${de}`).test(t))?.[1]
+  // «may» y «march» son palabras corrientes («anyone who may be driving…»): solo cuentan con una
+  // preposicion delante. Y en aleman el mes puede llevar un sufijo de calendario («Oktoberwochenende»),
+  // pero no cualquier cosa: «Marzahn», «Main», «Julia» y «Augustiner» no son meses (revision del lote 5).
+  const mes = MESES.find((m) => (m === 'may' || m === 'march'
+      ? new RegExp(`\\b(?:in|for|early|late|mid|until|by|this|next|of|im|bis)\\s+${m}\\b`)
+      : new RegExp(`\\b${m}\\b`)).test(t))
+    ?? Object.entries(MESES_DE).find(([de]) => new RegExp(`\\b${de}(?:s|wochenende|woche|anfang|ende|mitte)?\\b`).test(t))?.[1]
     ?? null
   if (mes) {
     if (i.fecha.expresion === 'mes_nombrado' && i.fecha.mes === mes) return i
@@ -279,7 +288,10 @@ const iso = (d: Date) => d.toISOString().slice(0, 10)
 /** Resuelve la expresion contra el reloj del servidor. Aqui, y en ningun otro sitio, se
  *  convierte «este sabado» en una fecha. */
 export function resolverVentana(i: Intencion, ahora = new Date()): Ventana {
-  const hoy = new Date(Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate()))
+  // El dia de HOY es el de Berlin, no el UTC del servidor: entre las 00:00 y las 02:00 (CEST) el
+  // sembrador ya iba un dia por delante del parser (revision del lote 5).
+  const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(ahora).split('-').map(Number)
+  const hoy = new Date(Date.UTC(y, m - 1, d))
   const mas = (n: number) => new Date(hoy.getTime() + n * DIA)
   // 0 = domingo. Dias hasta el proximo <objetivo>, contando hoy como 0 solo si coincide.
   const hasta = (objetivo: number) => (objetivo - hoy.getUTCDay() + 7) % 7
@@ -416,7 +428,7 @@ export function parsearSinModelo(q: string): Intencion {
   if (desde) ciudad = desde
 
   let expresion: Expresion = 'sin_fecha'
-  if (/\b(morgen|tomorrow)\b/.test(sinTildes)) expresion = 'manana'
+  if (RE_MANANA.test(sinTildes)) expresion = 'manana'
   else if (/\b(samstag|saturday)\b/.test(sinTildes)) expresion = 'este_sabado'
   else if (/\b(freitag|friday)\b/.test(sinTildes)) expresion = 'viernes_noche'
   else if (/\b(wochenende|weekend)\b/.test(sinTildes)) expresion = 'este_finde'
