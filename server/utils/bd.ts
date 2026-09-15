@@ -95,6 +95,32 @@ export function centroDe(lugar: string | null, respaldo: string | null = null): 
   return buscar(lugar) ?? buscar(respaldo)
 }
 
+/** El barrio mas cercano a un punto [lon, lat], con nombre de pantalla («Neukolln»), o null si
+ *  el punto no cae a menos de ~2,5 km de ninguno. El origen de un viaje no es columna —solo lo es
+ *  su punto— y la tarjeta decia «Berlin → Mitte» para un viaje que sale de Neukolln: el barrio
+ *  esta en el titulo en dos de tres plantillas, y en la tercera no esta en ningun sitio. Contra el
+ *  catalogo generado el resultado es determinista, que es lo que exige el brief §9. */
+export function barrioDe(punto: [number, number] | null): string | null {
+  if (!punto) return null
+  const [lon, lat] = punto
+  const kx = Math.cos((lat * Math.PI) / 180)
+  let mejor: string | null = null
+  let d2 = Infinity
+  for (const [clave, [blon, blat]] of Object.entries(BARRIOS)) {
+    const dx = (blon - lon) * kx
+    const dy = blat - lat
+    const d = dx * dx + dy * dy
+    if (d < d2) {
+      d2 = d
+      mejor = clave
+    }
+  }
+  // 0,0225 grados ≈ 2,5 km: mas lejos que eso ya no es «ese barrio», es la ciudad.
+  if (mejor == null || Math.sqrt(d2) > 0.0225) return null
+  const nombre = mejor.includes('/') ? mejor.slice(mejor.indexOf('/') + 1) : mejor
+  return nombre.replace(/(^|[\s-])(\p{L})/gu, (m) => m.toUpperCase())
+}
+
 /** La ciudad a la que pertenece un barrio, si se reconoce. Sirve para decir «Kreuzberg, Berlin»
  *  en la pantalla sin que el usuario tenga que escribir las dos cosas. */
 export function ciudadDe(lugar: string | null): string | null {

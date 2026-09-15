@@ -158,12 +158,13 @@ const avatar = computed(() => {
       <div v-if="c?.nombre" class="quien">
         <span class="avatar" :style="{ background: avatar.color }">{{ avatar.inicial }}</span>
         <span class="nombre">{{ c.nombre }}</span>
-        <span v-if="notaUtil" class="nota" :aria-label="`Rated ${c.nota.toFixed(1)} out of 5 from ${c.notas} ratings`">
+        <span v-if="notaUtil" class="nota">
+          <span class="sr-only">Rated {{ c.nota.toFixed(1) }} out of 5 from {{ c.notas }} ratings</span>
           <span class="estrella" aria-hidden="true">★</span><span aria-hidden="true">{{ c.nota.toFixed(1) }}</span>
           <span class="conteo" aria-hidden="true">({{ c.notas }})</span>
         </span>
         <span v-else class="etiqueta gris">New · {{ c.viajes }} rides</span>
-        <span v-if="c.verificado >= 1" class="etiqueta verde"><UIcon name="i-lucide-badge-check" /> ID</span>
+        <span v-if="c.verificado >= 1" class="etiqueta"><UIcon name="i-lucide-badge-check" /> ID</span>
         <span v-if="c.coche" class="coche">{{ c.coche }}</span>
         <span v-if="idiomaDistinto" class="etiqueta gris">{{ r.idioma.toUpperCase() }}</span>
       </div>

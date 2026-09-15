@@ -244,7 +244,7 @@ async function apuntarse(quitar = false) {
             <UBadge v-else color="warning" variant="subtle" size="sm">
               New · {{ conductor.completed_plans }} rides
             </UBadge>
-            <UBadge v-if="conductor.verification >= 1" color="success" variant="subtle" size="sm">
+            <UBadge v-if="conductor.verification >= 1" color="primary" variant="soft" size="sm">
               <UIcon name="i-lucide-badge-check" /> ID
             </UBadge>
             <span v-if="conductor.coche" class="coche">{{ conductor.coche }}</span>
