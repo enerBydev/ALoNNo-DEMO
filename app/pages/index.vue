@@ -375,6 +375,11 @@ defineShortcuts({
       <template v-if="datos">
         <!-- El caso degradado SI se avisa en linea: cambia lo que el usuario ve. El resto de
              la telemetria vive detras de «Why these?» (P8). -->
+        <!-- Un lugar que no esta en el catalogo: se dice, no se disimula con los viajes de siempre. -->
+        <UAlert
+          v-if="datos.aviso" color="warning" variant="subtle" icon="i-lucide-map-pin-off" class="hueco"
+          :description="datos.aviso"
+        />
         <UAlert
           v-if="datos.degradado" color="warning" variant="subtle" icon="i-lucide-info" class="hueco"
           description="We couldn't read your sentence in time, so this search ran on rules and the three fields above. Correct one to search again."
@@ -509,7 +514,7 @@ defineShortcuts({
           <p class="grupo-t">Plans — concerts, matches, trips</p>
           <button
             v-for="f in frases" :key="f.escenario" class="ejemplo"
-            @click="paletaAbierta = false; buscar({ frase: f.frase_del_cliente })"
+            @click="paletaAbierta = false; buscar({ frase: f.frase_del_cliente, ciudad: 'Berlin' })"
           >
             <UBadge size="sm" color="neutral" variant="subtle">
               {{ /[äöüßÄÖÜ]|^Ich|^Meine/.test(f.frase_del_cliente) ? 'DE' : 'EN' }}

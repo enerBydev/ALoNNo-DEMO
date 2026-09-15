@@ -14,9 +14,13 @@
 
 export type Arquetipo = 'plan_seeks_person' | 'plan_seeks_plan' | 'intent_seeks_any' | 'standing_interest'
 
+import { canonizarLugar } from './alias'
+
 export type Expresion =
   | 'hoy' | 'manana' | 'este_finde' | 'este_sabado' | 'este_domingo'
   | 'viernes_noche' | 'esta_semana' | 'proximo_mes' | 'mes_nombrado' | 'sin_fecha'
+  // Solo las escribe `reforzarFecha()`: «am Montag» dicho un martes es el lunes que viene.
+  | 'este_lunes' | 'este_martes' | 'este_miercoles' | 'este_jueves'
 
 export interface Intencion {
   archetype: Arquetipo
@@ -144,7 +148,9 @@ export function normalizar(bruto: any): Intencion {
     Array.isArray(v) ? v.filter((x) => typeof x === 'string').slice(0, 8) : []
   const ciudad = (v: any): string | null => {
     if (typeof v !== 'string' || !v.trim()) return null
-    return v.normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+    // «Munich» → «Munchen», «Cologne» → «Koln»: el modelo escribe en el idioma de la frase y el
+    // catalogo tiene un solo nombre por ciudad (aceptacion v10, B1).
+    return canonizarLugar(v.normalize('NFD').replace(/[̀-ͯ]/g, '').trim())
   }
   const exp = bruto?.fecha?.expresion ?? bruto?.date?.expresion ?? 'sin_fecha'
   const intencion: Intencion = {
@@ -161,7 +167,8 @@ export function normalizar(bruto: any): Intencion {
     dest_city: ciudad(bruto?.dest_city),
     fecha: {
       expresion: enumerado(exp, ['hoy', 'manana', 'este_finde', 'este_sabado', 'este_domingo',
-        'viernes_noche', 'esta_semana', 'proximo_mes', 'mes_nombrado', 'sin_fecha'] as const, 'sin_fecha'),
+        'viernes_noche', 'esta_semana', 'proximo_mes', 'mes_nombrado', 'sin_fecha',
+        'este_lunes', 'este_martes', 'este_miercoles', 'este_jueves'] as const, 'sin_fecha'),
       mes: MESES.includes(String(bruto?.fecha?.mes ?? '').toLowerCase())
         ? String(bruto.fecha.mes).toLowerCase() : null,
     },
@@ -218,30 +225,52 @@ export function decidirArquetipo(i: Intencion): Arquetipo {
  * si el modelo SI vio una fecha, se respeta — el sabe leer «am zweiten Oktoberwochenende» y
  * estas reglas no. */
 export function reforzarFecha(i: Intencion, q: string): Intencion {
-  if (i.fecha.expresion !== 'sin_fecha') return i
+  // LA FECHA DEL TEXTO GANA AL MODELO. Hasta el 15-sep-2026 esto solo corregia cuando el modelo
+  // decia `sin_fecha`: una lectura EQUIVOCADA («tomorrow» → hoy, «am Montag» → proximo_mes) no se
+  // corregia nunca, y al cachearse quedaba congelada seis horas. La aceptacion de la v10 lo midio
+  // en la frase 4 del cliente y en dos de los chips de la portada (bloqueante B3). Un marcador
+  // inequivoco en la frase es un hecho; lo que dijo el modelo, una lectura. Gana el hecho.
   const t = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   const reglas: Array<[RegExp, Expresion]> = [
-    [/\b(morgen|tomorrow)\b/, 'manana'],
-    [/\b(heute|today|tonight|heute abend)\b/, 'hoy'],
+    // «morgen» = ma~nana; «jeden Morgen» / «am Morgen» / «guten Morgen» = la ma~nana, no el dia.
+    [/(?<!\b(?:jeden|am|guten|heute|fruh|frueh)\s)\b(morgen|tomorrow)\b/, 'manana'],
+    [/\b(heute|today|tonight)\b/, 'hoy'],
+    [/\b(freitagabend|freitag abend|friday (evening|night))\b/, 'viernes_noche'],
     [/\b(samstag|saturday)\b/, 'este_sabado'],
     [/\b(sonntag|sunday)\b/, 'este_domingo'],
     [/\b(freitag|friday)\b/, 'viernes_noche'],
+    [/\b(montag|monday)\b/, 'este_lunes'],
+    [/\b(dienstag|tuesday)\b/, 'este_martes'],
+    [/\b(mittwoch|wednesday)\b/, 'este_miercoles'],
+    [/\b(donnerstag|thursday)\b/, 'este_jueves'],
     [/\b(wochenende|weekend)\b/, 'este_finde'],
     [/\b(diese woche|this week)\b/, 'esta_semana'],
     [/\b(nachsten monat|next month|im monat)\b/, 'proximo_mes'],
   ]
-  for (const [re, exp] of reglas) {
-    if (re.test(t)) {
-      // EL ARQUETIPO SE RECALCULA. `normalizar()` ya lo habia decidido con la fecha que dijo el
-      // modelo; si aqui se cambia la fecha y no se vuelve a decidir, la correccion no llega a
-      // ninguna parte. Paso el 10-sep-2026 con la frase 8: la fecha quedaba bien y el arquetipo
-      // seguia siendo `standing_interest`. La prueba unitaria no lo cazo porque llamaba a las
-      // dos funciones por separado, que es justo lo que el codigo real NO hace.
-      const corregida = { ...i, fecha: { ...i.fecha, expresion: exp } }
-      return { ...corregida, archetype: decidirArquetipo(corregida) }
-    }
+  // UN MES NOMBRADO MANDA SOBRE TODO LO DEMAS. «A weekend in Cologne in October» lleva «weekend» y
+  // «October»: el finde es el de octubre, no el de esta semana. Se mira antes que las reglas.
+  // En aleman, el mes puede ir pegado («Oktoberwochenende»): se busca como prefijo.
+  const MESES_DE: Record<string, string> = {
+    januar: 'january', februar: 'february', marz: 'march', april: 'april', mai: 'may', juni: 'june',
+    juli: 'july', august: 'august', september: 'september', oktober: 'october', november: 'november', dezember: 'december',
   }
-  return i
+  const mes = MESES.find((m) => new RegExp(`\\b${m}\\b`).test(t))
+    ?? Object.entries(MESES_DE).find(([de]) => new RegExp(`\\b${de}`).test(t))?.[1]
+    ?? null
+  if (mes) {
+    if (i.fecha.expresion === 'mes_nombrado' && i.fecha.mes === mes) return i
+    const corregida = { ...i, fecha: { expresion: 'mes_nombrado' as Expresion, mes } }
+    return { ...corregida, archetype: decidirArquetipo(corregida) }
+  }
+  const enTexto = reglas.find(([re]) => re.test(t))?.[1]
+  if (!enTexto || enTexto === i.fecha.expresion) return i
+  // EL ARQUETIPO SE RECALCULA. `normalizar()` ya lo habia decidido con la fecha que dijo el
+  // modelo; si aqui se cambia la fecha y no se vuelve a decidir, la correccion no llega a
+  // ninguna parte. Paso el 10-sep-2026 con la frase 8: la fecha quedaba bien y el arquetipo
+  // seguia siendo `standing_interest`. La prueba unitaria no lo cazo porque llamaba a las
+  // dos funciones por separado, que es justo lo que el codigo real NO hace.
+  const corregida = { ...i, fecha: { expresion: enTexto, mes: null } }
+  return { ...corregida, archetype: decidirArquetipo(corregida) }
 }
 
 const DIA = 86_400_000
@@ -260,6 +289,15 @@ export function resolverVentana(i: Intencion, ahora = new Date()): Ventana {
       return { desde: iso(hoy), hasta: iso(hoy), etiqueta: 'today', exacta: true }
     case 'manana':
       return { desde: iso(mas(1)), hasta: iso(mas(1)), etiqueta: 'tomorrow', exacta: true }
+    case 'este_lunes': case 'este_martes': case 'este_miercoles': case 'este_jueves': {
+      // Nunca hoy: «am Montag» dicho un lunes es el lunes que viene.
+      const DIAS: Record<string, [number, string]> = {
+        este_lunes: [1, 'Monday'], este_martes: [2, 'Tuesday'], este_miercoles: [3, 'Wednesday'], este_jueves: [4, 'Thursday'],
+      }
+      const [n, nombre] = DIAS[i.fecha.expresion]
+      const d = mas(hasta(n) === 0 ? 7 : hasta(n))
+      return { desde: iso(d), hasta: iso(d), etiqueta: `on ${nombre}`, exacta: true }
+    }
     case 'este_sabado': {
       const s = mas(hasta(6))
       return { desde: iso(s), hasta: iso(s), etiqueta: 'this Saturday', exacta: true }

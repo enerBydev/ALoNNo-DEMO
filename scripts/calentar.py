@@ -68,11 +68,14 @@ def main():
             except Exception as e:
                 estado = f"error {str(e)[:40]}"
                 continue
-            if not d.get("degradado"):
+            # `incompleto` (numero sin prosa) tampoco vale: la aceptacion de la v10 encontro 9 de 15
+            # frases cacheadas sin explicacion porque esto solo miraba `degradado`.
+            if not d.get("degradado") and not d.get("incompleto"):
                 top = (d.get("listas") or [{}])[0].get("resultados") or [{}]
                 estado = f"✓ {seg:>5}s · intento {i} · {top[0].get('porcentaje', '?')}% {str(top[0].get('titulo', ''))[:34]}"
                 break
-            estado = f"~ degradada tras {i} intento(s) ({d.get('motivo_degradado')})"
+            estado = (f"~ degradada tras {i} intento(s) ({d.get('motivo_degradado')})" if d.get("degradado")
+                      else f"~ sin explicacion tras {i} intento(s) (capa 4 muda)")
         if estado.startswith("~") or estado.startswith("error"):
             quedaron_degradadas += 1
         print(f"  {estado:<62} {q[:44]}")
