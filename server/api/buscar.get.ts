@@ -1,7 +1,7 @@
 // El endpoint de busqueda: orquesta las cinco capas del §6.
 //
 // **Es un GET a proposito.** La frase va en la URL y no en el cuerpo porque
-// `defineCachedEventHandler` de Nitro construye la clave de cache con la URL: con un POST, dos
+// la clave de cache se construye con la URL (ver `claveDeCache` abajo): con un POST, dos
 // frases distintas comparten entrada de cache y la segunda recibe la respuesta de la primera.
 // Medido el 10-sep-2026. Ademas, asi una busqueda es enlazable.
 import { embeberConsulta, chatJson, type Uso } from '../utils/ia'
@@ -34,7 +34,7 @@ function leerPunto(t: string | null): [number, number] | null {
   } catch { return null }
 }
 
-export default defineCachedEventHandler(async (event) => {
+async function buscar(event: any) {
   const t0 = Date.now()
   // EL PRESUPUESTO DE LA PETICION ENTERA. Sin esto, cada capa tenia su techo y nadie miraba la
   // suma: 15 s de Capa 0 + 9 s de Capa 4 son 24 s, y el navegador no sabe si eso es una espera o
@@ -378,36 +378,59 @@ export default defineCachedEventHandler(async (event) => {
     },
     tokens: suma(usoParser, usoEmbed, usoExplicacion),
   }
-}, {
-  // LA CACHE. La Capa 0 tarda entre 3,9 s y 15 s por variabilidad del proveedor, y las 10 frases
-  // del cliente son clicables: se van a repetir. Cacheadas, la segunda vez cuestan una lectura de
-  // KV y cero llamadas a la IA — que es ademas el control 4 de la seccion E de la propuesta.
-  //
-  // La clave la construye Nitro con la URL, y por eso este endpoint es un GET: con un POST el
-  // cuerpo NO entra en la clave y dos frases distintas compartirian respuesta. Medido.
-  maxAge: 60 * 60 * 6,
-  swr: true,
-  name: 'buscar',
-  // `?fresco=1` salta la cache. Sirve para dos cosas y las dos hacen falta:
-  //   * en desarrollo, para ver el cambio que acabas de escribir en vez del de hace media hora;
-  //   * delante del cliente, para poder decir «y ahora sin cache» y ense~nar los tiempos REALES
-  //     de cada capa. Una demo que solo sabe ense~nar 0,3 s cacheados no esta demostrando nada.
-  // No entra en la clave a proposito: la respuesta fresca se guarda en la MISMA entrada, asi que
-  // forzar una vez tambien refresca a los demas.
-  shouldBypassCache: (event) => Boolean(getQuery(event).fresco),
-  // LA VERSION VA EN LA CLAVE, Y HAY QUE SUBIRLA AL TOCAR CUALQUIER CAPA — no solo el scoring.
-  // Paso el 10-sep-2026: se corrigio el parser para que la frase 8 detectara «this weekend», se
-  // desplego, y las 10 frases seguian dando el resultado viejo porque salian de KV. Una cache
-  // que no se invalida ense~na el trabajo de ayer y parece que el arreglo no funciono.
-  getKey: (event) => {
-    const g = getQuery(event)
-    const q = String(g.q ?? '').trim().toLowerCase()
-    const ciudad = String(g.ciudad ?? '').trim().toLowerCase()
-    // Los campos corregidos cambian el resultado, asi que cambian la clave. Sin esto, corregir
-    // «hacia Mitte» por «hacia Westend» devolveria la respuesta de Mitte.
-    const campos = [g.desde, g.hacia, g.cuando].map((x) => String(x ?? '').trim().toLowerCase()).join('|')
-    // La ciudad entra en la clave porque cambia el resultado: la misma frase desde Berlin y
-    // desde Koln devuelve coches distintos. Olvidarla serviria el resultado del otro.
-    return `v11:${ciudad}:${campos}:${q}`
-  },
+}
+
+/** La clave de cache. LA VERSION VA DENTRO, Y HAY QUE SUBIRLA AL TOCAR CUALQUIER CAPA — no solo
+ *  el scoring. Paso el 10-sep-2026: se corrigio el parser, se desplego, y las 10 frases seguian
+ *  dando el resultado viejo porque salian de KV. Una cache que no se invalida ense~na el trabajo
+ *  de ayer y parece que el arreglo no funciono. */
+function claveDeCache(event: any): string {
+  const g = getQuery(event)
+  const q = String(g.q ?? '').trim().toLowerCase()
+  // La ciudad entra en la clave porque cambia el resultado: la misma frase desde Berlin y desde
+  // Koln devuelve coches distintos. Y los campos corregidos tambien: corregir «hacia Mitte» por
+  // «hacia Westend» devolveria, si no, la respuesta de Mitte.
+  const ciudad = String(g.ciudad ?? '').trim().toLowerCase()
+  const campos = [g.desde, g.hacia, g.cuando].map((x) => String(x ?? '').trim().toLowerCase()).join('|')
+  return `buscar:v12:${ciudad}:${campos}:${q}`
+}
+
+// LA CACHE, A MANO. Antes era `defineCachedEventHandler` de Nitro, y se cambio por un motivo
+// medido el 15-sep-2026: **guardaba las respuestas degradadas**. El proveedor de IA no contesta a
+// veces; cuando eso pasaba en una peticion normal, el resultado a reglas se quedaba en KV seis
+// horas y la portada decia «the model did not answer in time» aunque el proveedor ya estuviera
+// bien. Y `shouldBypassCache` (el `?fresco=1`) saltaba la cache pero NO escribia la respuesta
+// fresca, asi que `just calentar` creia arreglarlo y no arreglaba nada.
+//
+// Con el almacen en la mano las reglas son tres, y se leen enteras aqui:
+//   1. si hay entrada y no piden `fresco`, se sirve;
+//   2. se calcula; si la respuesta viene del modelo, se guarda (6 h). Si es degradada, NO: la
+//      siguiente peticion vuelve a intentarlo, que es justo lo que se quiere;
+//   3. `fresco` siempre calcula y siempre guarda si salio bien: calentar la cache funciona.
+//
+// La clave se construye con la URL, y por eso este endpoint es un GET: con un POST el cuerpo no
+// entra en la clave y dos frases distintas compartirian respuesta. Medido el 10-sep.
+const VIDA_S = 60 * 60 * 6
+
+export default defineEventHandler(async (event) => {
+  const almacen = useStorage('cache')
+  const clave = claveDeCache(event)
+  const fresco = Boolean(getQuery(event).fresco)
+
+  if (!fresco) {
+    const guardado = await almacen.getItem<any>(clave).catch(() => null)
+    if (guardado && typeof guardado === 'object') {
+      setHeader(event, 'x-cache', 'HIT')
+      return guardado
+    }
+  }
+
+  const r = await buscar(event)
+  setHeader(event, 'x-cache', fresco ? 'BYPASS' : 'MISS')
+  if (!r.degradado) {
+    await almacen.setItem(clave, r, { ttl: VIDA_S }).catch((e: any) => {
+      console.warn(`[cache] no se pudo guardar ${clave}: ${String(e?.message ?? e).slice(0, 120)}`)
+    })
+  }
+  return r
 })
