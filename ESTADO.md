@@ -4,19 +4,15 @@ Entrega: **miercoles 16 de septiembre**, ma~nana. Ventana de feedback pedida: **
 hasta el lunes 21**.
 
 > **Hecho el 15 de septiembre**, ademas de lo de abajo: base **re-anclada** (y `--reanclar`
-> arreglado: reventaba a mitad y desplazaba con horas), `main` **protegida** por ruleset,
-> `/api/salud` que **puede estar en rojo**, bios del seed diversificadas (140 distintas), techos
-> cortos contra un proveedor que a veces no contesta, y la cache **caliente sin ninguna respuesta
-> degradada** (`just calentar`, 15/15 frases desde el modelo). Produccion verificada en Firefox
-> real: version 42, «read by the model», fechas en el 16.
-
-> **El giro del dia.** Hasta hoy la demo emparejaba **planes sociales**. el encargo del cliente —el
-> adjunto del encargo publicado en Workana— describe una **app de coche compartido**, y es lo que
-> el anuncio paga. La demo pasa a ser eso **sin tirar el motor**, porque los dos productos son el
-> mismo problema: alguien con plazas libres y una ventana de tiempo, y alguien que quiere
-> coincidir en espacio, direccion y hora. Las 10 frases del cliente siguen funcionando.
->
-> **Sigue haciendo falta preguntarle al cliente cual de los dos productos esta vivo** (`86bbyvz4w`).
+> arreglado), `main` **protegida**, `/api/salud` que **puede estar en rojo**, bios diversificadas,
+> techos cortos contra un proveedor que a veces no contesta, la demo **renombrada a Match Engine**
+> (repo `enerBydev/match-engine`, Worker `match-engine`, sin nombre de cliente en la superficie
+> publica), y **el programa de UX testing**: 6 agentes, 25 metodos, 126 hallazgos con evidencia
+> contra la psicologia de Uber (docs privados, `conocimiento/ux/README.md`). De ellos, **dos lotes
+> aplicados** (PR #27 y #28): tres bugs de verdad —los campos no se aplicaban, la cache no llegaba
+> al KV, «um 8» daba un viaje de las 20:00— y la capa de presentacion entera: h1, icono que pisaba
+> el texto, hora de Berlin, movil sobre el pliegue, «Offer a ride» que era «Post a plan», la ficha
+> del conductor con accion. Produccion verificada en Firefox a 1280 y 390.
 
 ## Lo que hay construido, verificado hoy
 
@@ -108,6 +104,17 @@ texto), **Image** (imposible: su proveedor de Cloudflare exige una zona y la dem
 `workers.dev`) y **MapLibre** (5,5x mas pesado y exige WebGL).
 
 El Worker pesa **1,46 MB** sin comprimir: el **2,3 %** del limite de 64 MiB.
+
+## El programa de UX testing, y lo que queda de el
+
+Seis agentes con navegadores reales, axe-core, pixelmatch y `@vue/test-utils` contra la demo
+desplegada, con **15 principios de la psicologia de Uber medidos en uber.com** como referencia
+(docs privados, `conocimiento/ux/`). 126 hallazgos: 11 bloqueantes, 43 altos, 46 medios, 26 bajos.
+**Los 11 bloqueantes y los altos baratos estan aplicados** (PR #27 y #28). Lo que queda, en orden
+de retorno: el mapa de escritorio a columna derecha con rotulo (3 h), los tres experimentos A/B por
+bandera (§3 del informe 05), Cloudflare Web Analytics (15 min, token del dashboard), y los 16
+protocolos con personas (5 s, primer clic, card sorting, contextual inquiry, UAT del dia 16 en §7
+del informe 04).
 
 ## Lo que queda flojo, y se dice (regla 8)
 

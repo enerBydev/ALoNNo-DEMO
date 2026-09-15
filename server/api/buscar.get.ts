@@ -595,6 +595,37 @@ function kvDe(event: any): { get: (k: string) => Promise<any>; put: (k: string, 
 	};
 }
 
+// EL FRENO DE PRESUPUESTO. Protege lo unico que hay que proteger: el credito de IA. La demo es
+// una URL PUBLICA con una clave de IA detras; sin freno, un bucle de `curl` la deja sin credito.
+//
+// Vivia en `server/middleware/freno.ts` y contaba TODA peticion antes de mirar la cache, con un
+// comentario que decia lo contrario. El 15-sep-2026 el programa de UX (cientos de peticiones de
+// seis agentes) agoto las 400 del dia y produccion devolvio 429 hasta para las frases cacheadas
+// —que el propio mensaje del 429 prometia que seguian funcionando—. El critico de DevOps lo habia
+// se~nalado el 11. Ahora se cuenta AQUI, solo cuando de verdad se va a llamar al modelo: un
+// acierto de cache no gasta nada y no cuenta nada.
+//
+// Por que un contador diario y no uno por IP: el binding `ratelimits` devolvia `success: true`
+// siempre, y KV es de consistencia eventual — no sirve para decidir sobre UNA peticion, pero si
+// sobre quinientas. Contar por IP de verdad es un Durable Object: trabajo del proyecto pagado.
+const TECHO_DIARIO = 800;
+
+async function cobrarPresupuesto(event: any) {
+	const kv = (event.context as any)?.cloudflare?.env?.CACHE;
+	if (!kv) return; // en local no hay binding: no se frena lo que no se puede medir
+	const clave = `gasto:${new Date().toISOString().slice(0, 10)}`;
+	const gastado = Number((await kv.get(clave)) ?? 0);
+	if (gastado >= TECHO_DIARIO) {
+		throw createError({
+			statusCode: 429,
+			statusMessage:
+				"This demo has reached its daily AI budget for new sentences. The example sentences " +
+				"still work — they are cached — and fresh searches resume tomorrow.",
+		});
+	}
+	await kv.put(clave, String(gastado + 1), { expirationTtl: 60 * 60 * 48 });
+}
+
 export default defineEventHandler(async (event) => {
 	const almacen = kvDe(event);
 	const clave = claveDeCache(event);
@@ -606,6 +637,11 @@ export default defineEventHandler(async (event) => {
 			setHeader(event, "x-cache", "HIT");
 			return guardado;
 		}
+	}
+
+	// Solo lo que va a costar cuenta: el camino directo (sin modelo) tampoco gasta credito.
+	if (!Boolean(getQuery(event).desde || getQuery(event).hacia || getQuery(event).cuando)) {
+		await cobrarPresupuesto(event);
 	}
 
 	const r = await buscar(event);
