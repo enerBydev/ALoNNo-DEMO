@@ -141,7 +141,7 @@ const enviando = ref(false);
 const resultado = ref<any>(null);
 async function apuntarse(quitar = false) {
 	if (!sesion.value)
-		return navigateTo(`/entrar?volver=/plan/${ruta.params.id}`);
+		return navigateTo(`/entrar?volver=/plan/${ruta.params.id}&ciudad=${encodeURIComponent(p.value?.origin_city ?? "")}`);
 	enviando.value = true;
 	try {
 		resultado.value = await $fetch("/api/interes", {

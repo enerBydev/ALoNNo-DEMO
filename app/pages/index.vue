@@ -131,7 +131,11 @@ async function buscar(
 		ciudadElegida.value = opciones.ciudad ?? null;
 	}
 	const q = consulta.value.trim();
-	if (!q) return;
+	if (!q) {
+		// Un «no» sin salida: la frase vacia no hacia nada, ni peticion ni mensaje (medido).
+		error.value = "Type a sentence first — or use the From / To / When fields above.";
+		return;
+	}
 
 	cargando.value = true;
 	error.value = null;
@@ -201,7 +205,8 @@ onBeforeUnmount(() => {
 
 // La primera busqueda ocurre en el servidor, asi que la portada llega con resultados dentro del
 // HTML. Es lo que hace que el primer vistazo sea el producto y no un formulario.
-await buscar();
+// Si la URL trae campos (p. ej. desde «Search for it» tras publicar un viaje), mandan.
+await buscar({ usarCampos: Boolean(campos.desde || campos.hacia || campos.cuando) });
 
 // Cuando la Capa 0 entiende la frase, los campos se rellenan SOLOS. No es un formulario que hay
 // que rellenar: es la comprension del modelo hecha visible y corregible, que es el mejor
@@ -485,12 +490,6 @@ defineShortcuts({
 </template>
 
 <style scoped>
-.nativo {
-	/* Los campos de Nuxt UI y este tienen que medir lo mismo o la fila se descuadra. */
-	height: 40px; min-height: 40px; border-radius: var(--radio-2);
-	border: 1px solid var(--linea); background: var(--superficie);
-	font-size: var(--t-15); padding: 0 var(--e3);
-}
 .buscador { display: grid; gap: var(--e3); margin-bottom: var(--e5); }
 .campos { display: flex; gap: var(--e3); align-items: flex-end; flex-wrap: wrap; }
 .campo { flex: 1 1 180px; }
