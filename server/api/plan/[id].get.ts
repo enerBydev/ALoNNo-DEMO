@@ -2,6 +2,7 @@
 // indexable: la seccion K de la propuesta vende que cada plan publico es un canal de captacion,
 // y eso solo funciona si el HTML llega hecho.
 import { tabla, sesionDe } from '../../utils/sesion'
+import { barrioDe } from '../../utils/bd'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
@@ -21,6 +22,10 @@ export default defineEventHandler(async (event) => {
   // La geometria en GeoJSON, para que el mapa pinte la RUTA y no dos chinchetas. PostgREST
   // devuelve `geography` como WKB hexadecimal, asi que la conversion la hace Postgres.
   const geo = await tabla<any>(event, `rpc/geometria_de_plan?p_id=${id}`).catch(() => null)
+
+  // El barrio de salida por el punto de origen, como en la tarjeta: la ficha decia «Berlin → Mitte»
+  // para un viaje que sale de Neukolln. La ciudad solo si el punto no cae en ningun barrio.
+  plan.desde = barrioDe(geo?.origen?.coordinates ?? null) ?? plan.origin_city
 
   const yo = sesionDe(event)
   return {

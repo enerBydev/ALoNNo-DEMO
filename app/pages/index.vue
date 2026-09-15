@@ -190,7 +190,7 @@ async function buscar(
 		error.value =
 			e?.name === "TimeoutError" || /timeout/i.test(String(e?.message))
 				? "The AI provider did not answer in time. Try again — or use the From / To / When fields, " +
-					"which skip the model entirely and always answer in under a second."
+					"which do not need the model to understand you."
 				: e?.data?.statusMessage || e?.statusMessage || "The search failed.";
 	} finally {
 		cargando.value = false;
@@ -541,7 +541,7 @@ defineShortcuts({
 .rotulo { font-size: var(--t-13); font-weight: 600; margin-top: var(--e2); }
 .pie-mapa { margin-top: var(--e3); color: var(--tinta-3); }
 .pie-mapa a { display: block; margin-top: 2px; }
-.primaria { min-width: 120px; }
+.primaria { min-width: 120px; min-height: 44px; }
 /* A 600 px de columna: From y To reparten, When 130, boton 120, en UNA fila (spec §4.3). */
 @media (min-width: 1024px) {
   .campos { flex-wrap: nowrap; }
@@ -588,6 +588,11 @@ defineShortcuts({
     border-radius: 999px; padding: 8px var(--e3); min-height: 36px; margin: var(--e2) 0; cursor: pointer;
   }
   .mapa-portada:not(.abierto) { display: none; }
+  /* WCAG 2.5.8 en telefono: 9 de 31 controles median menos de 44 px (re-verificacion, #37).
+     Los chips y los enlaces crecen por padding, no por fuente, para no mover el texto. */
+  .chip-ejemplo { min-height: 44px; padding: 10px var(--e3); }
+  .chip-mapa { min-height: 44px; }
+  .ejemplos-linea .enlace, .titulo-fila .enlace { padding: 10px 0; }
 }
 
 .progreso {

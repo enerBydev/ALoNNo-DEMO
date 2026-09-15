@@ -410,8 +410,8 @@ export function puntuarPlan(
       plan.conductor ?? undefined),
     comp('trust', 'Confianza', 'Trust', confConductor, confConductor, P.trust,
       plan.conductor_nota != null && (plan.conductor_notas ?? 0) >= 3
-        ? `${plan.conductor_nota.toFixed(1)} · ${plan.conductor_notas} valoraciones`
-        : `sin nota todavia · ${plan.conductor_viajes ?? 0} viajes`),
+        ? `${plan.conductor_nota.toFixed(1)} · ${plan.conductor_notas} ratings`
+        : `no rating yet · ${plan.conductor_viajes ?? 0} rides`),
   ]
 
   const porcentaje = Math.round(componentes.reduce((s, c) => s + c.puntos, 0))

@@ -118,7 +118,13 @@ y el SSR de la portada no leia el KV (15-20 s por visitante mientras la API cont
 el `$fetch` interno crea un evento sin `context.cloudflare`, y ahora un middleware guarda el
 binding para el). Las seis, mas los cuatro abiertos baratos —un solo verde de accion, chips de
 verificacion legibles, vocabulario propio para las consultas que no son trayectos, y el tiempo real
-de la Capa 0 cuando se agota— van en el PR de la tarea `86bc0u8f3`. Lo que queda, en orden de
+de la Capa 0 cuando se agota— van en el PR de la tarea `86bc0u8f3`. Un cuarto lote (`86bc0uern`)
+cierra los parciales baratos: el detalle de confianza en ingles, la moneda de la ficha con Intl,
+`/mio` con vocabulario de viajes, una salida en la ficha de un viaje inexistente, el texto del
+timeout sin promesas falsas, y 44 px en los controles que quedaban cortos en telefono. Lo que sigue
+parcial, y se declara: el aviso de hydration mismatch en `/` y `/plan`, el CTA de la tarjeta que
+lleva a la ficha en vez de pedir la plaza (2 clics con sesion, 4 sin), y un salto de 88 px al
+montar el mapa. Lo que queda, en orden de
 retorno: los tres experimentos A/B por bandera (§3 del informe 05), Cloudflare Web Analytics
 (15 min, token del dashboard), y los 16 protocolos con personas (5 s, primer clic, card sorting,
 contextual inquiry, UAT del dia 16 en §7 del informe 04).
