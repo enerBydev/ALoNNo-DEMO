@@ -185,28 +185,35 @@ def main():
     token = os.environ.get("SUPABASE_ACCESS_TOKEN") or secreto_gcp("devenv-supabase")
 
     if reanclar:
-        # Desplaza TODAS las fechas por la diferencia entre ahora y el ancla guardada.
-        # Las distancias relativas se conservan: eso es lo que hace que «manana» siga siendo
-        # manana el dia 21, sin re-embeber nada.
+        # Desplaza TODAS las fechas por DIAS ENTEROS entre hoy y el ancla. Las distancias
+        # relativas se conservan: «manana» sigue siendo manana el dia 21, sin re-embeber nada.
+        #
+        # DOS FALLOS PAGADOS EL 15-SEP-2026, al re-anclar por primera vez de verdad:
+        #   * el delta era `now() - anclado`, con horas y minutos: un viaje de las 08:10 paso a
+        #     salir a las 03:43. El desplazamiento tiene que ser en dias enteros.
+        #   * `interval::int` no existe en Postgres (42846) y el UPDATE de `availability`
+        #     reventaba DESPUES de haber movido planes e intents, y ANTES de actualizar el ancla:
+        #     un segundo intento habria movido los planes otra vez. Ahora es una sola transaccion.
         r = sql("""
-            with d as (select now() - anclado as delta from seed_meta where id = 1)
-            update plans set starts_at = starts_at + (select delta from d),
-                             ends_at   = ends_at   + (select delta from d)
-            returning 1""", token)
-        movidos = len(r) if isinstance(r, list) else 0
-        sql("""
-            with d as (select now() - anclado as delta from seed_meta where id = 1)
-            update intents set window_start = window_start + (select delta from d)::interval,
-                               window_end   = window_end   + (select delta from d)::interval
-            where standing = false""", token)
-        sql("""
-            with d as (select now() - anclado as delta from seed_meta where id = 1)
+            begin;
+            with d as (select (now()::date - anclado::date) as dias from seed_meta where id = 1)
+            update plans set starts_at = starts_at + make_interval(days => (select dias from d)),
+                             ends_at   = ends_at   + make_interval(days => (select dias from d));
+            with d as (select (now()::date - anclado::date) as dias from seed_meta where id = 1)
+            update intents set window_start = window_start + (select dias from d),
+                               window_end   = window_end   + (select dias from d)
+            where standing = false;
+            with d as (select (now()::date - anclado::date) as dias from seed_meta where id = 1)
             update profiles set availability = (
-              select array_agg(daterange(lower(x) + (select delta from d)::interval::int,
-                                         upper(x) + (select delta from d)::interval::int))
-              from unnest(availability) x)""", token)
-        sql("update seed_meta set anclado = now() where id = 1", token)
-        print(f"re-anclado: {movidos} planes desplazados; fechas relativas conservadas")
+              select coalesce(array_agg(daterange(lower(x) + (select dias from d),
+                                                  upper(x) + (select dias from d), '[)')),
+                              '{}'::daterange[])
+              from unnest(availability) x);
+            update seed_meta set anclado = now() where id = 1;
+            commit;
+            select (select count(*) from plans where ends_at >= now()) as futuros,
+                   (select anclado from seed_meta where id = 1) as anclado;""", token)
+        print("re-anclado:", json.dumps(r[0] if isinstance(r, list) and r else r, ensure_ascii=False))
         return
 
     with open(SEED, encoding="utf-8") as f:

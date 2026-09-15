@@ -136,3 +136,9 @@ seed-determinista:
 # ANTES de mandar el link.
 frases:
     python3 scripts/frases.py
+
+# Deja la cache caliente y SIN respuestas degradadas: pide cada frase con `?fresco=1` hasta que
+# venga del modelo. El proveedor a veces no contesta, y un resultado degradado se guardaria seis
+# horas. Se corre ANTES de mandar el link (paso 4 de la lista del dia 16).
+calentar:
+    python3 scripts/calentar.py

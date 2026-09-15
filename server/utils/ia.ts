@@ -40,7 +40,13 @@ const TECHO_EMBEDDING_MS = 6_000
 // y 190 de salida. El coste esta en la SALIDA, no en el prompt. Por eso el techo son 14 s y no
 // 11: con 11 se degradaba una de cada dos, y la degradacion apaga la comprension de la frase,
 // que es justo lo que se le esta vendiendo al cliente.
-const TECHO_CHAT_MS = 14_000
+//
+// Y MEDIDO OTRA VEZ el 15-sep-2026, desde la VM y con la misma clave: la primera llamada de chat
+// contesta en 2,2 s y la segunda se cuelga mas de 40 s. No es lentitud, es que el proveedor a
+// veces NO CONTESTA. Contra eso, un techo largo es lo peor: espera 14 s a una peticion que no va
+// a volver. La forma correcta es **intentos cortos, varios**: si contesta, contesta en 2-3 s;
+// si no ha contestado a los 6, no va a hacerlo, y la siguiente peticion suele ir bien.
+const TECHO_CHAT_MS = 6_000
 
 /** Un fallo puntual del proveedor no puede tumbar una busqueda delante del cliente.
  *  Medido el 10-sep-2026: dos de diez frases devolvieron 502 en una tanda, y la misma frase

@@ -86,7 +86,9 @@ export default defineCachedEventHandler(async (event) => {
     // pero inmediato. Y se declara.
     // Un poco por encima del techo del proveedor (11 s), para que el que corte sea el de dentro
     // —que puede reintentar— y no este, que solo sabe rendirse.
-    const LIMITE_MS = 15_000
+    // Cabe DOS intentos de 6 s con su espera: si el primero se cuelga, el segundo suele volver
+    // en 2-3 s. Con un solo intento de 14 s, cada cuelgue del proveedor era una degradacion.
+    const LIMITE_MS = 13_500
     const r = await Promise.race([
       chatJson(env, SISTEMA_PARSER, q),
       new Promise<never>((_, rechaza) =>
@@ -406,6 +408,6 @@ export default defineCachedEventHandler(async (event) => {
     const campos = [g.desde, g.hacia, g.cuando].map((x) => String(x ?? '').trim().toLowerCase()).join('|')
     // La ciudad entra en la clave porque cambia el resultado: la misma frase desde Berlin y
     // desde Koln devuelve coches distintos. Olvidarla serviria el resultado del otro.
-    return `v10:${ciudad}:${campos}:${q}`
+    return `v11:${ciudad}:${campos}:${q}`
   },
 })

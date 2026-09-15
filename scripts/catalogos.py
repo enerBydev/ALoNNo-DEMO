@@ -116,6 +116,14 @@ BIO_DE = [
     "{a} lauft bei mir rauf und runter. Sonst: {i}. Ich bin in {c} zu Hause und mag kleine Runden lieber als grosse Gruppen.",
     "Ich bin neu in {c} und will die Stadt uber Leute kennenlernen, nicht uber Listen. Am liebsten {i}. Ich frage viel und rede gern.",
     "Meine Freunde sagen, ich plane zu viel. Stimmt wahrscheinlich. {i} stehen fast immer im Kalender, und in {c} findet sich dafur immer was.",
+    # Seis mas (11-sep-2026): con cinco plantillas para 140 perfiles, cuatro con el mismo texto
+    # literal salian en la misma pantalla, y eso se lee como datos falsos.
+    "Ich pendle jeden Tag durch {c} und habe unterwegs meist einen Platz frei. Abends und am Wochenende: {i}. Ich rede gern, kann aber auch gut schweigen.",
+    "Seit dem Umzug nach {c} bin ich viel mit dem Auto unterwegs und nehme gern Leute mit. {i} sind mein Ausgleich zur Arbeit. Punktlichkeit ist mir wichtig.",
+    "Halb Berlinerin, halb Weltreisende — im Moment in {c}. {i}, und {a} lauft im Auto. Ich mag es, wenn man sich kurz abspricht und dann einfach losfahrt.",
+    "Ich arbeite im Schichtdienst, deshalb sind meine Zeiten etwas anders. {i} passen da gut rein. In {c} kenne ich jede Abkurzung, das ist Berufskrankheit.",
+    "Nach zehn Jahren in {c} suche ich weniger neue Orte als neue Leute. {i}. Ich fahre ruhig, hore leise Musik und halte, wo es passt.",
+    "Ich bin eher der ruhige Typ, bis es um {i} geht. In {c} bin ich meistens mit dem Rad, aber fur langere Strecken nehme ich das Auto und gern jemanden mit.",
 ]
 BIO_EN = [
     "I moved to {c} a while ago and I still explore it like a visitor. Mostly {i}. I would rather go with one person than with a group of eight.",
@@ -123,6 +131,13 @@ BIO_EN = [
     "I work a lot during the week, so {c} weekends matter. {i} above all. I prefer plans that are decided, not plans that dissolve in a group chat.",
     "Originally not from {c}, which means I say yes to things locals stopped doing years ago. {i} are my usual excuse to leave the flat.",
     "Quiet during the week, loud on Saturdays. {i}. I like meeting one person properly instead of a crowd briefly.",
+    # Seis mas (11-sep-2026), por la misma razon que las alemanas.
+    "I commute across {c} most mornings and usually have a seat free. Evenings are for {i}. Happy to talk, happy to be quiet.",
+    "New to {c} and driving more than I expected. I take people along when the route fits. {i} keep me sane outside work.",
+    "Half local, half always-leaving. Right now in {c}. {i}, and {a} in the car. I like a short message beforehand and then just going.",
+    "Shift work means odd hours, which suits {i} surprisingly well. I know every shortcut in {c} — occupational hazard.",
+    "Ten years in {c} and I am done with new places; now I want new people. {i}. Calm driver, quiet music, I stop where it makes sense.",
+    "The quiet type until someone mentions {i}. Bike inside {c}, car for anything longer, and there is usually room for one more.",
 ]
 
 TITULO_DE = {
