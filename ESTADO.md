@@ -1,7 +1,14 @@
-# ESTADO — la demo es un coche compartido (11 de septiembre de 2026)
+# ESTADO — la demo es un coche compartido (15 de septiembre de 2026)
 
-Entrega: **miercoles 16 de septiembre**. Ventana de feedback pedida: **3 dias habiles → hasta el
-lunes 21**. Quedan 5 dias de construccion.
+Entrega: **miercoles 16 de septiembre**, ma~nana. Ventana de feedback pedida: **3 dias habiles →
+hasta el lunes 21**.
+
+> **Hecho el 15 de septiembre**, ademas de lo de abajo: base **re-anclada** (y `--reanclar`
+> arreglado: reventaba a mitad y desplazaba con horas), `main` **protegida** por ruleset,
+> `/api/salud` que **puede estar en rojo**, bios del seed diversificadas (140 distintas), techos
+> cortos contra un proveedor que a veces no contesta, y la cache **caliente sin ninguna respuesta
+> degradada** (`just calentar`, 15/15 frases desde el modelo). Produccion verificada en Firefox
+> real: version 42, «read by the model», fechas en el 16.
 
 > **El giro del dia.** Hasta hoy la demo emparejaba **planes sociales**. `pickando.docx` —el
 > adjunto del encargo publicado en Workana— describe una **app de coche compartido**, y es lo que
@@ -104,18 +111,16 @@ El Worker pesa **1,46 MB** sin comprimir: el **2,3 %** del limite de 64 MiB.
 
 ## Lo que queda flojo, y se dice (regla 8)
 
-1. **`main` no esta protegida.** El unico ruleset es `prueba-de-disponibilidad-BORRAR`,
-   desactivado, y se ve en un repo publico.
-2. **`/api/salud` siempre responde `ok`.** Contesto en 0,29 s mientras `/api/buscar` colgaba
-   92 s. Una sonda que no puede estar en rojo no es una sonda.
-3. **La latencia en frio sigue siendo del proveedor**: la Capa 0 tarda entre **6,8 y 9,2 s**
-   (medido dos veces seguidas, 1.108 tokens de entrada y 190 de salida — el coste esta en la
-   salida). Con cache, 0,3 s. El plan para el dia 16 es **calentar la cache** de todas las frases
-   antes de mandar el link, y que el camino de los campos exista para lo que el cliente teclee.
-4. **El contador de solicitudes en la cabecera** no esta. Pedir plaza si responde: sale un aviso
+1. **El proveedor de IA a veces NO contesta** (medido el 15: 2,2 s una llamada, >40 s la
+   siguiente, misma clave). Con intentos cortos y repetidos la Capa 0 vuelve casi siempre, y si
+   no, la demo cae a reglas y **lo dice** en pantalla. Una frase nueva en frio tarda entre 9 y
+   20 s; las de la demo estan cacheadas a 0,3-0,6 s. **Correr `just calentar` justo antes de
+   mandar el link.**
+2. **El contador de solicitudes en la cabecera** no esta. Pedir plaza si responde: sale un aviso
    y el boton cambia en el sitio.
-5. **Las bios del seed se repiten**: cuatro perfiles con el mismo texto literal pueden salir en
-   la misma pantalla, y eso se lee como datos falsos.
+3. **El ruleset `prueba-de-disponibilidad-BORRAR`** sigue ahi, desactivado: borrarlo exige un
+   permiso que esta sesion no tiene. Es un clic en Settings → Rules.
+4. **La clave `nvidia-nim` sigue sin rotar** (`86bbyrbb1`). Funciona, pero estuvo expuesta.
 
 ## Workers Builds SI despliega desde `main` — y el indicador que decia lo contrario miente
 
@@ -142,19 +147,18 @@ produccion—, no un `source` en una respuesta JSON.
 
 ## Lo siguiente, en orden
 
-1. Proteger `main` y borrar el ruleset de prueba.
-2. `/api/salud` que pueda estar en rojo: que toque el proveedor de IA y la base, con tiempos.
-3. Diversificar las bios del seed.
-4. **Re-sembrar el dia 16** y calentar la cache antes de mandar el link.
-5. El mensaje de entrega con la contrapropuesta y **la pregunta de cual de los dos productos
-   esta vivo**.
+1. **El dia 16**: `just reanclar` (o `just sembrar`), `just frases`, `just calentar`, y abrir la
+   demo en un navegador de verdad. En ese orden.
+2. Mandar el mensaje de entrega (`docs/entrega/mensaje-2026-09-16.md`) con la contrapropuesta y
+   **la pregunta de cual de los dos productos esta vivo**.
+3. Rotar `nvidia-nim` y borrar el ruleset de prueba (los dos son de Rene).
 
 ## La lista de comprobacion del dia 16, antes de mandar el link
 
-1. `just seed` y `just sembrar` — **re-sembrar**, para que las fechas vuelvan a ser relativas a
-   ese dia. Es el bug mas probable de todo el proyecto y ocurre delante del cliente.
+1. `just reanclar` — **desplaza las fechas al dia**, sin re-embeber. Es el bug mas probable de
+   todo el proyecto y ocurre delante del cliente. (`just sembrar` si se ha tocado el seed.)
 2. `just frases` — las 10 frases de Helder, y que ninguna devuelva vacio.
-3. Abrir la demo en un navegador de verdad, no con `curl`.
-4. Calentar la cache de las frases y de los ejemplos de coche compartido.
+3. `just calentar` — la cache caliente y **sin ninguna respuesta degradada**.
+4. Abrir la demo en un navegador de verdad, no con `curl`.
 5. Escribir en el mensaje lo que **no** entra: pagos, tiempo real, chat, notificaciones, apps
    nativas. Es literalmente lo que hizo que este cliente volviera despues de desaparecer una vez.
