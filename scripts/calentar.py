@@ -45,7 +45,7 @@ def pedir(base, q, ciudad, fresco):
     url = f"{base}/api/buscar?{urllib.parse.urlencode(params)}"
     t0 = time.time()
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "match-engine-calentador/1.0"}),
-                                timeout=60) as r:
+                                timeout=120) as r:  # modo paciente: hasta 90 s por frase
         return json.loads(r.read()), round(time.time() - t0, 1)
 
 

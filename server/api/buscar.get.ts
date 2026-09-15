@@ -56,7 +56,12 @@ async function buscar(event: any) {
 	// suma: 15 s de Capa 0 + 9 s de Capa 4 son 24 s, y el navegador no sabe si eso es una espera o
 	// una averia. Con presupuesto, la Capa 4 —que es prosa, la unica capa que el cliente NO
 	// necesita para decidir— cobra lo que sobre y se salta si no sobra nada.
-	const PRESUPUESTO_MS = 20_000;
+	// MODO PACIENTE para el calentador (`?fresco=1`): nadie espera delante de la pantalla, asi que el
+	// presupuesto crece y los intentos contra el proveedor tambien. Medido el 15-sep-2026 por la tarde:
+	// desde el Worker la Capa 0 agotaba los 13,5 s en las 15 frases y la cache no se llenaba nunca.
+	// El visitante en vivo sigue con los 20 s de siempre.
+	const paciente = Boolean(getQuery(event).fresco);
+	const PRESUPUESTO_MS = paciente ? 90_000 : 20_000;
 	const q = String(getQuery(event).q ?? "").trim();
 	if (!q)
 		throw createError({ statusCode: 400, statusMessage: "falta ?q=<frase>" });
@@ -158,9 +163,9 @@ async function buscar(event: any) {
 			// —que puede reintentar— y no este, que solo sabe rendirse.
 			// Cabe DOS intentos de 6 s con su espera: si el primero se cuelga, el segundo suele volver
 			// en 2-3 s. Con un solo intento de 14 s, cada cuelgue del proveedor era una degradacion.
-			const LIMITE_MS = 13_500;
+			const LIMITE_MS = paciente ? 45_000 : 13_500;
 			const r = await Promise.race([
-				chatJson(env, SISTEMA_PARSER, q),
+				chatJson(env, SISTEMA_PARSER, q, 500, paciente ? 7 : 3),
 				new Promise<never>((_, rechaza) =>
 					setTimeout(
 						() => rechaza(new Error("capa 0: se agoto el tiempo")),
@@ -393,9 +398,9 @@ async function buscar(event: any) {
 		// que hay que poder defender— que hacer esperar por una frase que no va a llegar.
 		if (restante < 2_500)
 			throw new Error(`sin presupuesto: quedaban ${restante} ms`);
-		const TECHO_EXPLICACION_MS = Math.min(restante, 9_000);
+		const TECHO_EXPLICACION_MS = Math.min(restante, paciente ? 40_000 : 9_000);
 		const r = await Promise.race([
-			explicar(env, paraExplicar, intencion.language),
+			explicar(env, paraExplicar, intencion.language, paciente ? 6 : 3),
 			new Promise<never>((_, rechaza) =>
 				setTimeout(
 					() => rechaza(new Error("capa 4: se agoto el tiempo")),

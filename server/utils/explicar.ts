@@ -47,6 +47,7 @@ export async function explicar(
   env: Record<string, string | undefined>,
   items: ParaExplicar[],
   idioma: 'de' | 'en',
+  intentos = 3,
 ): Promise<{ frases: Record<string, string>; uso: Uso }> {
   if (!items.length) return { frases: {}, uso: { tokens_entrada: 0, tokens_salida: 0, ms: 0 } }
 
@@ -70,6 +71,7 @@ export async function explicar(
     + `${JSON.stringify(cuerpo, null, 1)}\n\n`
     + `Remember: every "frase" must be written in ${nombre}.`,
     120 * items.length + 200,
+    intentos,
   )
 
   const frases: Record<string, string> = {}

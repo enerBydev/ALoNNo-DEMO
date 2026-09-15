@@ -145,7 +145,10 @@ contextual inquiry, UAT del dia 16 en §7 del informe 04).
 ## Lo que queda flojo, y se dice (regla 8)
 
 1. **El proveedor de IA a veces NO contesta** (medido el 15: 2,2 s una llamada, >40 s la
-   siguiente, misma clave). Con intentos cortos y repetidos la Capa 0 vuelve casi siempre, y si
+   siguiente, misma clave). Y desde el Worker es peor que desde esta VM: por la tarde del 15 la
+   Capa 0 agotaba los 13,5 s en las 15 frases mientras la VM contestaba en 4-10 s. Por eso el
+   calentador (`?fresco=1`) tiene **modo paciente**: 90 s de presupuesto y mas intentos, solo para el;
+   el visitante sigue con 20 s. Con intentos cortos y repetidos la Capa 0 vuelve casi siempre, y si
    no, la demo cae a reglas y **lo dice** en pantalla. Una frase nueva en frio tarda entre 9 y
    20 s; las de la demo estan cacheadas a 0,3-0,6 s. **Correr `just calentar` justo antes de
    mandar el link.**
