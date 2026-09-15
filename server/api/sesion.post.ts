@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   // NO httpOnly: `useCookie` tiene que poder leerla en el navegador para que la navegacion
   // entre paginas no dependa de una llamada de red. Lo que guarda es publico —id, nombre,
   // ciudad— y no autoriza nada: cada endpoint que escribe vuelve a comprobarla en el servidor.
-  setCookie(event, 'alonno_sesion', JSON.stringify(filas[0]), {
+  setCookie(event, 'sameway_sesion', JSON.stringify(filas[0]), {
     httpOnly: false, secure: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 12,
   })
   return filas[0]

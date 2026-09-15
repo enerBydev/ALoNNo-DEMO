@@ -1,6 +1,6 @@
 {
   "escenario": "02-colonia-octubre",
-  "frase_de_helder": "I already booked a weekend in Cologne in October, but the person who was coming with me cancelled. I am looking for someone who would enjoy the trip too.",
+  "frase_del_cliente": "I already booked a weekend in Cologne in October, but the person who was coming with me cancelled. I am looking for someone who would enjoy the trip too.",
   "que_debe_devolver": "Mezcla etiquetada: personas que disfrutarian ese viaje y planes compatibles en Colonia dentro de la misma ventana de octubre, con el solape de fechas visible y el match fuerte escrito en aleman.",
   "perfiles": [
     {

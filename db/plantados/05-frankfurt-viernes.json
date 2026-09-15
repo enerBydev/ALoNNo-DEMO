@@ -1,6 +1,6 @@
 {
   "escenario": "05-frankfurt-viernes",
-  "frase_de_helder": "„Ich habe für Freitagabend einen Tisch in Frankfurt reserviert, aber meine Begleitung ist ausgefallen. Vielleicht hat jemand spontan Lust auf gutes Essen.\"",
+  "frase_del_cliente": "„Ich habe für Freitagabend einen Tisch in Frankfurt reserviert, aber meine Begleitung ist ausgefallen. Vielleicht hat jemand spontan Lust auf gutes Essen.\"",
   "que_debe_devolver": "Personas de Frankfurt con gusto por la cocina levantina, libres el viernes por la noche y a pocos km del restaurante; el near-miss por presupuesto baja unos puntos pero no se descarta.",
   "perfiles": [
     {

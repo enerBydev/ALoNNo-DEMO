@@ -7,14 +7,14 @@
 
 POR QUE EXISTE. El proveedor de IA a veces no contesta (medido el 15-sep-2026: 2,2 s una llamada,
 mas de 40 s la siguiente). Cuando eso pasa, la busqueda cae a reglas y **ese resultado degradado
-se guarda en la cache** seis horas: Helder abriria la demo y veria «fallback rules · the model
+se guarda en la cache** seis horas: el cliente abriria la demo y veria «fallback rules · the model
 did not answer in time» en la portada, aunque el proveedor ya estuviera bien.
 
 Esto pide cada frase con `?fresco=1` —que salta la cache y sobreescribe la entrada— hasta que la
 respuesta venga del modelo, con un maximo de intentos. Se corre **antes de mandar el link**, y
 es el paso 4 de la lista del dia 16 en ESTADO.md.
 
-Las frases son las 10 de Helder (`db/frases.json`, el criterio de aceptacion) mas las de coche
+Las frases son las 10 del cliente (`db/frases.json`, el criterio de aceptacion) mas las de coche
 compartido que la portada ofrece como ejemplos y la busqueda por defecto de `/`.
 """
 import json
@@ -25,7 +25,7 @@ import urllib.parse
 import urllib.request
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE = "https://alonno-demo.enerby212.workers.dev"
+BASE = "https://sameway-demo.enerby212.workers.dev"
 INTENTOS = 4
 
 # Las mismas que `app/pages/index.vue` ofrece. Si cambian alli, cambian aqui.
@@ -44,7 +44,7 @@ def pedir(base, q, ciudad, fresco):
         params["fresco"] = "1"
     url = f"{base}/api/buscar?{urllib.parse.urlencode(params)}"
     t0 = time.time()
-    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "alonno-calentador/1.0"}),
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "sameway-calentador/1.0"}),
                                 timeout=60) as r:
         return json.loads(r.read()), round(time.time() - t0, 1)
 
@@ -55,8 +55,8 @@ def main():
         base = sys.argv[sys.argv.index("--url") + 1].rstrip("/")
 
     with open(os.path.join(RAIZ, "db", "frases.json"), encoding="utf-8") as f:
-        helder = [("Berlin", x["frase_de_helder"]) for x in json.load(f)]
-    frases = COCHE + helder
+        cliente = [("Berlin", x["frase_del_cliente"]) for x in json.load(f)]
+    frases = COCHE + cliente
 
     print(f"calentando {len(frases)} frases contra {base}\n")
     quedaron_degradadas = 0

@@ -1,13 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO just:*)",
-      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO pnpm lint:*)",
-      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO pnpm typecheck:*)",
-      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO pnpm test:*)",
-      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO pnpm build:*)",
-      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO vitest:*)",
-      "Bash(direnv exec /workspace/proyectos/enerbydev/ALoNNo-DEMO just:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO just:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO pnpm lint:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO pnpm typecheck:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO pnpm test:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO pnpm build:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO vitest:*)",
+      "Bash(direnv exec /workspace/proyectos/enerbydev/Sameway-DEMO just:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",

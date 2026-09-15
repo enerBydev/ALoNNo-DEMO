@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""frases — las 10 frases de Helder contra la demo desplegada.
+"""frases — las 10 frases del cliente contra la demo desplegada.
 
     python3 scripts/frases.py                    # contra produccion
     python3 scripts/frases.py --url http://…     # contra otra URL
@@ -27,7 +27,7 @@ import urllib.parse
 import urllib.request
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-URL = "https://alonno-demo.enerby212.workers.dev"
+URL = "https://sameway-demo.enerby212.workers.dev"
 
 V = "\033[32m"; R = "\033[31m"; A = "\033[33m"; G = "\033[90m"; N = "\033[0m"
 
@@ -36,15 +36,15 @@ def frases():
     fuera = []
     for f in sorted(glob.glob(os.path.join(RAIZ, "db", "plantados", "*.json"))):
         d = json.load(open(f, encoding="utf-8"))
-        if d.get("frase_de_helder"):
-            fuera.append((d["escenario"], d["frase_de_helder"], d.get("que_debe_devolver", "")))
+        if d.get("frase_del_cliente"):
+            fuera.append((d["escenario"], d["frase_del_cliente"], d.get("que_debe_devolver", "")))
     return fuera
 
 
 def buscar(base, q):
     url = f"{base}/api/buscar?" + urllib.parse.urlencode({"q": q})
     t0 = time.time()
-    req = urllib.request.Request(url, headers={"User-Agent": "alonno-frases/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "sameway-frases/1.0"})
     with urllib.request.urlopen(req, timeout=180) as r:
         return json.loads(r.read()), time.time() - t0
 
@@ -55,7 +55,7 @@ def main():
     args = ap.parse_args()
 
     lista = frases()
-    print(f"{len(lista)} frases de Helder contra {args.url}\n")
+    print(f"{len(lista)} frases del cliente contra {args.url}\n")
     fallos = 0
     for escenario, q, esperado in lista:
         try:

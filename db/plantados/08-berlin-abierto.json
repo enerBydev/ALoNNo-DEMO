@@ -1,6 +1,6 @@
 {
   "escenario": "08-berlin-abierto",
-  "frase_de_helder": "I am in Berlin this weekend and would like to do something spontaneous — live music, a bar, an event or just explore the city with someone.",
+  "frase_del_cliente": "I am in Berlin this weekend and would like to do something spontaneous — live music, a bar, an event or just explore the city with someone.",
   "que_debe_devolver": "Planes de VARIAS categorias distintas en Berlin este fin de semana (musica en vivo, un bar, un evento, un paseo por la ciudad) mezclados con personas que declaran la misma intencion abierta: el top 5 tiene que traer al menos tres categorias.",
   "perfiles": [
     {

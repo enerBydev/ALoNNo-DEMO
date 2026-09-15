@@ -15,7 +15,7 @@
 export interface Sesion { id: string; display_name: string; city: string }
 
 export function useSesion() {
-  const galleta = useCookie<Sesion | null>('alonno_sesion', {
+  const galleta = useCookie<Sesion | null>('sameway_sesion', {
     default: () => null,
     sameSite: 'lax',
     path: '/',

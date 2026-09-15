@@ -1,11 +1,11 @@
-# ALoNNo — matching demo
+# Sameway — matching demo
 
-**Live: https://alonno-demo.enerby212.workers.dev**
+**Live: https://sameway-demo.enerby212.workers.dev**
 
 Type one sentence — in German or in English — and the system works out what you meant, finds
 people and plans that fit, ranks them with a real percentage, and explains each one.
 
-Built in seven days as a free demo for the ALoNNo project. **Synthetic data only. No real people.**
+Built in seven days as a portfolio demo. **Synthetic data only. No real people.**
 
 ---
 

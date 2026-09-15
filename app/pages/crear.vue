@@ -2,7 +2,7 @@
 // FLUJO 2 · «create a plan». Y de paso, la unica pantalla donde se VE la regla 5: el plan se
 // embebe al escribirlo, una vez, y a partir de ahi aparece en las busquedas sin costar nada.
 definePageMeta({ middleware: 'sesion' })
-useSeoMeta({ title: 'Post a plan — ALoNNo demo' })
+useSeoMeta({ title: 'Post a plan — Sameway demo' })
 
 const { sesion } = useSesion()
 const form = reactive({

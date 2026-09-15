@@ -1,4 +1,4 @@
-// El arbol de decision del §9-A, probado sobre las diez frases de Helder.
+// El arbol de decision del §9-A, probado sobre las diez frases del cliente.
 //
 // No llama al modelo: prueba la parte DETERMINISTA — que es justo la que se le quito al modelo
 // porque la fallaba. Corre sin red, dentro de `just ci`.
@@ -78,7 +78,7 @@ describe('las fechas se resuelven en codigo, nunca las escribe el modelo', () =>
 
 describe('el codigo corrige al modelo cuando la frase dice una fecha y el no la ve', () => {
   it('frase 8: «this weekend» convierte un interes permanente en una intencion con ventana', () => {
-    // Medido con la frase 8 de Helder: el modelo devolvia `sin_fecha` y la frase acababa como
+    // Medido con la frase 8 del cliente: el modelo devolvia `sin_fecha` y la frase acababa como
     // `standing_interest`, perdiendo el filtro del fin de semana entero.
     const mudo = base({ user_has_booking: false, city: 'Berlin' })
     expect(decidirArquetipo(mudo)).toBe('standing_interest')

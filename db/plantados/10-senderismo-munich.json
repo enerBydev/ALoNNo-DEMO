@@ -1,6 +1,6 @@
 {
   "escenario": "10-senderismo-munich",
-  "frase_de_helder": "I planned a hiking weekend near Munich, but my friend cancelled. I am looking for someone active who enjoys nature and is free that weekend.",
+  "frase_del_cliente": "I planned a hiking weekend near Munich, but my friend cancelled. I am looking for someone active who enjoys nature and is free that weekend.",
   "que_debe_devolver": "Personas de Munich activas y de naturaleza, libres ese fin de semana, ordenadas por ritmo: el que camina al mismo `pace` que el plan arriba y el que quiere pasear tranquilo abajo, con la explicacion diciendo que lo que falla es el ritmo, no el gusto.",
   "perfiles": [
     {

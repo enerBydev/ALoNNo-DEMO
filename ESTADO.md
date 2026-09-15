@@ -10,19 +10,19 @@ hasta el lunes 21**.
 > degradada** (`just calentar`, 15/15 frases desde el modelo). Produccion verificada en Firefox
 > real: version 42, «read by the model», fechas en el 16.
 
-> **El giro del dia.** Hasta hoy la demo emparejaba **planes sociales**. `pickando.docx` —el
+> **El giro del dia.** Hasta hoy la demo emparejaba **planes sociales**. el encargo del cliente —el
 > adjunto del encargo publicado en Workana— describe una **app de coche compartido**, y es lo que
 > el anuncio paga. La demo pasa a ser eso **sin tirar el motor**, porque los dos productos son el
 > mismo problema: alguien con plazas libres y una ventana de tiempo, y alguien que quiere
-> coincidir en espacio, direccion y hora. Las 10 frases de Helder siguen funcionando.
+> coincidir en espacio, direccion y hora. Las 10 frases del cliente siguen funcionando.
 >
-> **Sigue haciendo falta preguntarle a Helder cual de los dos productos esta vivo** (`86bbyvz4w`).
+> **Sigue haciendo falta preguntarle al cliente cual de los dos productos esta vivo** (`86bbyvz4w`).
 
 ## Lo que hay construido, verificado hoy
 
 | | Comprobacion |
 |---|---|
-| Nuxt 4.5.2 + Nitro, preset `cloudflare_module` | desplegado: <https://alonno-demo.enerby212.workers.dev> |
+| Nuxt 4.5.2 + Nitro, preset `cloudflare_module` | desplegado: <https://sameway-demo.enerby212.workers.dev> |
 | Base en **Frankfurt** (`qbrgwphcpflbwhfqhffc`) | pgvector 0.8.2 · PostGIS 3.3.7 · pg_trgm 1.6 |
 | El esquema, con la capa de coche | `profiles`/`plans`/`intents`/`intereses`/`valoraciones` · `vector(2048)` · HNSW sobre `halfvec(2048)` · `ruta geography(linestring)` con indice GiST |
 | El mundo sembrado | 240 perfiles (**120 conductores**) · 300 planes, de los que **120 son trayectos de diario** y **254 tienen ruta** · 42 intents · **1.185 valoraciones** bilingues, nota media **4,72** |
@@ -139,7 +139,7 @@ Comprobado hoy extremo a extremo, que es la unica forma:
 | merge del PR #20 a `main` | 10:42 |
 | version 40 del Worker | **10:43:37**, 73 s despues |
 | ¿desplego alguien a mano? | no: nadie corrio `wrangler deploy`, y `.github/workflows/` solo tiene `ci.yml`, que **no despliega** |
-| ¿sirve produccion el codigo nuevo? | si: `<title>ALoNNo — find the driver going your way</title>`, mapa con 10 teselas y 6 tarjetas, en Firefox real |
+| ¿sirve produccion el codigo nuevo? | si: `<title>Sameway — find the driver going your way</title>`, mapa con 10 teselas y 6 tarjetas, en Firefox real |
 
 La leccion es la de siempre en este repo: **un campo que se lee como una prueba no siempre lo
 es**. Lo que prueba el git-connect es la cadena entera —empujar, esperar, y ver el cambio en
@@ -157,7 +157,7 @@ produccion—, no un `source` en una respuesta JSON.
 
 1. `just reanclar` — **desplaza las fechas al dia**, sin re-embeber. Es el bug mas probable de
    todo el proyecto y ocurre delante del cliente. (`just sembrar` si se ha tocado el seed.)
-2. `just frases` — las 10 frases de Helder, y que ninguna devuelva vacio.
+2. `just frases` — las 10 frases del cliente, y que ninguna devuelva vacio.
 3. `just calentar` — la cache caliente y **sin ninguna respuesta degradada**.
 4. Abrir la demo en un navegador de verdad, no con `curl`.
 5. Escribir en el mensaje lo que **no** entra: pagos, tiempo real, chat, notificaciones, apps

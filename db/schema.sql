@@ -1,4 +1,4 @@
--- ALoNNo DEMO — esquema unico e idempotente (brief §5).
+-- Sameway DEMO — esquema unico e idempotente (brief §5).
 --
 -- DEMO: sin migraciones versionadas a proposito (regla 1). Este archivo se aplica entero,
 -- tantas veces como haga falta, y deja la base en el mismo sitio.
@@ -9,7 +9,7 @@
 --   nemotron-3-embed-1b     2048 dim · recall@1 8/8 · margen +0.340   <- elegido
 --   text-embedding-3-small  1536 dim · recall@1 8/8 · margen +0.319
 --
--- Empatan en recall sobre 8 pares DE<->EN de las frases reales de Helder. Lo que decide NO es
+-- Empatan en recall sobre 8 pares DE<->EN de las frases reales del cliente. Lo que decide NO es
 -- la calidad: es que el gateway de Vercel —la unica via a text-embedding-3-small aqui— corta
 -- con `429 Free tier requests on this model are rate-limited` a la segunda tanda, y sembrar
 -- son ~420 items. NIM hizo 60 vectores en 4.8 s sin un fallo. Una demo que se revisa en vivo
@@ -88,7 +88,7 @@ create table if not exists plans (
 );
 
 -- Arquetipos 3 y 4: gente con una INTENCION declarada, sin plan concreto.
--- Sin esta tabla, las frases 3, 6, 8 y 9 de Helder no tienen contra que casar.
+-- Sin esta tabla, las frases 3, 6, 8 y 9 del cliente no tienen contra que casar.
 create table if not exists intents (
   id            uuid primary key,
   owner_id      uuid references profiles(id),
@@ -183,8 +183,8 @@ alter table intereses enable row level security;
 -- EL GIRO A COCHE COMPARTIDO (11-sep-2026)
 -- ════════════════════════════════════════════════════════════════════════════════════════
 --
--- `pickando.docx` —el adjunto del encargo de Workana— describe una app de coche compartido,
--- no un emparejamiento de planes sociales. Ver docs/conocimiento/07-pickando-vs-alonno.md.
+-- el encargo del cliente (docs privados) describe una app de coche compartido,
+-- no un emparejamiento de planes sociales. Ver el informe 07 de los docs privados.
 --
 -- El motor de 5 capas NO se toca. Lo que cambia es el dominio, y encaja casi entero:
 --

@@ -29,7 +29,7 @@ const DESTINOS = [
     <header>
       <div class="contenedor barra-nav">
         <NuxtLink to="/" class="marca">
-          <span class="punto" /> ALoNNo
+          <span class="punto" /> Sameway
           <UBadge size="sm" color="neutral" variant="subtle">demo</UBadge>
         </NuxtLink>
 
@@ -59,7 +59,7 @@ const DESTINOS = [
     <footer>
       <div class="contenedor minusculo">
         <strong>DEMO</strong> · synthetic data · no real personal data ·
-        built by enerBydev for the ALoNNo project ·
+        built by enerBydev as a portfolio demo ·
         <NuxtLink to="/como-funciona">how the matching works</NuxtLink>
       </div>
     </footer>

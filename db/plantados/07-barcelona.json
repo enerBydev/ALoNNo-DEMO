@@ -1,6 +1,6 @@
 {
   "escenario": "07-barcelona",
-  "frase_de_helder": "Ich habe eine Reise nach Barcelona gebucht und möchte ungern alleine fahren. Ich suche jemanden, der ungefähr im gleichen Zeitraum dort sein möchte.",
+  "frase_del_cliente": "Ich habe eine Reise nach Barcelona gebucht und möchte ungern alleine fahren. Ich suche jemanden, der ungefähr im gleichen Zeitraum dort sein möchte.",
   "que_debe_devolver": "Planes de viaje con dest_city Barcelona y origin_city aleman cuyas ventanas solapen con la del usuario: arriba el de solape total, detras el parcial, y abajo o fuera el que no solapa.",
   "perfiles": [
     {

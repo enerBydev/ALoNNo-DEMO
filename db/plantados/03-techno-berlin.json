@@ -1,6 +1,6 @@
 {
   "escenario": "03-techno-berlin",
-  "frase_de_helder": "Ich möchte am Wochenende auf ein Techno-Festival in Berlin, aber keiner von meinen Freunden hat Lust.",
+  "frase_del_cliente": "Ich möchte am Wochenende auf ein Techno-Festival in Berlin, aber keiner von meinen Freunden hat Lust.",
   "que_debe_devolver": "Planes de techno en Berlin este fin de semana con plaza libre, dominando el top, mas gente con la misma intencion y sin con quien ir.",
   "perfiles": [
     {

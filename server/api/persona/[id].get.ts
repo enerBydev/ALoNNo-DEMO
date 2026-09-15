@@ -3,7 +3,7 @@
 // La reputacion se calcula AQUI y no en la pantalla. El material ya existia —`valoraciones` con
 // 1.232 rese~nas bilingues, `verification`, `completed_plans`, `desde_offset`— y no llegaba a
 // ninguna parte: la ficha ense~naba «verification 3/3», que es una representacion interna, y
-// nada mas. `pickando.docx` pide «driver rating & review» con nombre propio.
+// nada mas. el encargo del cliente pide «driver rating & review» con nombre propio.
 import { tabla } from "../../utils/sesion";
 
 /** Meses de antiguedad -> «Member since March 2024». La se~nal de permanencia mas barata que

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useSeoMeta({ title: 'How the matching works — ALoNNo demo' })
+useSeoMeta({ title: 'How the matching works — Sameway demo' })
 const capas = [
   { n: 0, t: 'Understanding the sentence', c: 'one small-model call',
     d: 'Your sentence becomes a structured object: what kind of question it is, the city, the date, the subject, what must match. If the model gets the archetype wrong, the code corrects it — the decision tree is deterministic once you have the facts.' },

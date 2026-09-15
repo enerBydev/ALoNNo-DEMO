@@ -1,4 +1,4 @@
-// Endpoint de salud. Helder pidio una URL de health en el proyecto anterior, y ademas es lo que
+// Endpoint de salud. El cliente pidio una URL de health en el proyecto anterior, y ademas es lo que
 // permite decidir si un despliegue quedo bien sin abrir el navegador.
 //
 // UNA SONDA QUE NO PUEDE ESTAR EN ROJO NO ES UNA SONDA. La version anterior devolvia
@@ -72,7 +72,7 @@ export default defineEventHandler(async (event) => {
 
 	return {
 		estado,
-		servicio: "alonno-demo",
+		servicio: "sameway-demo",
 		bd: bd.estado,
 		bd_ms: bd.ms,
 		ia: ia.estado,

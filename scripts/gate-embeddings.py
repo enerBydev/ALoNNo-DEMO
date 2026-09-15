@@ -3,7 +3,7 @@
 #
 #   uv run --with openai python scripts/gate-embeddings.py
 #
-# Mide recall@1 cross-lingua sobre pares DE<->EN construidos con las frases REALES de Helder
+# Mide recall@1 cross-lingua sobre pares DE<->EN construidos con las frases REALES del cliente
 # (§9-A): cada frase alemana debe recuperar su equivalente inglesa entre todas las demas.
 # Imprime ademas el margen medio —cuanto le saca el par correcto al mejor impostor—, que es
 # lo que dice si el resultado aguanta o va justo.
@@ -71,7 +71,7 @@ def evaluar(nombre, base, secreto, modelo, extra_q=None, extra_p=None):
         aciertos += (mejor==i)
     print(f"  {nombre:<46} dim {len(ve[0]):>5} · recall@1 {aciertos}/{len(PARES)} · margen medio {sum(margenes)/len(margenes):+.3f}")
 
-print("=== gate cross-lingua DE->EN, 8 pares de las frases de Helder ===")
+print("=== gate cross-lingua DE->EN, 8 pares de las frases del cliente ===")
 evaluar("text-embedding-3-small (Vercel)", "https://ai-gateway.vercel.sh/v1", "vercel-ai-gateway", "openai/text-embedding-3-small")
 evaluar("nemotron-3-embed-1b (NIM, con input_type)", "https://integrate.api.nvidia.com/v1", "nvidia-nim",
         "nvidia/nemotron-3-embed-1b", {"input_type":"query","truncate":"END"}, {"input_type":"passage","truncate":"END"})

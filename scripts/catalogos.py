@@ -171,7 +171,7 @@ DESC_EN = [
 
 
 # ══════════════════════════════════════════════════════════════════════════════════════════
-# COCHE COMPARTIDO (11-sep-2026) — lo que pide `pickando.docx`
+# COCHE COMPARTIDO (11-sep-2026) — lo que pide el encargo del cliente
 # ══════════════════════════════════════════════════════════════════════════════════════════
 #
 # «This app is to be used privately by anyone on the way to work, shopping, etc.»
@@ -180,7 +180,7 @@ DESC_EN = [
 #   * el de diario   — Kreuzberg → Mitte a las 8:10, de lunes a viernes
 #   * el del evento  — Berlin → el estadio de Munich el sabado
 #
-# El segundo es el que hace que las 10 frases de Helder sigan devolviendo resultados: el
+# El segundo es el que hace que las 10 frases del cliente sigan devolviendo resultados: el
 # destino del trayecto ES el plan. Un conductor que va al Bayern-Dortmund y lleva dos plazas
 # libres es, a la vez, el resultado de «busco a alguien que vaya al partido» y un viaje.
 

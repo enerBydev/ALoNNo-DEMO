@@ -7,14 +7,14 @@
  * entendia que le ense~naba la pantalla**, una pagina que explica en vez de mostrar es el error
  * anterior repetido en otro sitio (docs/conocimiento/20-critica-uiux.md §6).
  *
- * Asi que esta pantalla abre con una busqueda YA HECHA y cacheada: Helder abre el link y en el
+ * Asi que esta pantalla abre con una busqueda YA HECHA y cacheada: el cliente abre el link y en el
  * primer segundo ve conductores, horas, notas y precios. Los diez segundos siguientes los gasta
  * entendiendo el producto, no buscandolo.
  */
 import frases from "../../db/frases.json";
 
 useSeoMeta({
-	title: "ALoNNo — find the driver going your way",
+	title: "Sameway — find the driver going your way",
 	description:
 		"Say it in one sentence, in German or English. The engine reads it, filters by " +
 		"route and time, ranks, and explains the number.",
@@ -80,7 +80,7 @@ const CUANDO = [
 	{ value: "proximo_mes", label: "next month" },
 ];
 
-/** Ejemplos propios del coche compartido. Los diez de Helder siguen estando —son el criterio de
+/** Ejemplos propios del coche compartido. Las diez del cliente siguen estando —son el criterio de
  *  aceptacion (regla 4)— pero hablan de conciertos, y esta demo tambien tiene que saber
  *  ense~nar lo que el encargo de Workana pide de verdad. Marcado como a~nadido nuestro. */
 const EJEMPLOS_COCHE = [
@@ -425,7 +425,7 @@ defineShortcuts({
       </p>
     </template>
 
-    <!-- ── ⌘K: las diez frases de Helder, que eran el criterio de aceptacion y vivian
+    <!-- ── ⌘K: las diez frases del cliente, que eran el criterio de aceptacion y vivian
              escondidas dentro de un desplegable ─────────────────────────────────────────── -->
     <UModal v-model:open="paletaAbierta" title="Try a sentence">
       <template #body>
@@ -440,15 +440,15 @@ defineShortcuts({
           </button>
         </div>
         <div class="grupo">
-          <p class="grupo-t">Helder's ten sentences — verbatim, the acceptance criterion</p>
+          <p class="grupo-t">The client's ten sentences — verbatim, the acceptance criterion</p>
           <button
             v-for="f in frases" :key="f.escenario" class="ejemplo"
-            @click="paletaAbierta = false; buscar({ frase: f.frase_de_helder })"
+            @click="paletaAbierta = false; buscar({ frase: f.frase_del_cliente })"
           >
             <UBadge size="sm" color="neutral" variant="subtle">
-              {{ /[äöüßÄÖÜ]|^Ich|^Meine/.test(f.frase_de_helder) ? 'DE' : 'EN' }}
+              {{ /[äöüßÄÖÜ]|^Ich|^Meine/.test(f.frase_del_cliente) ? 'DE' : 'EN' }}
             </UBadge>
-            {{ f.frase_de_helder }}
+            {{ f.frase_del_cliente }}
           </button>
         </div>
       </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // FLUJO 3 · lo mio: mis planes, a que me apunte, y quien se apunto a los mios.
 definePageMeta({ middleware: 'sesion' })
-useSeoMeta({ title: 'Mine — ALoNNo demo' })
+useSeoMeta({ title: 'Mine — Sameway demo' })
 const { data, pending } = await useFetch<any>('/api/mio')
 const fecha = (i: string) => new Date(i).toLocaleDateString('en-GB',
   { weekday: 'short', day: 'numeric', month: 'short' })
