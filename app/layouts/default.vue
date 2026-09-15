@@ -20,7 +20,7 @@ const DESTINOS = [
 	{ a: "/", etiqueta: "Search", icono: "i-lucide-search" },
 	{ a: "/crear", etiqueta: "Offer a ride", icono: "i-lucide-circle-plus" },
 	{ a: "/mio", etiqueta: "My rides", icono: "i-lucide-route" },
-	{ a: "/como-funciona", etiqueta: "How", icono: "i-lucide-info" },
+	{ a: "/como-funciona", etiqueta: "How it works", icono: "i-lucide-info" },
 ];
 </script>
 
@@ -30,7 +30,7 @@ const DESTINOS = [
       <div class="contenedor barra-nav">
         <NuxtLink to="/" class="marca">
           <span class="punto" /> Match Engine
-          <UBadge size="sm" color="neutral" variant="subtle">demo</UBadge>
+          <UBadge size="sm" color="neutral" variant="subtle">demo · synthetic data</UBadge>
         </NuxtLink>
 
         <nav class="escritorio">
@@ -47,7 +47,7 @@ const DESTINOS = [
             </NuxtLink>
             <UButton size="xs" variant="ghost" color="neutral" @click="cerrar">sign out</UButton>
           </template>
-          <UButton v-else to="/entrar" size="sm" variant="soft">Sign in</UButton>
+          <UButton v-else to="/entrar" size="sm" variant="ghost" color="neutral">Sign in</UButton>
         </div>
       </div>
     </header>
@@ -96,8 +96,8 @@ nav.escritorio a {
   text-decoration: none; padding: 6px var(--e3); border-radius: 8px;
   font-size: var(--t-15); color: var(--tinta-2);
 }
-nav.escritorio a:hover { background: var(--linea); color: var(--tinta); }
-nav.escritorio a.on { color: var(--tinta); font-weight: 600; background: var(--linea); }
+nav.escritorio a:hover { color: var(--tinta); }
+nav.escritorio a.on { color: var(--tinta); font-weight: 600; box-shadow: inset 0 -2px 0 var(--tinta); border-radius: 0; }
 
 .yo { display: flex; align-items: center; gap: var(--e2); }
 .quien { display: flex; align-items: center; gap: var(--e1); text-decoration: none; }
