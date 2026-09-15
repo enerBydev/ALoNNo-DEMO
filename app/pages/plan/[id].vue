@@ -155,7 +155,7 @@ async function apuntarse(quitar = false) {
 			title: quitar ? "Request withdrawn" : "Seat requested",
 			description: quitar
 				? "You are no longer on this ride."
-				: `Waiting for ${conductor.value?.display_name} to confirm.`,
+				: `${conductor.value?.display_name} usually answers within a day.`, // DEMO: plazo sintetico; en el producto real, la mediana real del conductor (P4)
 			icon: quitar ? "i-lucide-undo-2" : "i-lucide-check",
 			color: quitar ? "neutral" : "primary",
 		});

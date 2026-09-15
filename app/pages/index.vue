@@ -44,6 +44,8 @@ const verDescartados = ref(false);
 const senalado = ref<string | null>(null);
 const paso = ref(0);
 const paletaAbierta = ref(false);
+// La telemetria vive detras de «Why these?» (P8): el estado es el titulo de la lista.
+const verPorque = ref(false);
 
 // EL MAPA SOLO DESPUES DE QUE LA PAGINA ESTE MONTADA Y PINTADA.
 //
@@ -230,6 +232,34 @@ watch(
 );
 
 const listas = computed(() => datos.value?.listas ?? []);
+
+/** «2 rides tomorrow · Neukölln → Mitte»: el titulo ES el estado de la busqueda (P8). */
+function tituloDe(l: any): string {
+	const d = datos.value;
+	const n = l.total;
+	if (l.clave === "viajes") {
+		const cuando = d?.ventana?.etiqueta ?? "";
+		const desde = d?.intencion?.city ? capitalizar(d.intencion.city) : "";
+		const hacia = d?.intencion?.hacia ? capitalizar(d.intencion.hacia) : "";
+		const ruta = desde && hacia ? ` · ${desde} → ${hacia}` : hacia ? ` · to ${hacia}` : "";
+		const que = d?.intencion?.trayecto ? (n === 1 ? "ride" : "rides") : (n === 1 ? "plan" : "plans");
+		return `${n} ${que} ${cuando}${ruta}`;
+	}
+	return `${n} ${n === 1 ? "driver" : "drivers"} who match you`;
+}
+const capitalizar = (t: string) => t.replace(/(^|[\s-])(\p{L})/gu, (m) => m.toUpperCase());
+
+/** El rotulo del mapa: el viaje se~nalado o, si no hay ninguno, el primero. */
+const rotuloMapa = computed(() => {
+	const lista = viajes.value;
+	const r = lista.find((x: any) => x.id === senalado.value) ?? lista[0];
+	if (!r) return null;
+	const hora = r.cuando
+		? new Date(r.cuando).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })
+		: "";
+	const desvio = r.viaje?.km_de_tu_ruta != null ? ` · ${r.viaje.km_de_tu_ruta} km from you` : "";
+	return `${r.conductor?.nombre ?? r.titulo} · ${hora}${desvio}`;
+});
 const viajes = computed(() =>
 	(
 		listas.value.find((l: any) => l.clave === "viajes")?.resultados ?? []
@@ -264,202 +294,203 @@ defineShortcuts({
 </script>
 
 <template>
-  <div class="contenedor">
-    <!-- ── el buscador: los campos son la superficie, la frase es el atajo ─────────────── -->
-    <!-- Sin h1, nada decia que hace el producto: el primer texto era «From» a 13 px (medido). -->
-    <header class="titular">
-      <h1>Rides on your route</h1>
-      <p class="tenue">Drivers already going your way, at your time. Say it in one sentence, or use the fields.</p>
-    </header>
+  <div class="contenedor pagina">
+    <!-- ── COLUMNA DEL PRODUCTO ──────────────────────────────────────────────────────────── -->
+    <div class="producto">
+      <!-- Sin h1, nada decia que hace el producto: el primer texto era «From» a 13 px (medido).
+           Cuatro palabras (P1: ≤ 4), en segunda persona (P14). -->
+      <header class="titular">
+        <h1>Rides on your route</h1>
+        <p class="tenue">Drivers already going your way, at your time.</p>
+      </header>
 
-    <section class="buscador" :class="{ buscando: cargando }">
-      <div class="campos">
-        <UFormField label="From" class="campo">
-          <UInput v-model="campos.desde" placeholder="Neukolln" icon="i-lucide-circle-dot" />
-        </UFormField>
-        <UFormField label="To" class="campo">
-          <UInput v-model="campos.hacia" placeholder="Mitte" icon="i-lucide-map-pin" />
-        </UFormField>
-        <UFormField label="When" class="campo estrecho-campo">
-          <!-- `<select>` NATIVO, no `USelect`. El de Nuxt UI 4 rompe con «Component is missing
-               template or render function: SelectItem» y esa excepcion tumba la hidratacion
-               ENTERA: la pantalla caia al 500 de `error.vue` con el HTML del servidor
-               perfectamente servido detras (medido el 11-sep-2026, Firefox real).
-               El nativo ademas abre la rueda del sistema en movil, que se usa mejor. -->
-          <select v-model="campos.cuando" class="nativo" aria-label="When">
-            <option v-for="c in CUANDO" :key="c.value" :value="c.value">{{ c.label }}</option>
-          </select>
-        </UFormField>
-        <UButton
-          size="lg" icon="i-lucide-search" :loading="cargando"
-          @click="buscar({ usarCampos: true })"
-        >
-          Search
-        </UButton>
-      </div>
+      <!-- ── el buscador: los campos son la superficie, la frase es el atajo ────────────── -->
+      <section class="buscador" :class="{ buscando: cargando }" aria-label="Find a ride">
+        <div class="campos">
+          <UFormField label="From" class="campo">
+            <UInput v-model="campos.desde" size="xl" placeholder="Neukölln" icon="i-lucide-circle-dot" @keydown.enter="buscar({ usarCampos: true })" />
+          </UFormField>
+          <UFormField label="To" class="campo">
+            <UInput v-model="campos.hacia" size="xl" placeholder="Mitte" icon="i-lucide-map-pin" @keydown.enter="buscar({ usarCampos: true })" />
+          </UFormField>
+          <UFormField label="When" class="campo estrecho-campo">
+            <!-- `<select>` NATIVO, no `USelect`: el de Nuxt UI 4 rompe la hidratacion en SSR
+                 (medido el 11-sep) y el nativo abre la rueda del sistema en movil. -->
+            <select v-model="campos.cuando" class="nativo alto" aria-label="When">
+              <option v-for="c in CUANDO" :key="c.value" :value="c.value">{{ c.label }}</option>
+            </select>
+          </UFormField>
+          <!-- UNA primaria por pantalla (P5). Antes habia tres botones para la misma accion. -->
+          <UButton size="xl" class="primaria" :loading="cargando" @click="buscar({ usarCampos: true })">
+            Find rides
+          </UButton>
+        </div>
 
-      <div class="frase">
+        <!-- La frase: Enter envia. Sin boton propio: la joya no necesita un segundo CTA. -->
         <UInput
           v-model="consulta"
-          size="lg"
+          size="xl"
           class="entrada"
-          placeholder="…or just say it: «Ich fahre morgen um 8 nach Mitte, zwei Plätze frei»"
+          placeholder="Or just say it — &quot;Ich fahre morgen um 8 von Neukölln nach Mitte&quot;"
           icon="i-lucide-message-square"
+          aria-label="Say what you need, in German or English. Press Enter to search."
           @keydown.enter="buscar()"
         />
-        <UButton variant="soft" size="lg" :loading="cargando" @click="buscar()">
-          Read my sentence
-        </UButton>
-        <UButton
-          variant="ghost" color="neutral" size="lg" icon="i-lucide-command"
-          @click="paletaAbierta = true"
-        >
-          Examples
-        </UButton>
-      </div>
 
-      <p class="minusculo ayuda">
-        The fields fill in from your sentence. Change one and the search re-runs instantly, without AI.
-      </p>
-    </section>
-
-    <!-- ── error ────────────────────────────────────────────────────────────────────────── -->
-    <UAlert
-      v-if="error" color="error" variant="subtle" icon="i-lucide-triangle-alert"
-      title="That did not work" :description="error" class="hueco"
-    />
-
-    <!-- ── esperando: esqueletos con la forma del resultado, y la capa que corre ─────────── -->
-    <!-- El progreso se ense~na en TODA busqueda, no solo en la primera: con datos ya en pantalla,
-         una busqueda nueva de 10-20 s no daba ninguna se~nal (medido por dos agentes). -->
-    <div v-if="cargando" class="progreso" role="status" aria-live="polite">
-      <UIcon name="i-lucide-loader-circle" class="gira" />
-      <span>{{ PASOS[paso] }}…</span>
-      <span class="minusculo">step {{ paso + 1 }} of {{ PASOS.length }}</span>
-    </div>
-    <template v-if="cargando && !datos">
-      <div v-for="n in 3" :key="n" class="hueso">
-        <USkeleton class="h-5 w-2/5" />
-        <USkeleton class="h-4 w-3/5" />
-        <div class="hueso-fila">
-          <USkeleton class="h-11 w-11 rounded-full" />
-          <USkeleton class="h-4 w-1/3" />
-        </div>
-      </div>
-    </template>
-
-    <template v-if="datos">
-      <!-- ── el mapa: un coche compartido sin mapa no existe ──────────────────────────── -->
-      <button v-if="viajes.length" class="chip-mapa" type="button" :aria-expanded="mapaAbierto" @click="alternarMapa">
-        <UIcon :name="mapaAbierto ? 'i-lucide-chevron-up' : 'i-lucide-map'" />
-        {{ mapaAbierto ? 'Hide map' : 'Show map' }}
-      </button>
-      <NuxtErrorBoundary v-if="viajes.length && mapaListo">
-        <MapaRuta
-          :viajes="viajes" :centro="centro" :radio-km="radio" :seleccionado="senalado"
-          class="hueco mapa-portada" :class="{ abierto: mapaAbierto }"
-        />
-        <!-- Si el mapa falla, se pierde el mapa y nada mas. Antes se llevaba la pantalla entera. -->
-        <template #error="{ error: errorMapa }">
-          <p class="minusculo hueco">Map unavailable ({{ errorMapa }}). The results below are unaffected.</p>
-        </template>
-      </NuxtErrorBoundary>
-
-      <!-- ── lo que se entendio, en una linea, no en una tarjeta de taxonomia ─────────── -->
-      <div class="entendido">
-        <UBadge v-if="datos.directo" color="neutral" variant="subtle">
-          From your fields
-        </UBadge>
-        <UBadge v-else-if="datos.degradado" color="warning" variant="subtle">
-          Read without AI — it took too long
-        </UBadge>
-        <UBadge v-else color="neutral" variant="subtle">Understood from your sentence</UBadge>
-        <span class="minusculo">
-          {{ datos.totales.candidatos }} candidates ·
-          {{ datos.totales.viajes }} rides · {{ datos.totales.personas }} drivers ·
-          within {{ radio }} km of your route · {{ datos.ventana.etiqueta }}
-        </span>
-        <span class="empuja" />
-        <UButton
-          size="xs" variant="ghost" color="neutral" icon="i-lucide-refresh-cw"
-          :loading="cargando" @click="buscar({ fresco: true })"
-        >
-          Run again
-        </UButton>
-      </div>
-
-      <!-- ── DOS LISTAS, cada una ordenada por SU numero ──────────────────────────────── -->
-      <section v-for="l in listas" :key="l.clave" class="lista">
-        <h2 class="titulo-lista">
-          {{ l.titulo }}
-          <span class="minusculo">{{ l.total }}</span>
-        </h2>
-
-        <p v-if="!l.resultados.length" class="vacio">
-          Nobody is doing that right now.
-          <button class="enlace" @click="campos.cuando = ''; buscar({ usarCampos: true })">
-            Try without the date
+        <!-- Los atajos a la vista (P2), no detras de un glifo de Mac. -->
+        <p class="ejemplos-linea">
+          <span class="minusculo">Try:</span>
+          <button v-for="e in EJEMPLOS_COCHE.slice(3, 5)" :key="e.texto" class="chip-ejemplo" type="button" @click="buscar({ frase: e.texto, ciudad: e.ciudad })">
+            {{ e.texto }}
           </button>
+          <button class="enlace" type="button" @click="paletaAbierta = true">all 15 sentences</button>
         </p>
+      </section>
 
-        <template v-for="r in l.resultados" :key="r.id">
-          <div class="fila-resultado" @mouseenter="senalado = r.id" @mouseleave="senalado = null">
-            <TarjetaViaje
-              :r="r" :idioma-consulta="datos.intencion.language" :abierto="abierto[r.id]"
-              @alternar="abierto[r.id] = !abierto[r.id]"
-              @pedir="pedirPlaza(r)"
-            />
+      <!-- ── error ────────────────────────────────────────────────────────────────────── -->
+      <UAlert
+        v-if="error" color="error" variant="subtle" icon="i-lucide-triangle-alert"
+        :description="error" class="hueco"
+      />
+
+      <!-- ── esperando: la capa que corre, en TODA busqueda; esqueletos solo sin datos ───── -->
+      <div v-if="cargando" class="progreso" role="status" aria-live="polite">
+        <UIcon name="i-lucide-loader-circle" class="gira" />
+        <span>{{ PASOS[paso] }}…</span>
+        <span class="minusculo">step {{ paso + 1 }} of {{ PASOS.length }}</span>
+      </div>
+      <template v-if="cargando && !datos">
+        <div v-for="n in 3" :key="n" class="hueso">
+          <USkeleton class="h-5 w-2/5" />
+          <USkeleton class="h-4 w-3/5" />
+          <div class="hueso-fila">
+            <USkeleton class="h-11 w-11 rounded-full" />
+            <USkeleton class="h-4 w-1/3" />
+          </div>
+        </div>
+      </template>
+
+      <template v-if="datos">
+        <!-- El caso degradado SI se avisa en linea: cambia lo que el usuario ve. El resto de
+             la telemetria vive detras de «Why these?» (P8). -->
+        <UAlert
+          v-if="datos.degradado" color="warning" variant="subtle" icon="i-lucide-info" class="hueco"
+          description="We couldn't read your sentence in time, so this search ran on rules and the three fields above. Correct one to search again."
+        />
+
+        <!-- El mapa en movil: plegado tras un chip. En escritorio vive en la columna derecha. -->
+        <button v-if="viajes.length" class="chip-mapa" type="button" :aria-expanded="mapaAbierto" @click="alternarMapa">
+          <UIcon :name="mapaAbierto ? 'i-lucide-chevron-up' : 'i-lucide-map'" />
+          {{ mapaAbierto ? 'Hide map' : 'Show map' }}
+        </button>
+        <div v-if="viajes.length && mapaAbierto" class="solo-movil">
+          <NuxtErrorBoundary v-if="mapaListo">
+            <MapaRuta :viajes="viajes" :centro="centro" :radio-km="radio" :seleccionado="senalado" class="hueco" />
+            <template #error><p class="minusculo hueco">Map unavailable. The results are unaffected.</p></template>
+          </NuxtErrorBoundary>
+        </div>
+
+        <!-- ── DOS LISTAS, cada una ordenada por SU numero; el estado es el titulo (P8) ──── -->
+        <section v-for="(l, i) in listas" :key="l.clave" class="lista">
+          <div class="titulo-fila">
+            <h2 class="titulo-lista">{{ tituloDe(l) }}</h2>
+            <button v-if="i === 0" class="enlace" type="button" :aria-expanded="verPorque" @click="verPorque = !verPorque">
+              {{ verPorque ? 'Hide' : 'Why these?' }}
+            </button>
           </div>
 
-          <!-- el desglose: siete enteros que SUMAN el numero de al lado -->
-          <div v-if="abierto[r.id]" class="desglose">
-            <div v-for="c in r.componentes" :key="c.nombre" class="comp">
-              <span class="comp-n">
-                {{ c.etiqueta_en }}
-                <em v-if="c.detalle">{{ c.detalle }}</em>
+          <!-- «Why these?»: lo que se entendio, el embudo y los tiempos — a un clic, no encima. -->
+          <div v-if="i === 0 && verPorque" class="porque-estas">
+            <p>
+              <UBadge v-if="datos.directo" color="neutral" variant="subtle">From your fields</UBadge>
+              <UBadge v-else-if="datos.degradado" color="warning" variant="subtle">Read without AI</UBadge>
+              <UBadge v-else color="neutral" variant="subtle">Understood from your sentence</UBadge>
+              <span class="minusculo">
+                {{ datos.totales.candidatos }} candidates · {{ datos.totales.viajes }} rides ·
+                {{ datos.totales.personas }} drivers · within {{ radio }} km of your route · {{ datos.ventana.etiqueta }}
               </span>
-              <UProgress :model-value="c.valor * 100" size="xs" class="comp-b" />
-              <span class="comp-v">{{ c.valor.toFixed(2) }} × {{ c.peso.toFixed(2) }}</span>
-              <b class="comp-p">+{{ c.puntos_enteros }}</b>
-            </div>
-            <div class="comp suma">
-              <span class="comp-n">adds up to</span>
-              <span class="comp-b" /><span class="comp-v" />
-              <b class="comp-p">{{ r.porcentaje }}</b>
+            </p>
+            <p class="minusculo">
+              <b>{{ datos.tiempos.total }} ms</b> — model {{ datos.tiempos.capa_0_llm + datos.tiempos.capa_4_llm }} ·
+              embedding {{ datos.tiempos.embedding }} · Postgres {{ datos.tiempos.capa_1_2_postgres }} · scoring &lt;1.
+              The model runs at most twice: once to read your sentence, once to phrase what you see.
+              <button class="enlace" type="button" :disabled="cargando" @click="buscar({ fresco: true })">Run again without cache</button>
+            </p>
+          </div>
+
+          <!-- Un «no» con dos salidas (P15). -->
+          <div v-if="!l.resultados.length" class="vacio">
+            <p>No one {{ l.clave === 'viajes' ? 'drives that route' : 'matches that' }} {{ datos.ventana.etiqueta }}.</p>
+            <div class="salidas">
+              <UButton size="sm" variant="soft" @click="campos.cuando = ''; buscar({ usarCampos: true })">Try any day</UButton>
+              <UButton v-if="l.clave === 'viajes'" size="sm" variant="ghost" color="neutral" @click="campos.cuando = 'esta_semana'; buscar({ usarCampos: true })">
+                See who drives it other days
+              </UButton>
             </div>
           </div>
-        </template>
-      </section>
 
-      <!-- ── los near-miss: por que NO salieron ───────────────────────────────────────── -->
-      <section v-if="datos.descartados.length" class="hueco">
-        <UButton
-          variant="ghost" color="neutral" size="sm"
-          :icon="verDescartados ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
-          @click="verDescartados = !verDescartados"
-        >
-          Ruled out, and why ({{ datos.totales.descartados }})
-        </UButton>
-        <ul v-if="verDescartados" class="descartados">
-          <li v-for="r in datos.descartados" :key="r.id">
-            <b>{{ r.porcentaje }}%</b> {{ r.titulo }} — <i>{{ r.motivo_descarte }}</i>
-          </li>
-        </ul>
-      </section>
+          <template v-for="r in l.resultados" :key="r.id">
+            <div class="fila-resultado" @mouseenter="senalado = r.id" @mouseleave="senalado = null">
+              <TarjetaViaje
+                :r="r" :idioma-consulta="datos.intencion.language" :abierto="abierto[r.id]"
+                @alternar="abierto[r.id] = !abierto[r.id]"
+                @pedir="pedirPlaza(r)"
+              />
+            </div>
 
-      <!-- ── donde se fue el tiempo. La seccion E de la propuesta, hecha visible ──────── -->
-      <p class="tiempos minusculo">
-        <b>{{ datos.tiempos.total }} ms</b> —
-        model {{ datos.tiempos.capa_0_llm + datos.tiempos.capa_4_llm }} ·
-        embedding {{ datos.tiempos.embedding }} ·
-        Postgres {{ datos.tiempos.capa_1_2_postgres }} · scoring &lt;1.
-        The expensive part is the model, and it runs at most twice: once to read your sentence,
-        once to phrase what you see. Everything else is an index.
+            <!-- el desglose: siete enteros que SUMAN el numero de al lado -->
+            <div v-if="abierto[r.id]" class="desglose">
+              <div v-for="c in r.componentes" :key="c.nombre" class="comp">
+                <span class="comp-n">
+                  {{ c.etiqueta_en }}
+                  <em v-if="c.detalle">{{ c.detalle }}</em>
+                </span>
+                <UProgress :model-value="c.valor * 100" size="xs" class="comp-b" />
+                <span class="comp-v">{{ c.valor.toFixed(2) }} × {{ c.peso.toFixed(2) }}</span>
+                <b class="comp-p">+{{ c.puntos_enteros }}</b>
+              </div>
+              <div class="comp suma">
+                <span class="comp-n">adds up to</span>
+                <span class="comp-b" /><span class="comp-v" />
+                <b class="comp-p">{{ r.porcentaje }}</b>
+              </div>
+            </div>
+          </template>
+        </section>
+
+        <!-- ── los near-miss: por que NO salieron ─────────────────────────────────────── -->
+        <section v-if="datos.descartados.length" class="hueco">
+          <UButton
+            variant="ghost" color="neutral" size="sm"
+            :icon="verDescartados ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+            @click="verDescartados = !verDescartados"
+          >
+            Ruled out, and why ({{ datos.totales.descartados }})
+          </UButton>
+          <ul v-if="verDescartados" class="descartados">
+            <li v-for="r in datos.descartados" :key="r.id">
+              <b>{{ r.porcentaje }}%</b> {{ r.titulo }} — <i>{{ r.motivo_descarte }}</i>
+            </li>
+          </ul>
+        </section>
+      </template>
+    </div>
+
+    <!-- ── COLUMNA DEL MAPA (escritorio) ─────────────────────────────────────────────────── -->
+    <aside v-if="datos && viajes.length" class="lateral">
+      <NuxtErrorBoundary v-if="mapaListo">
+        <MapaRuta :viajes="viajes" :centro="centro" :radio-km="radio" :seleccionado="senalado" />
+        <template #error><p class="minusculo">Map unavailable. The results are unaffected.</p></template>
+      </NuxtErrorBoundary>
+      <!-- El rotulo del viaje se~nalado: el mapa contesta algo, no solo decora (P8). -->
+      <p v-if="rotuloMapa" class="rotulo">{{ rotuloMapa }}</p>
+      <p class="minusculo pie-mapa">
+        A portfolio demo by enerBydev. Synthetic drivers and rides; a real engine.
+        <NuxtLink to="/como-funciona">How the matching works →</NuxtLink>
       </p>
-    </template>
+    </aside>
 
-    <!-- ── ⌘K: las diez frases del cliente, que eran el criterio de aceptacion y vivian
-             escondidas dentro de un desplegable ─────────────────────────────────────────── -->
+    <!-- ── las 15 frases: las diez del cliente mas las cinco de coche ────────────────────── -->
     <UModal v-model:open="paletaAbierta" title="Try a sentence">
       <template #body>
         <div class="grupo">
@@ -489,16 +520,52 @@ defineShortcuts({
   </div>
 </template>
 
+
 <style scoped>
+/* Dos columnas en escritorio: 600 de producto, 20 de aire, 360 de mapa (spec §4.3 del informe
+   05). Antes el mapa ocupaba el 28 % del viewport y la primera respuesta quedaba bajo el
+   pliegue a 1280x800 (medido). En movil, una columna y el mapa tras un chip. */
+.pagina { display: grid; grid-template-columns: 1fr; gap: var(--e5); align-items: start; }
+.lateral { display: none; }
+@media (min-width: 1024px) {
+  .pagina { grid-template-columns: 600px 360px; column-gap: 20px; }
+  .lateral { display: block; position: sticky; top: 72px; padding-top: 40px; }
+  .chip-mapa, .solo-movil { display: none !important; }
+}
+.rotulo { font-size: var(--t-13); font-weight: 600; margin-top: var(--e2); }
+.pie-mapa { margin-top: var(--e3); color: var(--tinta-3); }
+.pie-mapa a { display: block; margin-top: 2px; }
+.primaria { min-width: 120px; }
+/* A 600 px de columna: From y To reparten, When 130, boton 120, en UNA fila (spec §4.3). */
+@media (min-width: 1024px) {
+  .campos { flex-wrap: nowrap; }
+  .campo { flex: 1 1 0; min-width: 0; }
+  .estrecho-campo { flex: 0 0 130px; }
+  .primaria { flex: 0 0 120px; }
+}
+.titulo-fila .enlace { white-space: nowrap; }
+.nativo.alto { height: 48px; min-height: 48px; }
+.ejemplos-linea { display: flex; align-items: center; gap: var(--e2); flex-wrap: wrap; }
+.chip-ejemplo {
+  font: inherit; font-size: var(--t-13); color: var(--tinta-2); background: transparent;
+  border: 1px solid var(--linea-fuerte); border-radius: 999px; padding: 4px var(--e3);
+  cursor: pointer; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chip-ejemplo:hover { border-color: var(--accion); color: var(--accion); }
+.titulo-fila { display: flex; align-items: baseline; justify-content: space-between; gap: var(--e3); margin-bottom: var(--e3); }
+.titulo-fila .titulo-lista { margin-bottom: 0; }
+.porque-estas { display: grid; gap: var(--e2); padding: var(--e3) var(--e4); margin-bottom: var(--e3);
+  border: 1px solid var(--linea); border-radius: var(--radio-2); background: var(--superficie); }
+.porque-estas p { display: flex; gap: var(--e2); align-items: center; flex-wrap: wrap; }
+.salidas { display: flex; gap: var(--e2); margin-top: var(--e2); flex-wrap: wrap; }
 .buscador { display: grid; gap: var(--e3); margin-bottom: var(--e5); }
 .campos { display: flex; gap: var(--e3); align-items: flex-end; flex-wrap: wrap; }
 .campo { flex: 1 1 180px; }
 .estrecho-campo { flex: 0 1 150px; }
-.frase { display: flex; gap: var(--e2); align-items: center; flex-wrap: wrap; }
-.entrada { flex: 1 1 320px; }
+.entrada { width: 100%; }
 
 .hueco { margin: var(--e4) 0; }
-.titular { margin-bottom: var(--e5); }
+.titular { margin-bottom: var(--e4); }
 .titular h1 { font-size: var(--t-40); line-height: 1.1; margin-bottom: var(--e2); }
 .titular p { font-size: var(--t-16); }
 .buscando .campos, .buscando .frase { opacity: .7; }
@@ -590,10 +657,7 @@ defineShortcuts({
   .campos { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e2); align-items: end; }
   .campo, .estrecho-campo { flex: none; min-width: 0; }
   .campos > :deep(button) { width: 100%; }
-  .frase { gap: var(--e2); }
-  .entrada { flex: 1 1 100%; }
-  .frase > :deep(button) { flex: 1 1 auto; }
-  .ayuda { display: none; }
+  .ejemplos-linea .chip-ejemplo { max-width: 100%; }
   .comp { grid-template-columns: 1fr 70px 44px; }
   .comp-b { display: none; }
 }
