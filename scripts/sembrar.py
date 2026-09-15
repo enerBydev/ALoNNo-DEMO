@@ -273,7 +273,12 @@ def main():
     for i in range(0, len(planes), LOTE_SQL):
         filas = []
         for p, e in zip(planes[i:i + LOTE_SQL], emb_plan[i:i + LOTE_SQL]):
-            inicio = f"(now() + interval '{p['dia_offset']} days')::date + time '{p['hora']}'"
+            # EN HORA DE BERLIN. Antes era `date + time` a secas, que Postgres interpreta en la zona
+            # de la sesion (UTC): un viaje sembrado «08:00» salia a las 10:00 en la pantalla en cuanto
+            # esta empezo a pintar la hora de Berlin (programa de UX, 15-sep-2026). La demo es
+            # Alemania: la hora que escribe el conductor es la de Alemania.
+            inicio = (f"(((now() at time zone 'Europe/Berlin')::date + interval '{p['dia_offset']} days') "
+                      f"+ time '{p['hora']}') at time zone 'Europe/Berlin'")
             filas.append(
                 f"({lit(p['id'])}::uuid, {lit(p['owner_id'])}::uuid, {lit(p['title'])}, "
                 f"{lit(p['description'])}, {lit(p['desc_lang'])}, {lit(p['category'])}, "

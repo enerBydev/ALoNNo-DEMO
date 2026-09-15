@@ -107,14 +107,28 @@ const EJEMPLOS_COCHE = [
 ];
 
 let reloj: ReturnType<typeof setInterval> | null = null;
+// La ciudad del ultimo ejemplo elegido; la sesion y «Berlin» son los respaldos.
+const ciudadElegida = ref<string | null>(null);
+// El mapa en movil va plegado: a 390 px ocupaba 300 px del pliegue y la primera respuesta
+// quedaba a y=1041 en una pantalla de 844 (medido). Un chip lo abre.
+const mapaAbierto = ref(false);
+function alternarMapa() {
+	mapaAbierto.value = !mapaAbierto.value;
+	// Leaflet mide su contenedor al montar; si estaba oculto, midio 0. Un `resize` le hace
+	// volver a medir sin exponer su instancia hasta aqui.
+	if (mapaAbierto.value) nextTick(() => window.dispatchEvent(new Event("resize")));
+}
 
 async function buscar(
-	opciones: { frase?: string; usarCampos?: boolean; fresco?: boolean } = {},
+	opciones: { frase?: string; ciudad?: string; usarCampos?: boolean; fresco?: boolean } = {},
 ) {
 	if (cargando.value) return;
 	if (opciones.frase) {
 		consulta.value = opciones.frase;
 		campos.desde = campos.hacia = campos.cuando = "";
+		// El ejemplo de Koln se buscaba con ciudad=Berlin: `EJEMPLOS_COCHE[].ciudad` existia y no
+		// se usaba (programa de UX, 15-sep). Con la ciudad del ejemplo, «Altstadt» es la de Koln.
+		ciudadElegida.value = opciones.ciudad ?? null;
 	}
 	const q = consulta.value.trim();
 	if (!q) return;
@@ -137,7 +151,7 @@ async function buscar(
 
 	const query: Record<string, string> = {
 		q,
-		ciudad: sesion.value?.city ?? "Berlin",
+		ciudad: ciudadElegida.value ?? sesion.value?.city ?? "Berlin",
 	};
 	if (opciones.usarCampos) {
 		if (campos.desde) query.desde = campos.desde;
@@ -200,6 +214,9 @@ watch(
 	datos,
 	(d) => {
 		if (!d) return;
+		// Si la busqueda salio de los campos, los campos son la verdad: rellenarlos con la
+		// intencion pisaba la correccion del usuario con lo que decia la frase (medido).
+		if (d.directo) return;
 		campos.desde = d.intencion.city ?? "";
 		campos.hacia = d.intencion.hacia ?? d.intencion.dest_city ?? "";
 		campos.cuando = d.intencion.fecha?.expresion ?? "";
@@ -244,7 +261,13 @@ defineShortcuts({
 <template>
   <div class="contenedor">
     <!-- ── el buscador: los campos son la superficie, la frase es el atajo ─────────────── -->
-    <section class="buscador">
+    <!-- Sin h1, nada decia que hace el producto: el primer texto era «From» a 13 px (medido). -->
+    <header class="titular">
+      <h1>Rides on your route</h1>
+      <p class="tenue">Drivers already going your way, at your time. Say it in one sentence, or use the fields.</p>
+    </header>
+
+    <section class="buscador" :class="{ buscando: cargando }">
       <div class="campos">
         <UFormField label="From" class="campo">
           <UInput v-model="campos.desde" placeholder="Neukolln" icon="i-lucide-circle-dot" />
@@ -258,7 +281,7 @@ defineShortcuts({
                ENTERA: la pantalla caia al 500 de `error.vue` con el HTML del servidor
                perfectamente servido detras (medido el 11-sep-2026, Firefox real).
                El nativo ademas abre la rueda del sistema en movil, que se usa mejor. -->
-          <select v-model="campos.cuando" class="nativo">
+          <select v-model="campos.cuando" class="nativo" aria-label="When">
             <option v-for="c in CUANDO" :key="c.value" :value="c.value">{{ c.label }}</option>
           </select>
         </UFormField>
@@ -290,9 +313,8 @@ defineShortcuts({
         </UButton>
       </div>
 
-      <p class="minusculo">
-        The fields fill themselves from what the sentence means. Correcting one re-runs the search
-        <b>without calling the model</b> — under a second, every time.
+      <p class="minusculo ayuda">
+        The fields fill in from your sentence. Change one and the search re-runs instantly, without AI.
       </p>
     </section>
 
@@ -303,12 +325,14 @@ defineShortcuts({
     />
 
     <!-- ── esperando: esqueletos con la forma del resultado, y la capa que corre ─────────── -->
+    <!-- El progreso se ense~na en TODA busqueda, no solo en la primera: con datos ya en pantalla,
+         una busqueda nueva de 10-20 s no daba ninguna se~nal (medido por dos agentes). -->
+    <div v-if="cargando" class="progreso" role="status" aria-live="polite">
+      <UIcon name="i-lucide-loader-circle" class="gira" />
+      <span>{{ PASOS[paso] }}…</span>
+      <span class="minusculo">step {{ paso + 1 }} of {{ PASOS.length }}</span>
+    </div>
     <template v-if="cargando && !datos">
-      <div class="progreso">
-        <UIcon name="i-lucide-loader-circle" class="gira" />
-        <span>{{ PASOS[paso] }}…</span>
-        <span class="minusculo">layer {{ paso }} of 4</span>
-      </div>
       <div v-for="n in 3" :key="n" class="hueso">
         <USkeleton class="h-5 w-2/5" />
         <USkeleton class="h-4 w-3/5" />
@@ -321,10 +345,14 @@ defineShortcuts({
 
     <template v-if="datos">
       <!-- ── el mapa: un coche compartido sin mapa no existe ──────────────────────────── -->
+      <button v-if="viajes.length" class="chip-mapa" type="button" :aria-expanded="mapaAbierto" @click="alternarMapa">
+        <UIcon :name="mapaAbierto ? 'i-lucide-chevron-up' : 'i-lucide-map'" />
+        {{ mapaAbierto ? 'Hide map' : 'Show map' }}
+      </button>
       <NuxtErrorBoundary v-if="viajes.length && mapaListo">
         <MapaRuta
           :viajes="viajes" :centro="centro" :radio-km="radio" :seleccionado="senalado"
-          class="hueco"
+          class="hueco mapa-portada" :class="{ abierto: mapaAbierto }"
         />
         <!-- Si el mapa falla, se pierde el mapa y nada mas. Antes se llevaba la pantalla entera. -->
         <template #error="{ error: errorMapa }">
@@ -335,12 +363,12 @@ defineShortcuts({
       <!-- ── lo que se entendio, en una linea, no en una tarjeta de taxonomia ─────────── -->
       <div class="entendido">
         <UBadge v-if="datos.directo" color="neutral" variant="subtle">
-          fields · no model call
+          From your fields
         </UBadge>
         <UBadge v-else-if="datos.degradado" color="warning" variant="subtle">
-          fallback rules · the model did not answer in time
+          Read without AI — it took too long
         </UBadge>
-        <UBadge v-else color="primary" variant="subtle">read by the model</UBadge>
+        <UBadge v-else color="neutral" variant="subtle">Understood from your sentence</UBadge>
         <span class="minusculo">
           {{ datos.totales.candidatos }} candidates ·
           {{ datos.totales.viajes }} rides · {{ datos.totales.personas }} drivers ·
@@ -351,7 +379,7 @@ defineShortcuts({
           size="xs" variant="ghost" color="neutral" icon="i-lucide-refresh-cw"
           :loading="cargando" @click="buscar({ fresco: true })"
         >
-          Run it again without cache
+          Run again
         </UButton>
       </div>
 
@@ -370,7 +398,7 @@ defineShortcuts({
         </p>
 
         <template v-for="r in l.resultados" :key="r.id">
-          <div @mouseenter="senalado = r.id" @mouseleave="senalado = null">
+          <div class="fila-resultado" @mouseenter="senalado = r.id" @mouseleave="senalado = null">
             <TarjetaViaje
               :r="r" :idioma-consulta="datos.intencion.language" :abierto="abierto[r.id]"
               @alternar="abierto[r.id] = !abierto[r.id]"
@@ -430,17 +458,17 @@ defineShortcuts({
     <UModal v-model:open="paletaAbierta" title="Try a sentence">
       <template #body>
         <div class="grupo">
-          <p class="grupo-t">Rideshare — what the job post asks for</p>
+          <p class="grupo-t">Rides — say it your way</p>
           <button
             v-for="e in EJEMPLOS_COCHE" :key="e.texto" class="ejemplo"
-            @click="paletaAbierta = false; buscar({ frase: e.texto })"
+            @click="paletaAbierta = false; buscar({ frase: e.texto, ciudad: e.ciudad })"
           >
             <UBadge size="sm" color="neutral" variant="subtle">{{ e.ciudad }}</UBadge>
             {{ e.texto }}
           </button>
         </div>
         <div class="grupo">
-          <p class="grupo-t">The client's ten sentences — verbatim, the acceptance criterion</p>
+          <p class="grupo-t">Plans — concerts, matches, trips</p>
           <button
             v-for="f in frases" :key="f.escenario" class="ejemplo"
             @click="paletaAbierta = false; buscar({ frase: f.frase_del_cliente })"
@@ -471,6 +499,24 @@ defineShortcuts({
 .entrada { flex: 1 1 320px; }
 
 .hueco { margin: var(--e4) 0; }
+.titular { margin-bottom: var(--e5); }
+.titular h1 { font-size: var(--t-40); line-height: 1.1; margin-bottom: var(--e2); }
+.titular p { font-size: var(--t-16); }
+.buscando .campos, .buscando .frase { opacity: .7; }
+/* 12 px entre tarjetas, como manda la especificacion: el selector viejo no casaba con el
+   envoltorio (medido: 0 px). */
+.fila-resultado { margin-bottom: var(--e3); }
+.chip-mapa { display: none; }
+@media (max-width: 720px) {
+  .titular h1 { font-size: var(--t-22); }
+  .titular p { font-size: var(--t-15); }
+  .chip-mapa {
+    display: inline-flex; align-items: center; gap: var(--e1); font: inherit; font-size: var(--t-13);
+    font-weight: 600; color: var(--accion); background: var(--accion-suave); border: 0;
+    border-radius: 999px; padding: 8px var(--e3); min-height: 36px; margin: var(--e2) 0; cursor: pointer;
+  }
+  .mapa-portada:not(.abierto) { display: none; }
+}
 
 .progreso {
   display: flex; align-items: center; gap: var(--e2);
@@ -539,9 +585,16 @@ defineShortcuts({
 .ejemplo:hover { border-color: var(--accion); background: var(--accion-suave); }
 
 @media (max-width: 640px) {
-  .campos { gap: var(--e2); }
-  .campo, .estrecho-campo { flex: 1 1 100%; }
+  /* Dos filas de 44 px —From | To · When | Search— como pide la especificacion del primer
+     viewport: apilado a ancho completo, la primera respuesta quedaba a y=1041 en una pantalla
+     de 844 (medido). */
+  .campos { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e2); align-items: end; }
+  .campo, .estrecho-campo { flex: none; min-width: 0; }
   .campos > :deep(button) { width: 100%; }
+  .frase { gap: var(--e2); }
+  .entrada { flex: 1 1 100%; }
+  .frase > :deep(button) { flex: 1 1 auto; }
+  .ayuda { display: none; }
   .comp { grid-template-columns: 1fr 70px 44px; }
   .comp-b { display: none; }
 }

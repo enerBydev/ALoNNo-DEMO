@@ -21,6 +21,7 @@ useSeoMeta({
 
 const fecha = (i: string) =>
 	new Date(i).toLocaleDateString("en-GB", {
+		timeZone: "Europe/Berlin",
 		weekday: "short",
 		day: "numeric",
 		month: "short",
@@ -40,6 +41,14 @@ const total = computed(
 
 /** La traduccion se pide una vez y se guarda: una rese~na alemana leida por alguien que no lee
  *  aleman es exactamente el argumento que esta demo vende, y aqui se puede tocar. */
+/** «← back to search» era un enlace a `/` y tiraba la busqueda de la persona: volvia a la
+ *  consulta por defecto (medido: de 5 viajes a 2). Si hay historial, se vuelve; si no, a `/`. */
+const router = useRouter();
+function volver() {
+	if (import.meta.client && window.history.length > 1) router.back();
+	else router.push("/");
+}
+
 const traducidas = ref<Record<string, string>>({});
 const traduciendo = ref<string | null>(null);
 async function traducir(r: any) {
@@ -82,7 +91,7 @@ const avatar = computed(() => {
     <p v-if="error" class="tarjeta">That profile does not exist.</p>
 
     <template v-else-if="p">
-      <NuxtLink to="/" class="volver minusculo">← back to search</NuxtLink>
+<a href="/" class="volver minusculo" @click.prevent="volver">← back to search</a>
 
       <header class="cabecera">
         <span class="avatar" :style="{ background: avatar }">{{ p.display_name.charAt(0) }}</span>
@@ -141,7 +150,7 @@ const avatar = computed(() => {
         Rates their passengers {{ rep.valora_a_sus_pasajeros_con.toFixed(1) }} on average
       </p>
 
-      <p class="bio">{{ p.bio }}</p>
+      <p class="bio" :lang="p.bio_lang">{{ p.bio }}</p>
 
       <!-- ── LAS RESE~NAS ───────────────────────────────────────────────────────────────── -->
       <section v-if="resenas.length" class="bloque">
@@ -158,7 +167,7 @@ const avatar = computed(() => {
               >★</span>
             </span>
           </header>
-          <p class="texto">«{{ r.texto }}»</p>
+          <p class="texto" :lang="r.idioma">«{{ r.texto }}»</p>
           <p v-if="traducidas[r.id]" class="traducido">→ {{ traducidas[r.id] }}</p>
           <UButton
             v-else size="xs" variant="ghost" color="neutral" icon="i-lucide-languages"

@@ -185,11 +185,11 @@ DESC_EN = [
 # libres es, a la vez, el resultado de «busco a alguien que vaya al partido» y un viaje.
 
 COCHES = [
-    "VW Golf · gris", "Skoda Octavia · azul", "Opel Corsa · blanco", "Ford Focus · negro",
-    "Toyota Yaris · rojo", "Renault Clio · gris", "Seat Leon · blanco", "BMW 1er · negro",
-    "Audi A3 · plata", "Mazda 3 · azul", "Hyundai i30 · blanco", "Fiat 500 · verde",
-    "Peugeot 208 · gris", "Kia Ceed · azul", "Nissan Leaf · blanco", "Tesla Model 3 · negro",
-    "VW ID.3 · azul", "Dacia Sandero · gris", "Citroen C3 · rojo", "Mini Cooper · verde",
+    "VW Golf · grey", "Skoda Octavia · blue", "Opel Corsa · white", "Ford Focus · black",
+    "Toyota Yaris · red", "Renault Clio · grey", "Seat Leon · white", "BMW 1er · black",
+    "Audi A3 · silver", "Mazda 3 · blue", "Hyundai i30 · white", "Fiat 500 · green",
+    "Peugeot 208 · grey", "Kia Ceed · blue", "Nissan Leaf · white", "Tesla Model 3 · black",
+    "VW ID.3 · blue", "Dacia Sandero · grey", "Citroen C3 · red", "Mini Cooper · green",
 ]
 
 # Corredores reales de cada ciudad: (barrio de salida, [barrios por los que pasa], barrio destino).
@@ -239,14 +239,16 @@ TITULO_TRAYECTO_DE = [
     "{o} → {d}, {h}",
     "Fahrt nach {d} um {h}",
     "{o} raus, {d} rein — {h}",
-    "Jeden Morgen {o} → {d}",
 ]
 TITULO_TRAYECTO_EN = [
     "{o} → {d}, {h}",
     "Driving to {d} at {h}",
     "{o} to {d} — {h}",
-    "Same run every morning: {o} → {d}",
 ]
+# Los recurrentes llevan la hora en el titulo y el momento del dia de verdad: «Jeden Morgen
+# Bilk → Altstadt» a las 18:00 se contradecia a si mismo (programa de UX, 15-sep-2026).
+TITULO_RECURRENTE_DE = {"manana": "Jeden Morgen {o} → {d}, {h}", "tarde": "Jeden Abend {o} → {d}, {h}"}
+TITULO_RECURRENTE_EN = {"manana": "Every morning {o} → {d}, {h}", "tarde": "Every evening {o} → {d}, {h}"}
 DESC_TRAYECTO_DE = [
     "Ich fahre die Strecke sowieso. Wer unterwegs mitkommen will, sagt kurz Bescheid.",
     "Feste Zeit, feste Strecke. Ich halte nur da, wo ich ohnehin an der Ampel stehe.",

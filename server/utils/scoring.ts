@@ -327,6 +327,8 @@ export function puntuarPlan(
     subject: string | null; subjectEspecificidad: 'named' | 'genre' | 'open'
     categoria: string | null; desde: string | null; hasta: string | null
     tags: string[]; radioKm: number
+    /** La hora de salida que dijo la persona (0-23), si la dijo. */
+    hora?: number | null
   },
 ): Puntuacion {
   const P = PESOS_INTENCION_PLAN
@@ -347,8 +349,23 @@ export function puntuarPlan(
     const ini = new Date(contexto.desde).getTime()
     const fin = new Date(contexto.hasta ?? contexto.desde).getTime() + 86_400_000
     const cuando = new Date(plan.starts_at).getTime()
-    if (cuando >= ini && cuando <= fin) fecha = 1
-    else {
+    if (cuando >= ini && cuando <= fin) {
+      fecha = 1
+      // LA HORA, CUANDO LA FRASE LA DICE. «morgen um 8» ponia un viaje de las 20:00 en primer
+      // lugar porque el dia encajaba y la hora no contaba para nada (programa de UX, 15-sep).
+      // Una hora de distancia sigue valiendo casi todo; tres, la mitad; seis o mas, un tercio.
+      // Es lo que un pasajero haria con la lista en la mano.
+      if (contexto.hora != null) {
+        // La hora local de Berlin, con horario de verano incluido: es la que escribio el conductor.
+        const partes = new Intl.DateTimeFormat('en-GB', {
+          hour: 'numeric', minute: 'numeric', hour12: false, timeZone: 'Europe/Berlin',
+        }).formatToParts(new Date(plan.starts_at))
+        const num = (t: string) => Number(partes.find((p) => p.type === t)?.value ?? 0)
+        const local = (num('hour') % 24) + num('minute') / 60
+        const delta = Math.min(Math.abs(local - contexto.hora), 24 - Math.abs(local - contexto.hora))
+        fecha = delta <= 1 ? 1 : delta <= 3 ? 0.55 : 0.3
+      }
+    } else {
       const dias = Math.min(Math.abs(cuando - ini), Math.abs(cuando - fin)) / 86_400_000
       fecha = dias <= 3 ? 0.5 : dias <= 10 ? 0.2 : 0
     }

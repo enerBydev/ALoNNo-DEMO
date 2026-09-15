@@ -20,6 +20,7 @@
 -- el fichero empieza tirandolas. Sigue siendo idempotente: `if exists` no falla si no estan.
 drop function if exists buscar_personas(halfvec, text, text, double precision, double precision, int, date, date, boolean, uuid, int);
 drop function if exists buscar_planes(halfvec, text, text, double precision, double precision, int, date, date, text, text, uuid, int);
+drop function if exists buscar_planes(halfvec, text, text, double precision, double precision, int, date, date, text, text, uuid, int, int);
 
 -- ── Personas ────────────────────────────────────────────────────────────────────────────
 create or replace function buscar_personas(
@@ -114,7 +115,12 @@ create or replace function buscar_planes(
   q_categoria   text default null,
   q_dest_city   text default null,
   q_excluir     uuid default null,
-  q_limite      int default 50
+  q_limite      int default 50,
+  -- Tope de distancia del VIAJE. Para «nach Mitte» a 2 km, un «Urlaub in Amsterdam» de 681 km
+  -- salia segundo porque su ruta EMPIEZA en casa del conductor, en Berlin, a 400 m de quien
+  -- pregunta (programa de UX, 15-sep-2026). Es verdad que pasa por alli; no es verdad que sea
+  -- un viaje al trabajo. Un trayecto de diario no mide 681 km.
+  q_max_km      int default null
 ) returns table (
   id uuid, owner_id uuid, title text, description text, desc_lang text, category text,
   origin_city text, dest_city text, is_travel boolean, venue text, subject text, tags text[],
@@ -151,6 +157,7 @@ language sql stable as $$
       -- Un plan al que se llega es un plan futuro. Lo pasado no es un match peor: no es match.
       and p.ends_at >= now()
       and (q_categoria is null or p.category = q_categoria)
+      and (q_max_km is null or p.distancia_km is null or p.distancia_km <= q_max_km)
       -- Si la frase nombra un destino ("una reserva a Barcelona"), manda el destino y NO el radio:
       -- quien pregunta esta en Alemania y el plan ocurre a 1.500 km.
       and (q_dest_city is null or p.dest_city ilike q_dest_city)

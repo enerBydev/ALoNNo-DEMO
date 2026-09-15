@@ -24,6 +24,9 @@ const conductor = computed(() => p.value?.perfil);
 const cuando = computed(() =>
 	p.value
 		? new Date(p.value.starts_at).toLocaleString("en-GB", {
+				// La demo es Alemania: la hora es la de Berlin en el servidor y en el navegador. Sin
+				// esto el Worker (UTC) y el visitante (su zona) discrepaban y la hora saltaba al hidratar.
+				timeZone: "Europe/Berlin",
 				weekday: "long",
 				day: "numeric",
 				month: "long",
@@ -61,7 +64,7 @@ const miembroDesde = computed(() => {
 	if (m == null) return null;
 	const d = new Date();
 	d.setMonth(d.getMonth() - m);
-	return d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+	return d.toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "Europe/Berlin" });
 });
 
 /** El mapa quiere la misma forma que le da la busqueda, asi que se fabrica un «viaje» con la
@@ -126,6 +129,14 @@ useHead(() => ({
 		: [],
 }));
 
+/** «← back to search» era un enlace a `/` y tiraba la busqueda de la persona: volvia a la
+ *  consulta por defecto (medido: de 5 viajes a 2). Si hay historial, se vuelve; si no, a `/`. */
+const router = useRouter();
+function volver() {
+	if (import.meta.client && window.history.length > 1) router.back();
+	else router.push("/");
+}
+
 const enviando = ref(false);
 const resultado = ref<any>(null);
 async function apuntarse(quitar = false) {
@@ -159,7 +170,7 @@ async function apuntarse(quitar = false) {
     <p v-if="error" class="tarjeta">That ride does not exist.</p>
 
     <template v-else-if="p">
-      <NuxtLink to="/" class="volver minusculo">← back to search</NuxtLink>
+<a href="/" class="volver minusculo" @click.prevent="volver">← back to search</a>
 
       <div class="fila-titulo">
         <UBadge color="primary" variant="subtle">
@@ -169,7 +180,7 @@ async function apuntarse(quitar = false) {
         <UBadge color="neutral" variant="outline">{{ p.desc_lang.toUpperCase() }}</UBadge>
       </div>
 
-      <h1>{{ p.title }}</h1>
+      <h1 :lang="p.desc_lang">{{ p.title }}</h1>
 
       <!-- La linea que decide: cuando sale, cuanto dura, cuanto cuesta. -->
       <p class="cuando">{{ cuando }}</p>
@@ -186,7 +197,7 @@ async function apuntarse(quitar = false) {
         <template #error><p class="minusculo hueco">Map unavailable. Everything else works.</p></template>
       </NuxtErrorBoundary>
 
-      <p class="descripcion">{{ p.description }}</p>
+      <p class="descripcion" :lang="p.desc_lang">{{ p.description }}</p>
 
       <!-- ── plazas y la accion ────────────────────────────────────────────────────────── -->
       <div class="tarjeta plazas">
@@ -279,6 +290,14 @@ h1 { font-size: var(--t-28); }
 .descripcion { margin: var(--e4) 0; color: var(--tinta-2); }
 
 .plazas { display: flex; align-items: center; justify-content: space-between; gap: var(--e4); flex-wrap: wrap; }
+@media (max-width: 720px) {
+  /* En movil, la accion primaria va pegada sobre la barra inferior, siempre visible: el bloque
+     quedaba bajo la barra fija (medido: y=840-876 con la barra desde 789). */
+  .plazas {
+    position: sticky; bottom: 64px; z-index: 5;
+    box-shadow: 0 -6px 20px #0e111614;
+  }
+}
 .grande { font-size: var(--t-28); font-variant-numeric: tabular-nums; }
 
 .titulo2 { margin-top: var(--e6); margin-bottom: var(--e3); font-size: var(--t-18); }
